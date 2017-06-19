@@ -143,17 +143,21 @@ DEQ basin coordinators review pertinent information including this report as par
 ##Basin Contact
 ```{r basin contact, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 library(knitr)
+library(dplyr)
+library(plyr)
+
 deq<- paste(BC_LU[BC_LU$AgArea %in% input$select, 'DEQ_bc_name'], BC_LU[BC_LU$AgArea %in% input$select, 'DEQ_bc_email'], sep = '; ')
 
 oda<- paste(BC_LU[BC_LU$AgArea %in% input$select, 'ODA_agwqcoord_name'], BC_LU[BC_LU$AgArea %in% input$select, 'ODA_agwqcoord_number'], sep = '; ')
 
 agarea <- input$select
 
-BC<-data.frame(agarea, deq, oda)
-colnames(BC) <- c('AgWQ Management Area', 'DEQ Basin Coordinator', 'ODA AgWQ Specialist')
+BC_table<-data.frame(agarea, deq, oda)
+colnames(BC_table) <- c('AgWQ Management Area', 'DEQ Basin Coordinator', 'ODA AgWQ Specialist')
 
-kable(BC, caption = "DEQ and ODA basin contacts")
+kable(BC_table, format = "markdown", padding = 0, digits = 1, caption = "Oregon DEQ and ODA basin contacts")
 ```
+
 #Methods
 
 ##Data Sources
@@ -193,61 +197,80 @@ library(raster)
 
 #location <- c(lon = median(stns$DECIMAL_LONG), lat = median(stns$DECIMAL_LAT))
 #raster <- raster('shapefiles/nlcd_2011_or')
-raster <- raster('//DEQLEAD03/gis_library/Base_Data/LU_LC/NLCD/Version 2011/Landcover/nlcd_2011_landcover_2011_edition_2014_03_31/nlcd_2011_landcover_2011_edition_2014_03_31.img')
+#raster <- raster('//DEQLEAD03/gis_library/Base_Data/LU_LC/NLCD/Version 2011/Landcover/nlcd_2011_landcover_2011_edition_2014_03_31/nlcd_2011_landcover_2011_edition_2014_03_31.img')
 
 #raster <- readOGR(dsn = 'shapefiles', layer = 'nlcd', verbose = FALSE) wayyyyyy too large
 
-long = c((min(stns$DECIMAL_LONG)), (max(stns$DECIMAL_LONG)))
-lat<- c((min(stns$DECIMAL_LAT)), (max(stns$DECIMAL_LAT)))
+# long = c((min(stns$DECIMAL_LONG)), (max(stns$DECIMAL_LONG)))
+# lat<- c((min(stns$DECIMAL_LAT)), (max(stns$DECIMAL_LAT)))
  
 
-mapImageData <- get_map(location = c(lon = -123.0383, lat = 42.43502),
-                        color = "color",
-                        source = "google",
-                        maptype = "terrain",
-                        zoom = 6)
+# mapImageData <- get_map(location = c(lon = -123.0383, lat = 42.43502),
+#                         color = "color",
+#                         source = "google",
+#                         maptype = "terrain",
+#                         zoom = 6)
 agarea <- agwqma[agwqma$PlanName == input$select,]
 agarea<-spTransform(agarea, CRS("+proj=longlat +datum=NAD83"))
 
-proj4string(raster) <- proj4string(agarea)
-
-xlim<-c((min(stns$DECIMAL_LONG) -0.75), (max(stns$DECIMAL_LONG) +0.75))
-ylim <- c((min(stns$DECIMAL_LAT) -0.75), (max(stns$DECIMAL_LAT) + 0.75))
-
-#range<-GetMap.bbox(lonR = range(long), latR = range(lat))
-
-map<-ggmap(mapImageData,
-           extent = 'panel',
-           ylab = "Latitude",
-           xlab = "Longitude",
-           darken = 0.05) + 
- # geom_polygon(aes(fill = raster))
-  geom_polygon(data = raster, aes(x = long, y = lat))
-  geom_polygon(data = agarea, aes(x =long, y=lat), colour = 'black', fill =NA) +
-  coord_fixed(xlim = xlim, ylim = ylim, ratio = 1.3) +
-  geom_point(aes(x = DECIMAL_LONG, y = DECIMAL_LAT), data = stns, label = 'Station_ID', fill = 'red', size = 4, alpha = 0.5) +
- geom_text_repel(data = stns, aes(x = DECIMAL_LONG, y = DECIMAL_LAT, label = Station_ID), colour = 'black', check_overlap = TRUE, nudge_y = 0.005) +
-  ggtitle(paste("Station Locations in the ", input$select, 'AgWQ Management Area')) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  theme(legend.position = 'top',
-        legend.direction = 'horizontal',
-        plot.title = element_text(size=9))
+# proj4string(raster) <- proj4string(agarea)
+# 
+# xlim<-c((min(stns$DECIMAL_LONG) -0.75), (max(stns$DECIMAL_LONG) +0.75))
+# ylim <- c((min(stns$DECIMAL_LAT) -0.75), (max(stns$DECIMAL_LAT) + 0.75))
+# 
+# #range<-GetMap.bbox(lonR = range(long), latR = range(lat))
+# 
+# map<-ggmap(mapImageData,
+#            extent = 'panel',
+#            ylab = "Latitude",
+#            xlab = "Longitude",
+#            darken = 0.05) + 
+#  # geom_polygon(aes(fill = raster))
+#   geom_polygon(data = raster, aes(x = long, y = lat))
+#   geom_polygon(data = agarea, aes(x =long, y=lat), colour = 'black', fill =NA) +
+#   coord_fixed(xlim = xlim, ylim = ylim, ratio = 1.3) +
+#   geom_point(aes(x = DECIMAL_LONG, y = DECIMAL_LAT), data = stns, label = 'Station_ID', fill = 'red', size = 4, alpha = 0.5) +
+#  geom_text_repel(data = stns, aes(x = DECIMAL_LONG, y = DECIMAL_LAT, label = Station_ID), colour = 'black', check_overlap = TRUE, nudge_y = 0.005) +
+#   ggtitle(paste("Station Locations in the ", input$select, 'AgWQ Management Area')) +
+#   xlab("Longitude") +
+#   ylab("Latitude") +
+#   theme(legend.position = 'top',
+#         legend.direction = 'horizontal',
+#         plot.title = element_text(size=9))
+#   
+# print(map)
+# 
+# test<-raster@data@attributes
+# 
+# ggplot() +
+#   geom_polygon(data = agarea, aes(x =long, y=lat), colour = 'black', fill =NA) + 
+#   geom_raster(aes(fill = Land.Cover.Class), data = raster, interpolate = FALSE) +
+#   coord_equal()
+# 
+#   spplot(raster, zcol = "Land.Cover.Class")
   
-print(map)
-
-test<-raster@data@attributes
-
-ggplot() +
-  geom_polygon(data = agarea, aes(x =long, y=lat), colour = 'black', fill =NA) + 
-  geom_raster(aes(fill = Land.Cover.Class), data = raster, interpolate = FALSE) +
-  coord_equal()
-
-  spplot(raster, zcol = "Land.Cover.Class")
-  
-
-  
-
+library(leaflet)
+map <- leaflet(agarea) %>%
+  addPolygons() %>%
+  addTiles() %>%
+  addMarkers(lng = stns$DECIMAL_LONG, 
+             lat = stns$DECIMAL_LAT, 
+             popup = paste(stns$Station_ID, stns$Station_Description, sep = "-")) %>%
+  # addProviderTiles(providers$Stamen.Terrain, group = "terrain") %>%
+  #           addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+            addWMSTiles(GetURL("USGSTopo"), 
+                        attribution = paste0("<a href='https://www.usgs.gov/'>",
+                                             "U.S. Geological Survey</a> | ",
+                                        "<ahref='https://www.usgs.gov/laws/policies_notices.html'>",
+                                             "Policies</a>"),
+                        group = "USGS Topo", layers = "0") %>%
+            addWMSTiles(GetURL("USGSHydroCached"), 
+                        group = "Hydrography", 
+                        options = WMSTileOptions(format = "image/png", 
+                                                 transparent = TRUE),
+                        layers = "0") %>%
+            hideGroup("Hydropgraphy") 
+map
   
 ```
 
