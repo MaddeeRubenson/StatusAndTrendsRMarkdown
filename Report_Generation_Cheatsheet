@@ -7,6 +7,6 @@
   -input$dates on line 41, this is the date range to query
   
   
-3. push 'Knit' and a word document will be created
+3. push 'Knit' and an html document will be created
 
 4. Add beneficial uses for pH, DO, and temp as needed. Note that the report will list a table of stations that need beneficial uses under each parameter section. 
