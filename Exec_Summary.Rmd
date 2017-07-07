@@ -1,0 +1,74 @@
+---
+title: "Output_excsummary"
+author: "Maddee Rubenson"
+date: "July 7, 2017"
+output:
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(RCurl)
+library(plyr)
+library(sp)
+library(wq)
+library(chron)
+library(reshape)
+library(ggplot2)
+library(zoo)
+library(dplyr)
+library(lubridate)
+library(base)
+```
+
+```{r load GE, include=FALSE}
+#df.all <- read.csv("df.all.csv")
+
+load("ouput.RData")
+
+```
+
+#Purpose
+Present data and analysis that will help DEQ fulfull its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. This report presents an anlysis of water quality data readily accessible from public databases and available in sufficient  quantity to indicate status and trends. DEQ will use available water quality data to answer the following questions:
+1. What is the status of water quality parameters downstream of agricultural land?
+2. What is the trend in water quality at key locations downtream of agricultural land?
+3. Are sites downstream of agricultural land meeting TMDL agricultural load allocations?
+
+#Analysis
+Analysts retrieved data from DEQ, EPA and USGS databases. The time period for the query was from `r as.Date(min(as.POSIXct((df.all$Sampled))))` to `r as.Date(max(as.POSIXct(df.all$Sampled)))`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014 from the USGS was marked as provisional data and included in this analysis.
+
+##Data Sources
+Analysts retrieved data from DEQ, EPA and USGS databases. The time period for the query was from `r as.Date(min(as.POSIXct(df.all$Sampled)))` to `r as.Date(max(as.POSIXct(df.all$Sampled)))`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria.
+
+##Land Use
+
+```{r landuse_exec, echo = FALSE}
+library(knitr)
+library(dplyr)
+library(plyr)
+
+stn_to_use<-c(unique(stns$Station_ID))
+
+landuse_exec<-stn_nlcd_df%>%
+  filter(Station_ID %in% stn_to_use) %>%
+  arrange(desc(PerAgWs)) %>%
+  filter((PerAgWs + PerRangeWs) > 20)
+colnames(landuse_exec) <- c("Station ID", "Station Description", "Year", "Watershed Area (km^2^)",
+                       "%Urban", "%Forest", "%Ag", "%Range", "%Other")
+landuse_exec<-landuse_exec[, - 3]
+
+kable(landuse_exec, digits = 1, format = "markdown", padding = 2, caption = "Land use and land cover for upstream catchments of stations used in this analysis, stations which fit the decision criteria and have >20% Agriculture and Range coverage are included. Land use and land cover for all stations used in analysis can be found in full report. Source: 2011 NAIP")
+
+```
+
+#Results Summary
+`r length(unique(stn_to_use))` total stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r input$select` subbasin. 
+
+Analyte         | Number of stns w/ sufficent data for status analysis | Number of stns w/ sufficent data for trend analysis
+----------------|----------------------------------------------------- | ----------------------------------------------------
+Bacteria        | `r length(unique(status[status$Analyte == "E. Coli", 'Station_ID']))` | `r length(unique(trend[trend$Analyte == "E. Coli", 'Station_ID']))`
+Temperature     | `r length(unique(status[status$Analyte == "Temperature", 'Station_ID']))` | `r length(unique(trend[trend$Analyte == "Temperature", 'Station_ID']))`
+Dissolved Oxygen| `r length(unique(status[status$Analyte == "Dissolved Oxygen", 'Station_ID']))` | `r length(unique(trend[trend$Analyte == "Dissolved Oxygen", 'Station_ID']))`
+pH              | `r length(unique(status[status$Analyte == "pH", 'Station_ID']))` | `r length(unique(trend[trend$Analyte == "pH", 'Station_ID']))`
+TSS             | `r length(unique(status[status$Analyte == "Total Suspended Solids", 'Station_ID']))` | `r length(unique(trend[trend$Analyte == "Total Suspended Solids", 'Station_ID']))`
+Total Phosphorus| `r length(unique(status[status$Analyte == "Total Phosphorus", 'Station_ID']))` | `r length(unique(trend[trend$Analyte == "Total Phosphorus", 'Station_ID']))`
