@@ -6,6 +6,8 @@ output:
   word_document: default
 ---
 
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(RCurl)
@@ -21,18 +23,34 @@ library(lubridate)
 library(base)
 ```
 
-```{r load GE, include=FALSE}
-#df.all <- read.csv("df.all.csv")
+```{r load dataframes, include=FALSE}
+#rmarkdown::render('Exec_Summary.Rmd', output_format = "word_document")
+##knit('Exec_Summary.Rmd', envir = myenv) 
 
-load("ouput.RData")
+
+#input <- list()
+# input$select <- "Inland Rogue"
+# dir <- paste0(input$select,"_","DataFrames")
+# 
+# df.all <- read.csv(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/df.all.csv'))
+# status <- read.csv(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/status.csv'))
+# trend <- read.csv(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/trend.csv'))
+# landuse <- read.csv(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/landuse.csv'))
+# stns <- read.csv(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/stns.csv'))
+
+
+#this is saved from the session Output_HTML.Rmd where all dataframes were created
+#It works, but is very slow
+#load("ouput.RData")
+
 
 ```
 
 #Purpose
 Present data and analysis that will help DEQ fulfull its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. This report presents an anlysis of water quality data readily accessible from public databases and available in sufficient  quantity to indicate status and trends. DEQ will use available water quality data to answer the following questions:
-1. What is the status of water quality parameters downstream of agricultural land?
-2. What is the trend in water quality at key locations downtream of agricultural land?
-3. Are sites downstream of agricultural land meeting TMDL agricultural load allocations?
+*What is the status of water quality parameters downstream of agricultural land?
+*What is the trend in water quality at key locations downtream of agricultural land?
+*Are sites downstream of agricultural land meeting TMDL agricultural load allocations?
 
 #Analysis
 Analysts retrieved data from DEQ, EPA and USGS databases. The time period for the query was from `r as.Date(min(as.POSIXct((df.all$Sampled))))` to `r as.Date(max(as.POSIXct(df.all$Sampled)))`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014 from the USGS was marked as provisional data and included in this analysis.
@@ -49,7 +67,7 @@ library(plyr)
 
 stn_to_use<-c(unique(stns$Station_ID))
 
-landuse_exec<-stn_nlcd_df%>%
+landuse_exec<-landuse %>%
   filter(Station_ID %in% stn_to_use) %>%
   arrange(desc(PerAgWs)) %>%
   filter((PerAgWs + PerRangeWs) > 20)
@@ -62,7 +80,7 @@ kable(landuse_exec, digits = 1, format = "markdown", padding = 2, caption = "Lan
 ```
 
 #Results Summary
-`r length(unique(stn_to_use))` total stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r input$select` subbasin. 
+`r length(unique(stn_to_use))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r input$select` subbasin. 
 
 Analyte         | Number of stns w/ sufficent data for status analysis | Number of stns w/ sufficent data for trend analysis
 ----------------|----------------------------------------------------- | ----------------------------------------------------
