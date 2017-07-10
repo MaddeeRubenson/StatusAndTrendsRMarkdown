@@ -67,7 +67,7 @@ library(plyr)
 
 stn_to_use<-c(unique(stns$Station_ID))
 
-landuse_exec<-landuse %>%
+landuse_exec<-stn_nlcd_df %>%
   filter(Station_ID %in% stn_to_use) %>%
   arrange(desc(PerAgWs)) %>%
   filter((PerAgWs + PerRangeWs) > 20)
