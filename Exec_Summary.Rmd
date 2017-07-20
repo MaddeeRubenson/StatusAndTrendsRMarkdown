@@ -1,9 +1,10 @@
 ---
-title: "Output_excsummary"
-author: "Maddee Rubenson"
-date: "July 7, 2017"
-output:
-  word_document: default
+title: ""
+author: ""
+date: ""
+output: 
+  word_document:
+    reference_docx: ReportTemplate.docx
 ---
 
 
@@ -24,7 +25,10 @@ library(base)
 ```
 
 ```{r load dataframes, include=FALSE}
-#rmarkdown::render('Exec_Summary.Rmd', output_format = "word_document")
+#to run rmarkdown
+#rmarkdown::render('Exec_Summary.Rmd', output_format = "word_document") 
+
+
 ##knit('Exec_Summary.Rmd', envir = myenv) 
 
 
@@ -45,20 +49,20 @@ library(base)
 
 
 ```
-
-#Purpose
+#Executive Summary
+###Purpose
 Present data and analysis that will help DEQ fulfull its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. This report presents an anlysis of water quality data readily accessible from public databases and available in sufficient  quantity to indicate status and trends. DEQ will use available water quality data to answer the following questions:
 *What is the status of water quality parameters downstream of agricultural land?
 *What is the trend in water quality at key locations downtream of agricultural land?
 *Are sites downstream of agricultural land meeting TMDL agricultural load allocations?
 
-#Analysis
+###Analysis
 Analysts retrieved data from DEQ, EPA and USGS databases. The time period for the query was from `r as.Date(min(as.POSIXct((df.all$Sampled))))` to `r as.Date(max(as.POSIXct(df.all$Sampled)))`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014 from the USGS was marked as provisional data and included in this analysis.
 
-##Data Sources
+###Data Sources
 Analysts retrieved data from DEQ, EPA and USGS databases. The time period for the query was from `r as.Date(min(as.POSIXct(df.all$Sampled)))` to `r as.Date(max(as.POSIXct(df.all$Sampled)))`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria.
 
-##Land Use
+###Land Use
 
 ```{r landuse_exec, echo = FALSE}
 library(knitr)
@@ -79,8 +83,8 @@ kable(landuse_exec, digits = 1, format = "markdown", padding = 2, caption = "Lan
 
 ```
 
-#Results Summary
-`r length(unique(stn_to_use))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r input$select` subbasin. 
+###Results Summary
+`r length(unique(stn_to_use))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r input$select` AgWQ Management Area 
 
 Analyte         | Number of stns w/ sufficent data for status analysis | Number of stns w/ sufficent data for trend analysis
 ----------------|----------------------------------------------------- | ----------------------------------------------------
