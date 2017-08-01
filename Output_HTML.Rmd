@@ -1,22 +1,25 @@
 ---
-title: ''
+title: "Oregon DEQ Water Quality Status and Trends report for the Upper Willamette-Siuslaw Subbasin"
 author: ''
-date: "June, 2017"
+date: "July 2017"
 output:
   html_document:
+    logo: favicon.ico
+    number_sections: yes
     toc: yes
-    toc_depth: '2'
+    toc_depth: 2
+    toc_float: yes
   word_document:
     fig_caption: yes
     reference_docx: ReportTemplate.docx
     toc: yes
-    toc_depth: 2
 always_allow_html: yes
 ---
 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
 ```{r Query, echo = FALSE, cache = FALSE, results = 'hide', include = FALSE}
@@ -41,7 +44,7 @@ library(lubridate)
 input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                  'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen')
-input$select <- "Inland Rogue" #input
+input$select <- "Upper Willamette-Siuslaw" #input
 input$dates <- c("2000-01-01", "2017-07-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 
@@ -127,7 +130,7 @@ stn_nlcd_df <- landUseAnalysis(all.sp, cats, NLCD2011)
 ##Purpose
 Area rules and plans have been adopted by the Oregon Department of Agriculture (ODA) for the `r input$select` Subbasin management area (`r OAR_LU[OAR_LU$AgArea %in% input$select,'OAR']`). Oregon statute and administrative rules require ODA to consult with the Department of Environmental Quality (DEQ) during the biennial review of Agricultural Water Quality Management Area Rules and Plans (ORS 568.930).  DEQ Total Maximum Daily Load (TMDL) and Nonpoint Source (NPS) program staff conduct these reviews based on ODA’s biennial review schedule of their area rules and plans1. ODA’s Agriculture Water Quality Program is outcome based, explicitly describing prohibited conditions, similar to DEQ’s TMDL and NPS programs which explicitly define water quality targets and goals.  The analysis of landscape conditions and water quality data is used for implementing these programs as well as identifying data gaps. 
 
-The purpose of this document is to present data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ . This document supports the following DEQ tasks identified in the MOA:
+The purpose of this document is to present data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. This document supports the following DEQ tasks identified in the MOA:
 
 *	Review available data for water quality trends and whether waterbodies are achieving water quality standards and meeting TMDL agricultural load allocations
 *	Evaluate and provide comment to ODA on the suitability of landscape conditions to achieve TMDL agricultural load allocations. 
@@ -297,7 +300,15 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
     exc_list<- list()
     for(j in 1: length(e_stns)) {
       new_data <- Ecoli[Ecoli$Station_ID == e_stns[j],]
-      ecoli_evaluate <- EvaluateEColiWQS(new_data)
+      
+      tmp_df <- new_data
+      tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+      tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+      sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+      tmp_df_MRL <- tmp_df[sub,]
+      tmp_df <- remove.dups(tmp_df_MRL, max)
+      
+      ecoli_evaluate <- EvaluateEColiWQS(tmp_df)
       ecoli_eval <- attr(ecoli_evaluate, 'ex_df')
       e_list[[j]] <- ecoli_evaluate
       exc_list[[j]] <- ecoli_eval
@@ -317,7 +328,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
                           ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == e_stns[i],'signif']), FALSE, TRUE))
       
       b <- plot.bacteria(new_data=mydata_sub,
-                         sea_ken_table=results_seaken ,
+                         sea_ken_table=results_seaken,
                          plot_trend = trend_logic,
                          plot_log = FALSE,
                          parm = unique(mydata_sub$Analyte))
@@ -366,8 +377,18 @@ if(any(df.all$Analyte == 'Enterococcus')){
     ent_list<- list()
     exc_list<- list()
     for(j in 1: length(ent_stns)) {
+  
       new_data <- Ent[Ent$Station_ID == ent_stns[j],]
-      ent_evaluate <- EvaluateEnteroWQS(new_data)
+      
+      
+      tmp_df <- new_data
+      tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+      tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+      sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+      tmp_df_MRL <- tmp_df[sub,]
+      tmp_df <- remove.dups(tmp_df_MRL, max)
+      
+      ent_evaluate <- EvaluateEnteroWQS(tmp_df)
       ent_eval <- attr(ent_evaluate, 'ex_df')
       ent_list[[j]] <- ent_evaluate
       exc_list[[j]] <- ent_eval
@@ -563,7 +584,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
     dplyr::filter(Analyte == "pH")
   p_stat <- c(unique(p_stat$Station_ID))
   
-  p_stn_table <- unique(append(pH_stn_table, p_stat))
+  pH_stn_table <- unique(append(pH_stn_table, p_stat))
   
   if(length(pH_stn_table) > 0) {
     
@@ -586,7 +607,15 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
       
       new_data <- pH[pH$Station_ID == pH_stn[j],]
       
-      pH_evaluate <- EvaluatepHWQS(new_data = new_data)
+      
+      tmp_df <- new_data
+      tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+      tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+      sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+      tmp_df_MRL <- tmp_df[sub,]
+      tmp_df <- remove.dups(tmp_df_MRL, max)
+      
+      pH_evaluate <- EvaluatepHWQS(new_data = tmp_df)
       
       pH_evaluate$Year <- as.POSIXct(strptime(pH_evaluate$Sampled, format = "%Y"))
       
@@ -831,7 +860,7 @@ library(ggplot2)
 library(knitr)
 library(base)
 
-if(!(trend == "No Stations Meet Trend Criteria")) {
+if(!(any(trend == "No Stations Meet Trend Criteria"))) {
   DO_stn<-trend %>%
     dplyr::filter(Analyte == "Dissolved Oxygen")
   DO_stn_table<-c(unique(DO_stn$Station_ID))
@@ -843,12 +872,12 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
   
   DO_stn <- unique(append(DO_stn, DO_stat))
   
-  if(length(DO_stn_table) > 0) {
+  if(length(DO_stn) > 0) {
     
     DO <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
     
     #(Ben_use_LU[Ben_use_LU$Station_ID %in% pH_stn_table, 'pH_benuse'])
-    in_bentable<-(Ben_use_LU[Ben_use_LU$Station_ID %in% DO_stn_table, 'DO_use'])
+    in_bentable<-(Ben_use_LU[Ben_use_LU$Station_ID %in% DO_stn, 'DO_use'])
     
     dta <- merge(DO, Ben_use_LU, by.x = "Station_ID", by.y = "Station_ID")
     DO_stn <- dta %>% filter(!is.na(DO_use))
@@ -865,12 +894,19 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
         
         new_data <- DO[DO$Station_ID == DO_stn[j],]
         
+          tmp_df <- new_data
+          tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+          tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+          sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+          tmp_df_MRL <- tmp_df[sub,]
+          tmp_df <- remove.dups(tmp_df, min)
+          
         #if(!is.na(any(new_data$sdadm))) {
         
         DO_Benuse <- (Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[j], 'DO_use'])
         spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[j], 'spwn_time'])
         
-        DO_evaluate <- EvaluateDOWQS(new_data = new_data,
+        DO_evaluate <- EvaluateDOWQS(new_data = tmp_df,
                                      selectUseDO = DO_Benuse,
                                      df.all = df.all, 
                                      selectSpawning = spwn_time,
@@ -879,7 +915,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
                                      station_desc_column = 'Station_Description',
                                      datetime_column = 'Sampled',
                                      result_column = 'Result',
-                                     datetime_format = '%Y-%m-%d')
+                                     datetime_format = '%Y-%m-%d %H:%M:%S')
         
         DO_eval <- attr(DO_evaluate, 'ex_df')
         DO_list[[j]] <- DO_evaluate
@@ -956,57 +992,9 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
 DO_exc <- exc
 ```
 
-#Summary Table
-```{r summary table, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
-# #exceedance tables:
-# #temperature: temp_exc
-# #dissolved oxygen:DO_exc
-# #pH:ph_exc
-# #E.coli:e_exc
-# #Enterococcus: ent_exc
-# parms <- c("Temperature", "Dissolved Oxygen", "E. Coli", "pH")
-# 
-# summary <- df.all %>%
-#   filter(Analyte %in% parms) %>%
-#   group_by(Analyte) %>%
-#   summarise(N_stns = length(unique(Station_ID)),
-#             N_results = length(Result))
-# if(!is.null(DO_exc)) {
-#   DO_length <- length(unique(DO_exc$`Station ID`))
-# } else {
-#   DO_length <- NA
-# }
-# 
-# if(!is.null(e_exc)) {
-#   e_length <- length(unique(e_exc$`Station ID`))
-# } else (
-#   e_length <- NA
-# )
-# 
-# if(!is.null(ph_exc)) {
-#   pH_length <- length(unique(ph_exc$`Station ID`))
-# } else {
-#   pH_length <- NA
-# }
-# 
-# if(!is.null(temp_exc)) {
-#   temp_length <- length(unique(temp_exc$`Station_ID`))
-# } else {
-#   temp_length <- NA
-# }
-# 
-# 
-# summary$N_stns_crit<- ifelse(summary$Analyte == "Dissolved Oxygen", DO_length,
-#                              ifelse(summary$Analyte == "E. Coli", e_length,
-#                                     ifelse(summary$Analyte == "pH", pH_length,
-#                                            ifelse(summary$Analyte == "Temperature", temp_length, NA))))
-# 
-# colnames(summary) <- c("Analyte", "#Stns", "Total # Results", "#Stns Analyzed")
-# 
-# kable(summary, format = "markdown", padding = 2, digits = 1, caption = "summary table of data available for each parameter with a WQS and included in this report")
-```
+#Summary 
 
-![](T:/AgWQM/DataAnalysis/Inland Rogue/Figures/WQassessment_V2.png)
+![](T:/AgWQM/DataAnalysis/Upper Willamette-Siuslaw/Figures/WQassessment_V1.png)
 
 ```{r parm summary table, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 stnsformap <-  parm_summary(stns = stns,
@@ -1055,7 +1043,7 @@ kable(status, padding = 2, digits = 1, caption = "Monitoring stations that fit t
 kable(trend, padding = 1, digits = 1, caption = "Monitoring stations that fit the criteria to assess trends")
 ```
 
-```{r save workspace}
+```{r save workspace, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 #df<-list('df.all', 'status', 'landuse', 'trend')
 
 #save.image("T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/ouput.RData")

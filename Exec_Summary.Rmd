@@ -88,9 +88,9 @@ kable(landuse_exec, digits = 1, format = "markdown", padding = 2, caption = "Lan
 
 Analyte         | Number of stns w/ sufficent data for status analysis | Number of stns w/ sufficent data for trend analysis
 ----------------|----------------------------------------------------- | ----------------------------------------------------
-Bacteria        | `r length(unique(status[status$Analyte == "E. Coli", 'Station_ID']))` | `r length(unique(trend[trend$Analyte == "E. Coli", 'Station_ID']))`
-Temperature     | `r length(unique(status[status$Analyte == "Temperature", 'Station_ID']))` | `r length(unique(trend[trend$Analyte == "Temperature", 'Station_ID']))`
-Dissolved Oxygen| `r length(unique(status[status$Analyte == "Dissolved Oxygen", 'Station_ID']))` | `r length(unique(trend[trend$Analyte == "Dissolved Oxygen", 'Station_ID']))`
-pH              | `r length(unique(status[status$Analyte == "pH", 'Station_ID']))` | `r length(unique(trend[trend$Analyte == "pH", 'Station_ID']))`
-TSS             | `r length(unique(status[status$Analyte == "Total Suspended Solids", 'Station_ID']))` | `r length(unique(trend[trend$Analyte == "Total Suspended Solids", 'Station_ID']))`
-Total Phosphorus| `r length(unique(status[status$Analyte == "Total Phosphorus", 'Station_ID']))` | `r length(unique(trend[trend$Analyte == "Total Phosphorus", 'Station_ID']))`
+Bacteria        | `r nrow(unique(status[status$Analyte == "E. Coli", ]))` | `r nrow(unique(trend[trend$Analyte == "E. Coli", ]))`
+Temperature     | `r nrow(unique(status[status$Analyte == "Temperature", ]))` | `r nrow(unique(trend[trend$Analyte == "Temperature", ]))`
+Dissolved Oxygen| `r nrow(unique(status[status$Analyte == "Dissolved Oxygen", ]))` | `r nrow(unique(trend[trend$Analyte == "Dissolved Oxygen", ]))`
+pH              | `r nrow(unique(status[status$Analyte == "pH", ]))` | `r nrow(unique(trend[trend$Analyte == "pH",]))`
+TSS             | `r nrow(unique(status[status$Analyte == "Total Suspended Solids", ]))` | `r nrow(unique(trend[trend$Analyte == "Total Suspended Solids", ]))`
+Total Phosphorus| `r nrow(unique(status[status$Analyte == "Total Phosphorus", ]))` | `r nrow(unique(trend[trend$Analyte == "Total Phosphorus", ]))`
