@@ -1,39 +1,40 @@
-AgArea,DEQ_bc_name,DEQ_bc_email,ODA_agwqcoord_name,ODA_agwqcoord_number,
-Burnt River,John Dadoly,dadoly.john@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us,
-Clackamas,Karen Williams,williams.karen@deq.state.or.us,Brenda Sanchez,bsanchez@oda.state.or.us,
-Coos-Coquille,Brian Duggan,duggan.bryan@deq.state.or.us,Beth Pietrzak,epietrzak@oda.state.or.us,
-Crooked River,Brian Duggan,duggan.bryan@deq.state.or.us,Maria Snodgress,msnodgress@oda.state.or.us,
-Curry,Brian Duggan,duggan.bryan@deq.state.or.us,Beth Pietrzak,epietrzak@oda.state.or.us,
-Lower Deschutes,Bonnie Lamb,lamb.bonnie@deq.state.or.us,Theresa DeBardelaben,tdebardelaben@oda.state.or.us,
-Middle Deschutes,Bonnie Lamb,lamb.bonnie@deq.state.or.us,Theresa DeBardelaben,tdebardelaben@oda.state.or.us,
-Upper Deschutes,Bonnie Lamb,lamb.bonnie@deq.state.or.us,Theresa DeBardelaben,tdebardelaben@oda.state.or.us,
-Goose and Summer Lakes ,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Maria Snodgress,msnodgress@oda.state.or.us,
-Greater Harney,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Maria Snodgress,msnodgress@oda.state.or.us,
-Hood River,Bonnie Lamb,lamb.bonnie@deq.state.or.us,Theresa DeBardelaben,tdebardelaben@oda.state.or.us,
-Inland Rogue,Bill Meyers,meyers.bill@deq.state.or.us,Beth Pietrzak,epietrzak@oda.state.or.us,
-Lower John Day,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Theresa DeBardelaben,tdebardelaben@oda.state.or.us,
-Middle John Day,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Maria Snodgress,msnodgress@oda.state.or.us,
-North and Middle Forks John Day,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Maria Snodgress,msnodgress@oda.state.or.us,
-Upper Mainstem and South Fork John Day River,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Maria Snodgress,msnodgress@oda.state.or.us,
-Klamath Headwaters,Mike Hiatt,hiatt.mike@deq.state.or.us,Beth Pietrzak,epietrzak@oda.state.or.us,
-Lost River,Mike Hiatt,hiatt.mike@deq.state.or.us,Beth Pietrzak,epietrzak@oda.state.or.us,
-Malheur River,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us,
-Mid Coast,David Waltz,waltz.david@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us,
-Molalla-Pudding French Prairie North Santiam,Karen Williams,williams.karen@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us,
-North Coast,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Brenda Sanchez,bsanchez@oda.state.or.us,
-Owyhee,John Dadoly,dadoly.john@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us,
-Powder-Brownlee,John Dadoly,dadoly.john@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us,
-Sandy Basin ,Karen Williams,williams.karen@deq.state.or.us,Brenda Sanchez,bsanchez@oda.state.or.us,
-South Santiam,Priscilla Woolverton,woolverton.priscilla@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us,
-Tualatin River Subbasin ,Wade Peerman,peerman.wade@deq.state.or.us,Brenda Sanchez,bsanchez@oda.state.or.us,
-Umatilla Basin ,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us,
-Umpqua River,David Waltz,waltz.david@deq.state.or.us,Beth Pietrzak,epietrzak@oda.state.or.us,
-Upper Grande Ronde,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us,
-Walla Walla ,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us,
-Wallowa,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us,
-Lower Willamette,Andrea Matzke,matzke.andrea@deq.state.or.us,Brenda Sanchez,bsanchez@oda.state.or.us,
-Middle Willamette,Andrea Matzke,matzke.andrea@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us,
-Southern Willamette Valley,Andrea Matzke,matzke.andrea@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us,
-Upper Willamette-Siuslaw,Andrea Matzke,matzke.andrea@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us,
-Willow Creek,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Theresa DeBardelaben,tdebardelaben@oda.state.or.us,
-Yamhill ,Nancy Gramlick,gramlick.nancy@deq.state.or.us,Brenda Sanchez,bsanchez@oda.state.or.us,
+AgArea,DEQ_bc_name,DEQ_bc_email,ODA_agwqcoord_name,ODA_agwqcoord_number
+Burnt River,John Dadoly,dadoly.john@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us
+Clackamas,Karen Williams,williams.karen@deq.state.or.us,Brenda Sanchez,bsanchez@oda.state.or.us
+Coos-Coquille,Brian Duggan,duggan.bryan@deq.state.or.us,Beth Pietrzak,epietrzak@oda.state.or.us
+Crooked River,Brian Duggan,duggan.bryan@deq.state.or.us,Maria Snodgress,msnodgress@oda.state.or.us
+Curry,Brian Duggan,duggan.bryan@deq.state.or.us,Beth Pietrzak,epietrzak@oda.state.or.us
+Lower Deschutes,Bonnie Lamb,lamb.bonnie@deq.state.or.us,Theresa DeBardelaben,tdebardelaben@oda.state.or.us
+Middle Deschutes,Bonnie Lamb,lamb.bonnie@deq.state.or.us,Theresa DeBardelaben,tdebardelaben@oda.state.or.us
+Upper Deschutes,Bonnie Lamb,lamb.bonnie@deq.state.or.us,Theresa DeBardelaben,tdebardelaben@oda.state.or.us
+Goose and Summer Lakes ,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Maria Snodgress,msnodgress@oda.state.or.us
+Greater Harney,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Maria Snodgress,msnodgress@oda.state.or.us
+Hood River,Bonnie Lamb,lamb.bonnie@deq.state.or.us,Theresa DeBardelaben,tdebardelaben@oda.state.or.us
+Inland Rogue,Bill Meyers,meyers.bill@deq.state.or.us,Beth Pietrzak,epietrzak@oda.state.or.us
+Lower John Day,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Theresa DeBardelaben,tdebardelaben@oda.state.or.us
+Middle John Day,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Maria Snodgress,msnodgress@oda.state.or.us
+North and Middle Forks John Day,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Maria Snodgress,msnodgress@oda.state.or.us
+Upper Mainstem and South Fork John Day River,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Maria Snodgress,msnodgress@oda.state.or.us
+Klamath Headwaters,Mike Hiatt,hiatt.mike@deq.state.or.us,Beth Pietrzak,epietrzak@oda.state.or.us
+Lost River,Mike Hiatt,hiatt.mike@deq.state.or.us,Beth Pietrzak,epietrzak@oda.state.or.us
+Malheur River,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us
+Mid Coast,David Waltz,waltz.david@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us
+Molalla-Pudding French Prairie North Santiam,Karen Williams,williams.karen@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us
+North Coast,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Brenda Sanchez,bsanchez@oda.state.or.us
+Owyhee,John Dadoly,dadoly.john@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us
+Powder-Brownlee,John Dadoly,dadoly.john@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us
+Sandy Basin ,Karen Williams,williams.karen@deq.state.or.us,Brenda Sanchez,bsanchez@oda.state.or.us
+South Santiam,Priscilla Woolverton,woolverton.priscilla@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us
+Tualatin River Subbasin ,Wade Peerman,peerman.wade@deq.state.or.us,Brenda Sanchez,bsanchez@oda.state.or.us
+Umatilla Basin ,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us
+Umpqua River,David Waltz,waltz.david@deq.state.or.us,Beth Pietrzak,epietrzak@oda.state.or.us
+Upper Grande Ronde,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us
+Walla Walla ,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us
+Wallowa,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Tom Demlanew,tdemlanew@oda.state.or.us
+Lower Willamette,Andrea Matzke,matzke.andrea@deq.state.or.us,Brenda Sanchez,bsanchez@oda.state.or.us
+Middle Willamette,Andrea Matzke,matzke.andrea@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us
+Southern Willamette Valley,Andrea Matzke,matzke.andrea@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us
+Upper Willamette-Siuslaw,Priscilla Woolverton,woolverton.priscilla@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us
+Willow Creek,Tonya Dombrowski,dombrowski.tonya@deq.state.or.us,Theresa DeBardelaben,tdebardelaben@oda.state.or.us
+Yamhill ,Nancy Gramlick,gramlick.nancy@deq.state.or.us,Brenda Sanchez,bsanchez@oda.state.or.us
+Upper Willamette-Siuslaw,David Waltz,waltz.david@deq.state.or.us,Jo Morgan,jmorgan@oda.state.or.us
