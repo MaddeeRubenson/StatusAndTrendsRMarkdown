@@ -4,7 +4,6 @@ author: ''
 date: "July 2017"
 output:
   html_document:
-    logo: favicon.ico
     number_sections: yes
     toc: yes
     toc_depth: 2
@@ -21,6 +20,14 @@ always_allow_html: yes
 knitr::opts_chunk$set(echo = TRUE)
 
 ```
+
+<script>
+   $(document).ready(function() {
+     $head = $('#header');
+     $head.prepend('<img src=\"LogoColorRegular.jpg\" style=\"float: right;width: 100px;\"/>')
+   });
+</script>
+
 
 ```{r Query, echo = FALSE, cache = FALSE, results = 'hide', include = FALSE}
 library(RCurl)
@@ -43,7 +50,8 @@ library(lubridate)
 
 input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
-                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen')
+                'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen')
+#input$parms <- c("Dissolved Oxygen")
 input$select <- "Upper Willamette-Siuslaw" #input
 input$dates <- c("2000-01-01", "2017-07-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
@@ -55,16 +63,13 @@ stations_huc <- read.csv('app/station_wbd_12132016.csv')
 ph_crit <- read.csv('app/PlanOWRDBasinpH_LU.csv')
 ph_crit <- merge(ph_crit, HUClist, by.x = 'plan_name', by.y = 'PlanName', all.x = TRUE)
 parms <- read.csv('app/WQP_Table3040_Names.csv', stringsAsFactors = FALSE)
-wq_limited <- read.csv('app/GIS/wq_limited_df_temp_bact_ph_DO_2012.csv')
+wq_limited <- read.csv('app/wq_limited_df_temp_bact_ph_DO_TP_Sediment_2012.csv')
 OAR_LU <- read.csv("Lookups/OAR_LU.csv")
 Ben_use_LU <- read.csv("Lookups/stations.csv", na.strings = c("", "NA"))
 BC_LU <- read.csv("Lookups/BC_LU.csv")
 
 source('functions/Rmarkdown_query.R')
 source('functions/01_DataQuery.R')
-
-#for testing
-#df.all <- read.csv("df.all.csv") #Willow Creek df
 
 df.all<-query(select =  input$select,
               parms = input$parms,
@@ -82,6 +87,19 @@ source("functions/funSeaKen.R")
 load('app/NLCD2011_OR.Rdata')
 load('app/OR_cats.Rdata')
 
+####################SPECIFIC TO INLAND ROGUE
+#####Fix lat and long for stations 11501, 36805, 11482
+# df.all$DECIMAL_LAT <- ifelse(df.all$Station_ID == '11051', '42.40442714179933',
+#                              ifelse(df.all$Station_ID == '11482', '42.24324139495159',
+#                                     ifelse(df.all$Station_ID == '36805', '42.343333052016355', df.all$DECIMAL_LAT)))
+# 
+# df.all$DECIMAL_LONG <- ifelse(df.all$Station_ID == '11051', '-122.93271666160818',
+#                              ifelse(df.all$Station_ID == '11482', '-123.68197565655716',
+#                                     ifelse(df.all$Station_ID == '36805', '-123.34341650590501', df.all$DECIMAL_LONG)))
+
+#df.all$DECIMAL_LAT <- as.numeric(df.all$DECIMAL_LAT)
+#df.all$DECIMAL_LONG <- as.numeric(df.all$DECIMAL_LONG)
+
 df.all <- clipToPlanArea(df.all, agwqma, input$select)
 df.all$Result <- clean(df.all$Result)
 df.all$Result <- suppressWarnings(as.numeric(df.all$Result))
@@ -97,23 +115,26 @@ if (any('Temperature' %in% df.all$Analyte)) {
   sdadm <- NULL
 }
 
+df.all <- remove_QAfail(df.all)
+
+#moved seaken to after remove_qafail
 if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen", 'Total Suspended Solids', 'Total Phosphorus') %in% df.all$Analyte)) {
   SeaKen <- run_seaKen(df.all)
 } else {
   SeaKen <- data.frame()
 }
 
-df.all <- remove_QAfail(df.all)
+
 wq_lim_whole <- extract_303d(df.all, wq_limited, input$select)
-wq_limited_df <- wq_lim_whole[,c('Stream_Lak', 'LLID_Strea', 
-                                 'Miles', 'Pollutant', 'Season', 
-                                 'Assessme_1', 'Criteria', 
-                                 'Listing_St')]
-wq_limited_df <- plyr::rename(wq_limited_df, 
-                              c('Stream_Lak' = 'Waterbody',
-                                'LLID_Strea' = 'LLID',
-                                'Assessme_1' = 'Year Assessed',
-                                'Listing_St' = 'Listing Status'))
+wq_lim_whole <- wq_lim_whole[,c('STREAM_LAK', 'LLID_STREA', 
+                                      'MILES', 'POLLUTANT', 'SEASON', 
+                                      'ASSESSME_1', 'CRITERIA', 
+                                      'LISTING_ST')]
+wq_lim_whole <- plyr::rename(wq_lim_whole, 
+                                   c('STREAM_LAK' = 'Waterbody',
+                                     'LLID_STREA' = 'LLID',
+                                     'ASSESSME_1' = 'Year Assessed',
+                                     'LISTING_ST' = 'Listing Status'))
 
 status <- Stations_Status(df.all)
 trend <- Stations_Trend(df.all)
@@ -126,13 +147,13 @@ stn_nlcd_df <- landUseAnalysis(all.sp, cats, NLCD2011)
 
 ```
 
-#Introduction
+#- Introduction
 ##Purpose
 Area rules and plans have been adopted by the Oregon Department of Agriculture (ODA) for the `r input$select` Subbasin management area (`r OAR_LU[OAR_LU$AgArea %in% input$select,'OAR']`). Oregon statute and administrative rules require ODA to consult with the Department of Environmental Quality (DEQ) during the biennial review of Agricultural Water Quality Management Area Rules and Plans (ORS 568.930).  DEQ Total Maximum Daily Load (TMDL) and Nonpoint Source (NPS) program staff conduct these reviews based on ODA’s biennial review schedule of their area rules and plans1. ODA’s Agriculture Water Quality Program is outcome based, explicitly describing prohibited conditions, similar to DEQ’s TMDL and NPS programs which explicitly define water quality targets and goals.  The analysis of landscape conditions and water quality data is used for implementing these programs as well as identifying data gaps. 
 
 The purpose of this document is to present data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. This document supports the following DEQ tasks identified in the MOA:
 
-*	Review available data for water quality trends and whether waterbodies are achieving water quality standards and meeting TMDL agricultural load allocations
+*	Review available data for water quality trends and whether waterbodies are achieving water quality criterion and meeting TMDL agricultural load allocations
 *	Evaluate and provide comment to ODA on the suitability of landscape conditions to achieve TMDL agricultural load allocations. 
 
 This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Additional data may exist but was not readily available at the time this report was compiled. DEQ will use available water quality data to answer the following questions:
@@ -141,7 +162,7 @@ This report presents an analysis of water quality data readily accessible from p
 *	What is the trend in water quality at key locations downstream of agricultural land?
 *	Are sites downstream of agricultural land meeting TMDL agricultural load allocations?
 
-DEQ basin coordinators review pertinent information including this report as part of ODA’s biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality standards and meet TMDL agricultural load allocations through ODA’s survey. 
+DEQ basin coordinators review pertinent information including this report as part of ODA’s biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL agricultural load allocations through ODA’s survey. 
 
 ##Basin Contact
 ```{r basin contact, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
@@ -161,37 +182,37 @@ colnames(BC_table) <- c('AgWQ Management Area', 'DEQ Basin Coordinator', 'ODA Ag
 kable(BC_table, format = "markdown", padding = 2, digits = 1, caption = "Oregon DEQ and ODA basin contacts")
 ```
 
-#Methods
+#- Methods
 
 ##Data Sources
-Analysts retrieved data from DEQ, EPA and USGS databases. The time period for the query was from `r as.Date(min(df.all$Sampled))` to `r as.Date(max(df.all$Sampled))`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014 from the USGS was marked as provisional data and included in this analysis. 
+Analysts retrieved data from DEQ, EPA and USGS databases. The time period for the query was from `r as.Date(min(df.all$Sampled))` to `r as.Date(max(df.all$Sampled))`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. 
 
 ##Decision Criteria
 
-Status and long-term trends of the data were assessed for evaluating water quality in relation to water quality standards or TMDL allocations. A decision criterion has been created for selecting stations that had greater than eight years of data and/or data to address water quality status. Stations that fit the criteria were sent to DEQ basin coordinator for their input on stations in the basin that had sufficient data that was not in one of the queried databases and that should also be included in this analysis. Monitoring data from tribal lands were not included in this analysis. Dominant land use characteristics were used as a station descriptor, not a deciding factor.
+Status and long-term trends of the data were assessed for evaluating water quality in relation to water quality criterion or TMDL allocations. A decision criterion has been created for selecting stations that had greater than eight years of data and/or data to address water quality status. Stations that fit the criteria were sent to DEQ basin coordinator for their input on stations in the basin that had sufficient data that was not in one of the queried databases and that should also be included in this analysis. Monitoring data from tribal lands were not included in this analysis. Dominant land use characteristics were used as a station descriptor, not a deciding factor.
 
 
 ![](Agreview_flowchart_V5.png)
+Station Monitoring station decision criteria to ensure the stations contain sufficient data to
+represent status and trends for the waterbody.
 
-```{r fig.cap = "Monitoring station decision criteria to ensure the stations contain sufficient data to represent status and trends for the waterbody"}
+#- Analysis
+DEQ compared pH results from both grab and continuous sample data to the water quality criterion. The bacteria standard is based on the presence of E. coli compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The temperature standard is based on the calculation of the seven day average of the daily maximum stream temperatures. When applicable, total suspended solids and total phosphorus were compared to the TMDL load allocation. If no allocation was present, total suspended solid and total phosphorus result values were plotted over time. Trends for pH, E. coli, total phosphorus, and total suspended solids were assessed using Seasonal Kendall Analysis, which removes the influence of season-to-season fluctuations .  The Seasonal Kendall Analysis also indicates the statistical significance and slope of the trend. 
 
-```
-
-#Analysis
-DEQ compared pH results from both grab and continuous sample data to the water quality standard. The bacteria standard is based on the presence of E. coli compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The temperature standard is based on the calculation of the seven day average of the daily maximum stream temperatures. When applicable, total suspended solids and total phosphorus were compared to the TMDL load allocation. If no allocation was present, total suspended solid and total phosphorus result values were plotted over time. Trends for pH, E. coli, total phosphorus, and total suspended solids were assessed using Seasonal Kendall Analysis, which removes the influence of season-to-season fluctuations .  The Seasonal Kendall Analysis also indicates the statistical significance and slope of the trend. 
-
-Dissolved oxygen (DO) was assessed by comparing the concentration to the water quality standard. If the DO concentration exceeded the water quality standard, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality standard. These points were noted in the plots using a different color. Fish use and spawning maps  and the DO criteria flow chart  were used to determine the applicable temperature and DO standards for the spawning and non-spawning time periods. 
+Dissolved oxygen (DO) was assessed by comparing the concentration to the water quality criterion. If the DO concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality criterion. These points were noted in the plots using a different color. Fish use and spawning maps  and the DO criteria flow chart  were used to determine the applicable temperature and DO standards for the spawning and non-spawning time periods. 
 
 For temperature trend analysis, analysts used data only from stations with eight years of continuous hourly temperature data in each month during the query period. Data were not used if observations were missing for more than one day each month or if fewer than 22 hourly measurements were recorded during the day. These criteria resulted in no more than 10% missing data across each of the temporal periods of interest. Trends in the data were tested using a Mann Kendall test (Mann 1945). Trends were evaluated on the following metrics:
 
 * Average Monthly 7-day average daily maximum
 * Average Monthly daily degree hours > the applicable temperature standard. 
 
-Trends are more detectable with the average monthly daily degree hours that exceed the applicable temperature standard because the metric incorporates both magnitude and duration of temperatures; the 7-day average daily maximum only incorporates the magnitude of exceedance. Fish use and spawning maps  were used to determine the applicable temperature standards for the spawning and non-spawning time periods. Section 2.6 of this report includes graphs for stations with data that exceeded a water quality standard more than once and/or showed a positive or negative trend. When insufficient data was available, that was noted in the graphs. 
+Trends are more detectable with the average monthly daily degree hours that exceed the applicable temperature standard because the metric incorporates both magnitude and duration of temperatures; the 7-day average daily maximum only incorporates the magnitude of exceedance. Fish use and spawning maps  were used to determine the applicable temperature standards for the spawning and non-spawning time periods. Section 2.6 of this report includes graphs for stations with data that exceeded a water quality criterion more than once and/or showed a positive or negative trend. When insufficient data was available, that was noted in the graphs. 
 
-#Results
+#- Results
 
 ##Station Locations
+Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` out of `r length(unique(df.all$Station_ID))` monitoring stations fit the criteria to assess water quality status and trends. The following map shows monitoring stations that fit the criteria within the AgWQ Management Area. 
+
 ```{r map, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 #library(ggmap)
 # library(ggrepel)
@@ -219,28 +240,32 @@ map <- leaflet(agarea) %>%
   addMarkers(lng = stns$DECIMAL_LONG, 
              lat = stns$DECIMAL_LAT, 
              popup = paste(stns$Station_ID, stns$Station_Description, sep = "-")) %>%
-            addWMSTiles(GetURL("USGSTopo"), 
-                        attribution = paste0("<a href='https://www.usgs.gov/'>",
-                                             "U.S. Geological Survey</a> | ",
-                                        "<ahref='https://www.usgs.gov/laws/policies_notices.html'>",
-                                             "Policies</a>"),
-                        group = "USGS Topo", layers = "0") %>%
-            addWMSTiles(GetURL("USGSHydroCached"), 
-                        group = "Hydrography", 
-                        options = WMSTileOptions(format = "image/png", 
-                                                 transparent = TRUE),
-                        layers = "0") %>%
-            hideGroup("Hydropgraphy") 
+  addWMSTiles(GetURL("USGSTopo"), 
+              attribution = paste0("<a href='https://www.usgs.gov/'>",
+                                   "U.S. Geological Survey</a> | ",
+                                   "<ahref='https://www.usgs.gov/laws/policies_notices.html'>",
+                                   "Policies</a>"),
+              group = "USGS Topo", layers = "0") %>%
+  addWMSTiles(GetURL("USGSHydroCached"), 
+              group = "Hydrography", 
+              options = WMSTileOptions(format = "image/png", 
+                                       transparent = TRUE),
+              layers = "0") %>%
+  hideGroup("Hydropgraphy") 
 map
   
 ```
 
 ##Land Use
+Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) developed by EPA was used to summarize the cumulative upstream catchment of each station for primary landuse characteristics, based on the National Hydrography Dataset Plus Version 2 geospatial framework.  
 
+Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. Source: 2011 NAIP
 ```{r landuse, echo = FALSE}
 library(knitr)
 library(dplyr)
 library(plyr)
+library(raster)
+library(leaflet)
 
 stn_to_use<-c(unique(stns$Station_ID))
 
@@ -251,29 +276,67 @@ colnames(landuse) <- c("Station ID", "Station Description", "Year", "Watershed A
                        "%Urban", "%Forest", "%Ag", "%Range", "%Other")
 landuse<-landuse[, - 3]
 
+lulc <- leaflet(agarea) %>%
+  addPolygons() %>%
+  addTiles() %>%
+  #addRasterImage(lulc) 
+  addMarkers(lng = stns$DECIMAL_LONG, 
+             lat = stns$DECIMAL_LAT, 
+             popup = paste(stns$Station_ID, stns$Station_Description, sep = "-")) %>%
+  addWMSTiles('https://raster.nationalmap.gov/arcgis/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer/WMSServer?',
+              group = "Land Use (NLCD 2011)",
+              layers = '33',
+              options = WMSTileOptions(format = 'image/png',
+                                       version = '1.3.0',
+                                       transparent = TRUE)) %>% 
+  addWMSTiles(GetURL("USGSHydroCached"), 
+              group = "Hydrography", 
+              options = WMSTileOptions(format = "image/png", 
+                                       transparent = TRUE),
+              layers = "0") %>%
+  hideGroup("Hydropgraphy") 
+lulc
+
 kable(landuse, digits = 1, format = "markdown", padding = 2, caption = "Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. Source: 2011 NAIP")
 
 ```
 
 
 ##Water Quality Limited Stream Segments
+Summary of Oregon's 2012 Integrated Report Assessment database and 303(d) list for parameters included in this report. Table based on the 2012 Integrated Report Listings by the EPA. Note that pH exceedances are values higher or lower than the given range.
+```{r wq_limited, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 
-```{r wq_limited, echo = FALSE}
+wq_limited_df <- wq_lim_whole[, -2]
 
-wq_limited_df <- wq_limited_df[, -2]
+wq_limited_df <- wq_limited_df %>% arrange(desc(POLLUTANT))
+
+wq_limited_df$`Listing Status` <- revalue(wq_limited_df$`Listing Status`, c("Cat 4A: Water quality limited, TMDL approved" = "Cat 4A",
+                                                                            "Cat 5: Water quality limited, 303(d) list, TMDL needed" = "Cat 5",
+                                                                            "TMDL approved" = "Cat 4A",
+                                                                            "303(d)" = "Cat 5"))
 
 kable(wq_limited_df, format = "markdown", padding = 2, caption = "Summary of Integrated Report listings for parameters included in this report. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA")
 
 ```
-_E.coli_: 30-day log mean of 126 E coli organisms per 100ml OR no single sample >406 organisms per 100 ml
-pH: Exceedances are values high or lower than the given range
-Temperature: Year Around = non-spawning
-Sedimentation: The formation of appreciable bottom or sludge deposits or the formation of any organic or inorganic deposits deleterious to fish or other aquatic life or injurious to public health, recreation, or industry may not be allowed.
-Assessment Categories: Cat 4A: Water quality limited, TMDL approved
-Cat 5: Water quality limited, 303(d) list, TMDL needed
 
+##Seasonal Kendal Trend Analysis
+For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal Kendal trend analysis. Results are summarized in table. 
+Output for the Seasonal Kendal analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values. If no table is visible, there were no monitoring station that contained sufficient data to assess trends. 
+```{r Seasonal Kendall, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
+SK <- SeaKen %>% filter(Station_ID %in% unique(stns$Station_ID)) %>% filter(signif !=  "Need at least 8 years") %>% 
+  filter(analyte != 'Dissolved oxygen saturation')
 
-##_E.coli_
+if(nrow(SK) > 0) {
+
+SK <- SK[,c(1, 2, 3, 4, 5, 8, 9)]
+
+SK$slope <- as.numeric(SK$slope)
+SK$pvalue <- as.numeric(SK$pvalue)
+
+kable(SK, format = "markdown", padding = 2, format.args = list(scientific = TRUE))
+}
+```
+##E.coli
 ```{r Ecoli, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = '_E. Coli_ water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
@@ -281,6 +344,7 @@ library(ggplot2)
 library(knitr)
 library(zoo)
 
+Ecoli_all <- df.all[df.all$Analyte == 'E. Coli',]
 Ecoli <- df.all[df.all$Analyte == 'E. Coli',]
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
@@ -322,7 +386,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
     
     ecoli_plots<-list()
     for (i in 1:length(e_stns)) {
-      mydata_sub <- Ecoli[Ecoli$Station_ID == e_stns[i],]
+      mydata_sub <- Ecoli_all[Ecoli_all$Station_ID == e_stns[i],]
       
       trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == e_stns[i],'signif']), FALSE,
                           ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == e_stns[i],'signif']), FALSE, TRUE))
@@ -353,7 +417,8 @@ if(!is.null(exc)) {
 ```
 
 ##Enterococcus 
-```{r Entero, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Entero water quality status and trends'}
+No monitoring stations contain enterococcus data. 
+```{r Entero, eval=FALSE, error=TRUE, fig.cap='Entero water quality status and trends', fig.height=6, fig.width=6, message=FALSE, warning=FALSE, include=FALSE}
 source("functions/funPlots.R")
 library(dplyr)
 library(ggplot2)
@@ -361,6 +426,7 @@ library(knitr)
 
 if(any(df.all$Analyte == 'Enterococcus')){
   
+  Ent_all <- df.all[df.all$Analyte == 'Enterococcus',]
   Ent <- df.all[df.all$Analyte == 'Enterococcus',]
   
   if(!(trend == "No Stations Meet Trend Criteria")) {
@@ -402,7 +468,7 @@ if(any(df.all$Analyte == 'Enterococcus')){
     
     ent_plots<-list()
     for (i in 1:length(ent_stns)) {
-      mydata_sub <- Enterococcus[Enterococcus$Station_ID == ent_stns[i],]
+      mydata_sub <- Ent_all[Ent_all$Station_ID == ent_stns[i],]
       
       trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == ent_stn[i],'signif']), FALSE,
                           ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == ent_stn[i],'signif']), FALSE, TRUE))
@@ -448,13 +514,22 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
   
   if(length(tp_stn) > 0) {
   
+  TP_all <- df.all[df.all$Analyte == 'Total Phosphorus',]
   TP <- df.all[df.all$Analyte == 'Total Phosphorus',]
   
   TP_list<- list()
   TP_exclist<- list()
   for(j in 1: length(tp_stn)) {
     new_data <- TP[TP$Station_ID == tp_stn[j],]
-    TP_evaluate <- EvaluateTPWQS(new_data, 
+    
+    tmp_df <- new_data
+      tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+      tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+      sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+      tmp_df_MRL <- tmp_df[sub,]
+      tmp_df <- remove.dups(tmp_df_MRL, max)
+    
+    TP_evaluate <- EvaluateTPWQS(tmp_df, 
                                  selectWQSTP = 0)
     TP_eval <- attr(TP_evaluate, 'ex_df')
     TP_list[[j]] <- TP_evaluate
@@ -469,7 +544,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
   
   tp_plots<-list()
   for (i in 1:length(tp_stn)) {
-    mydata_sub <- TP[TP$Station_ID == tp_stn[i],]
+    mydata_sub <- TP_all[TP_all$Station_ID == tp_stn[i],]
     
     trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE,
                         ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE, TRUE))
@@ -517,13 +592,23 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
   
   if(length(tss_stn) > 0){
     
+  TSS_all <- df.all[df.all$Analyte == 'Total Suspended Solids',]
   TSS <- df.all[df.all$Analyte == 'Total Suspended Solids',]
   
   TSS_list<- list()
   TSS_exclist<- list()
   for(j in 1: length(tss_stn)) {
     new_data <- TSS[TSS$Station_ID == tss_stn[j],]
-    TSS_evaluate <- EvaluateTSSWQS(new_data, 
+    
+    tmp_df <- new_data
+      tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+      tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+      sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+      tmp_df_MRL <- tmp_df[sub,]
+      tmp_df <- remove.dups(tmp_df_MRL, max)
+    
+    
+    TSS_evaluate <- EvaluateTSSWQS(tmp_df, 
                                    selectWQSTSS = 0)
     TSS_eval <- attr(TSS_evaluate, 'ex_df')
     TSS_list[[j]] <- TSS_evaluate
@@ -538,7 +623,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
   
   tss_plots<-list()
   for (i in 1:length(tss_stn)) {
-    mydata_sub <- TSS[TSS$Station_ID == tss_stn[i],]
+    mydata_sub <- TSS_all[TSS_all$Station_ID == tss_stn[i],]
     
     
     trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == tss_stn[i],'signif']), FALSE,
@@ -588,6 +673,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   
   if(length(pH_stn_table) > 0) {
     
+  pH_all <- df.all[df.all$Analyte == 'pH',]
   pH <- df.all[df.all$Analyte == 'pH',]
   
   in_bentable<-(Ben_use_LU[Ben_use_LU$Station_ID %in% pH_stn_table, 'pH_benuse'])
@@ -644,7 +730,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
     
     pH_plots<-list()
     for (i in 1:length(pH_stn)) {
-      mydata_sub <- pH[pH$Station_ID == pH_stn[i],]
+      mydata_sub <- pH_all[pH_all$Station_ID == pH_stn[i],]
       
       
       trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == pH_stn[i],'signif']), FALSE,
@@ -860,7 +946,7 @@ library(ggplot2)
 library(knitr)
 library(base)
 
-if(!(any(trend == "No Stations Meet Trend Criteria"))) {
+if(any(trend != "No Stations Meet Trend Criteria")) {
   DO_stn<-trend %>%
     dplyr::filter(Analyte == "Dissolved Oxygen")
   DO_stn_table<-c(unique(DO_stn$Station_ID))
@@ -874,6 +960,7 @@ if(!(any(trend == "No Stations Meet Trend Criteria"))) {
   
   if(length(DO_stn) > 0) {
     
+    DO_all <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
     DO <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
     
     #(Ben_use_LU[Ben_use_LU$Station_ID %in% pH_stn_table, 'pH_benuse'])
@@ -892,7 +979,7 @@ if(!(any(trend == "No Stations Meet Trend Criteria"))) {
       #DO <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
       for(j in 1: length(DO_stn)) {
         
-        new_data <- DO[DO$Station_ID == DO_stn[j],]
+        new_data <- DO_all[DO_all$Station_ID == DO_stn[j],]
         
           tmp_df <- new_data
           tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
@@ -937,7 +1024,7 @@ if(!(any(trend == "No Stations Meet Trend Criteria"))) {
       
       for (i in 1:length(DO_stn)) {
         
-        new_data <- DO[DO$Station_ID == DO_stn[i],]
+        new_data <- DO_all[DO_all$Station_ID == DO_stn[i],]
         
         trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == DO_stn[i],'signif']), FALSE,
                             ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == DO_stn[i],'signif']), FALSE, TRUE))
@@ -992,25 +1079,26 @@ if(!(any(trend == "No Stations Meet Trend Criteria"))) {
 DO_exc <- exc
 ```
 
-#Summary 
-
+#- Summary 
 ![](T:/AgWQM/DataAnalysis/Upper Willamette-Siuslaw/Figures/WQassessment_V1.png)
+Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by significant trends associated with long-term datasets. 
+Summary of stations that fit the criteria for status and trend analysis. One or more exceedances of the applicable water quality criterion within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by statistically significant trends associated with long-term datasets.
 
 ```{r parm summary table, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
-stnsformap <-  parm_summary(stns = stns,
-                            ecoli = ecoli,
-                            pH = pH, 
-                            DO_eval = DO_eval, 
-                            temp = temp,
-                            SeaKen = SeaKen, 
-                            status = status,
-                            trend = trend)
-
-colnames(stnsformap) <- c("Station ID", "Station Description", "Latitude", "Longitude", "Bacteria Status", 
-                          "Bacteria Trend","Temperature Status", "Temperature Trend", "pH Status", "pH Trend", "DO Status", "DO Trend")
-
-
-kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last two years of available data. Note: DO = dissolved oxygen")
+# stnsformap <-  parm_summary(stns = stns,
+#                             ecoli = ecoli,
+#                             pH = pH, 
+#                             DO_eval = DO_eval, 
+#                             temp = temp,
+#                             SeaKen = SeaKen, 
+#                             status = status,
+#                             trend = trend)
+# 
+# colnames(stnsformap) <- c("Station ID", "Station Description", "Latitude", "Longitude", "Bacteria Status", 
+#                           "Bacteria Trend","Temperature Status", "Temperature Trend", "pH Status", "pH Trend", "DO Status", "DO Trend")
+# 
+# 
+# kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last two years of available data. Note: DO = dissolved oxygen")
 #write.csv(stnsformap, "T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/Inland Rogue_DataFrames/stationsformap.csv")
 
 # map2 <- leaflet(agarea) %>%
@@ -1035,8 +1123,7 @@ kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stat
 # map2
 
 ```
-
-#Appendix
+#- Appendix
 ```{r appendix, echo=FALSE}
 kable(status, padding = 2, digits = 1, caption = "Monitoring stations that fit the criteria to assess status")
 
@@ -1049,8 +1136,11 @@ kable(trend, padding = 1, digits = 1, caption = "Monitoring stations that fit th
 #save.image("T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/ouput.RData")
 
 #dataframes saved in folder for AgArea
-dir <- paste0(input$select,"_","DataFrames")
-dir.create(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir))
+#dir <- paste0(input$select,"_","DataFrames")
+#dir.create(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir))
+
+
+
 # write.csv(status, paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/status.csv'))
 # write.csv(trend, paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/trend.csv'))
 # write.csv(stn_nlcd_df, paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/landuse.csv'))
