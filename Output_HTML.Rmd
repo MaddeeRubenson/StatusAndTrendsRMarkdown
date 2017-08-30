@@ -1,5 +1,6 @@
 ---
-title: "Oregon DEQ Water Quality Status and Trends report for the Upper Willamette-Siuslaw Subbasin"
+#title: #"" 
+title: "<img src=\"LogoColorRegular.jpg\" style=\"float: right;width: 80px; \"/> Oregon DEQ Water Quality Status and Trends report for the Inland Rogue Subbasin"
 author: ''
 date: "July 2017"
 output:
@@ -8,6 +9,7 @@ output:
     toc: yes
     toc_depth: 2
     toc_float: yes
+    mode: selfcontained
   word_document:
     fig_caption: yes
     reference_docx: ReportTemplate.docx
@@ -18,15 +20,30 @@ always_allow_html: yes
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
 ```
 
-<script>
-   $(document).ready(function() {
-     $head = $('#header');
-     $head.prepend('<img src=\"LogoColorRegular.jpg\" style=\"float: right;width: 100px;\"/>')
-   });
-</script>
+<!-- ![](LogoColorRegular.jpg) -->
+
+```{r logo, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
+
+
+# library(grid)
+# library(png)
+# logo <- readPNG('logo.png')
+# 
+# grid.raster(logo)
+
+# htmltools::img(src = knitr::image_uri('LogoColorRegular.jpg'),
+#                alt = 'logo',
+#                style = 'float: right;width: 100px;')
+```
+
+<!-- <script> -->
+<!--    $(document).ready(function() { -->
+<!--      $head = $('#header'); -->
+<!--      $head.prepend('<img src=\"LogoColorRegular.jpg\" style=\"float: right;width: 100px;\"/>') -->
+<!--    }); -->
+<!-- </script> -->
 
 
 ```{r Query, echo = FALSE, cache = FALSE, results = 'hide', include = FALSE}
@@ -52,7 +69,7 @@ input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen')
 #input$parms <- c("Dissolved Oxygen")
-input$select <- "Upper Willamette-Siuslaw" #input
+input$select <- "Inland Rogue" #input
 input$dates <- c("2000-01-01", "2017-07-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 
@@ -192,9 +209,12 @@ Analysts retrieved data from DEQ, EPA and USGS databases. The time period for th
 Status and long-term trends of the data were assessed for evaluating water quality in relation to water quality criterion or TMDL allocations. A decision criterion has been created for selecting stations that had greater than eight years of data and/or data to address water quality status. Stations that fit the criteria were sent to DEQ basin coordinator for their input on stations in the basin that had sufficient data that was not in one of the queried databases and that should also be included in this analysis. Monitoring data from tribal lands were not included in this analysis. Dominant land use characteristics were used as a station descriptor, not a deciding factor.
 
 
-![](Agreview_flowchart_V5.png)
-Station Monitoring station decision criteria to ensure the stations contain sufficient data to
-represent status and trends for the waterbody.
+![Monitoring station decision criteria to ensure the stations contain sufficient data to
+represent status and trends for the waterbody](Agreview_flowchart_V5.png)
+
+
+<!-- Station Monitoring station decision criteria to ensure the stations contain sufficient data to -->
+<!-- represent status and trends for the waterbody. -->
 
 #- Analysis
 DEQ compared pH results from both grab and continuous sample data to the water quality criterion. The bacteria standard is based on the presence of E. coli compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The temperature standard is based on the calculation of the seven day average of the daily maximum stream temperatures. When applicable, total suspended solids and total phosphorus were compared to the TMDL load allocation. If no allocation was present, total suspended solid and total phosphorus result values were plotted over time. Trends for pH, E. coli, total phosphorus, and total suspended solids were assessed using Seasonal Kendall Analysis, which removes the influence of season-to-season fluctuations .  The Seasonal Kendall Analysis also indicates the statistical significance and slope of the trend. 
@@ -206,7 +226,7 @@ For temperature trend analysis, analysts used data only from stations with eight
 * Average Monthly 7-day average daily maximum
 * Average Monthly daily degree hours > the applicable temperature standard. 
 
-Trends are more detectable with the average monthly daily degree hours that exceed the applicable temperature standard because the metric incorporates both magnitude and duration of temperatures; the 7-day average daily maximum only incorporates the magnitude of exceedance. Fish use and spawning maps  were used to determine the applicable temperature standards for the spawning and non-spawning time periods. Section 2.6 of this report includes graphs for stations with data that exceeded a water quality criterion more than once and/or showed a positive or negative trend. When insufficient data was available, that was noted in the graphs. 
+Trends are more detectable with the average monthly daily degree hours that exceed the applicable temperature standard because the metric incorporates both magnitude and duration of temperatures; the 7-day average daily maximum only incorporates the magnitude of exceedance. Fish use and spawning maps  were used to determine the applicable temperature standards for the spawning and non-spawning time periods. The results of this report includes graphs for stations with data that exceeded a water quality criterion more than once and/or showed a positive or negative trend. When insufficient data were available, that was noted in the graphs. 
 
 #- Results
 
@@ -319,9 +339,9 @@ kable(wq_limited_df, format = "markdown", padding = 2, caption = "Summary of Int
 
 ```
 
-##Seasonal Kendal Trend Analysis
-For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal Kendal trend analysis. Results are summarized in table. 
-Output for the Seasonal Kendal analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values. If no table is visible, there were no monitoring station that contained sufficient data to assess trends. 
+##Seasonal Kendall Trend Analysis
+For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal kendall trend analysis. Results are summarized in table. 
+Output for the Seasonal kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values. If no table is visible, there were no monitoring station that contained sufficient data to assess trends. 
 ```{r Seasonal Kendall, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 SK <- SeaKen %>% filter(Station_ID %in% unique(stns$Station_ID)) %>% filter(signif !=  "Need at least 8 years") %>% 
   filter(analyte != 'Dissolved oxygen saturation')
@@ -1080,7 +1100,7 @@ DO_exc <- exc
 ```
 
 #- Summary 
-![](T:/AgWQM/DataAnalysis/Upper Willamette-Siuslaw/Figures/WQassessment_V1.png)
+![](T:/AgWQM/DataAnalysis/Inland Rogue/Figures/WQassessment_V2.png)
 Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by significant trends associated with long-term datasets. 
 Summary of stations that fit the criteria for status and trend analysis. One or more exceedances of the applicable water quality criterion within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by statistically significant trends associated with long-term datasets.
 
