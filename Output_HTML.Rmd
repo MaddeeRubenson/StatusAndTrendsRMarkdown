@@ -1,15 +1,16 @@
 ---
-#title: #"" 
-title: "<img src=\"LogoColorRegular.jpg\" style=\"float: right;width: 80px; \"/> Oregon DEQ Water Quality Status and Trends report for the Inland Rogue Subbasin"
+title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
+  DEQ Water Quality Status and Trends report for the Goose and Summer Lakes AgWQ Management
+  Area'
 author: ''
-date: "July 2017"
+date: "September 2017"
 output:
   html_document:
+    mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
-    mode: selfcontained
   word_document:
     fig_caption: yes
     reference_docx: ReportTemplate.docx
@@ -17,34 +18,9 @@ output:
 always_allow_html: yes
 ---
 
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-<!-- ![](LogoColorRegular.jpg) -->
-
-```{r logo, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
-
-
-# library(grid)
-# library(png)
-# logo <- readPNG('logo.png')
-# 
-# grid.raster(logo)
-
-# htmltools::img(src = knitr::image_uri('LogoColorRegular.jpg'),
-#                alt = 'logo',
-#                style = 'float: right;width: 100px;')
-```
-
-<!-- <script> -->
-<!--    $(document).ready(function() { -->
-<!--      $head = $('#header'); -->
-<!--      $head.prepend('<img src=\"LogoColorRegular.jpg\" style=\"float: right;width: 100px;\"/>') -->
-<!--    }); -->
-<!-- </script> -->
-
 
 ```{r Query, echo = FALSE, cache = FALSE, results = 'hide', include = FALSE}
 library(RCurl)
@@ -69,8 +45,8 @@ input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen')
 #input$parms <- c("Dissolved Oxygen")
-input$select <- "Inland Rogue" #input
-input$dates <- c("2000-01-01", "2017-07-01") #input
+input$select <- "Goose and Summer Lakes" #input
+input$dates <- c("2000-01-01", "2017-09-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 
 agwqma <- readOGR(dsn = 'app/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
@@ -84,6 +60,7 @@ wq_limited <- read.csv('app/wq_limited_df_temp_bact_ph_DO_TP_Sediment_2012.csv')
 OAR_LU <- read.csv("Lookups/OAR_LU.csv")
 Ben_use_LU <- read.csv("Lookups/stations.csv", na.strings = c("", "NA"))
 BC_LU <- read.csv("Lookups/BC_LU.csv")
+#filepath<-paste0('T:/AgWQM/DataAnalysis/', input$select, '/Figures/WQassessment_V1.png')
 
 source('functions/Rmarkdown_query.R')
 source('functions/01_DataQuery.R')
@@ -92,6 +69,13 @@ df.all<-query(select =  input$select,
               parms = input$parms,
               dates = input$dates,
               db = input$db)
+
+##take out data from tribal land
+df.all <- df.all %>%
+  filter(!grepl('[Tt]ribe', Client)) %>%
+  filter(!grepl('CTG', Station_ID))
+
+
 ```
 
 ```{r Create_dataframes, echo = FALSE, cache = FALSE, results = 'hide', include = FALSE}
@@ -116,6 +100,9 @@ load('app/OR_cats.Rdata')
 
 #df.all$DECIMAL_LAT <- as.numeric(df.all$DECIMAL_LAT)
 #df.all$DECIMAL_LONG <- as.numeric(df.all$DECIMAL_LONG)
+
+##Add snapped stations
+df.all <- Snapped_Stations(df.all)
 
 df.all <- clipToPlanArea(df.all, agwqma, input$select)
 df.all$Result <- clean(df.all$Result)
@@ -158,26 +145,30 @@ trend <- Stations_Trend(df.all)
 stns<- All_stns_fit_Criteria(trend = trend, 
                              status = status,
                              df.all = df.all)
+
+
+
 stn_totals<-summarizeByStation(df.all)
-all.sp <- generateStnLyrToPlot(df.all, stn_totals)
+all.sp <- generateStnLyrToPlot(df.all, stn_totals) #changed lat and long names
 stn_nlcd_df <- landUseAnalysis(all.sp, cats, NLCD2011)
 
 ```
 
 #- Introduction
 ##Purpose
-Area rules and plans have been adopted by the Oregon Department of Agriculture (ODA) for the `r input$select` Subbasin management area (`r OAR_LU[OAR_LU$AgArea %in% input$select,'OAR']`). Oregon statute and administrative rules require ODA to consult with the Department of Environmental Quality (DEQ) during the biennial review of Agricultural Water Quality Management Area Rules and Plans (ORS 568.930).  DEQ Total Maximum Daily Load (TMDL) and Nonpoint Source (NPS) program staff conduct these reviews based on ODA’s biennial review schedule of their area rules and plans1. ODA’s Agriculture Water Quality Program is outcome based, explicitly describing prohibited conditions, similar to DEQ’s TMDL and NPS programs which explicitly define water quality targets and goals.  The analysis of landscape conditions and water quality data is used for implementing these programs as well as identifying data gaps. 
+Area rules and plans have been adopted by the Oregon Department of Agriculture (ODA) for the `r input$select` Subbasin management area (`r OAR_LU[OAR_LU$AgArea %in% input$select,'OAR']`). Oregon statute and administrative rules require ODA to consult with the Department of Environmental Quality (DEQ) during the biennial review of Agricultural Water Quality Management Area Rules and Plans (ORS 568.930).  DEQ Total Maximum Daily Load (TMDL) and Nonpoint Source (NPS) program staff conduct these reviews based on ODA’s biennial review schedule of their area rules and plans. ODA’s Agriculture Water Quality Program is outcome based, explicitly describing prohibited conditions, similar to DEQ’s TMDL and NPS programs which explicitly define water quality targets and goals.  The analysis of landscape conditions and water quality data is used for implementing these programs as well as identifying data gaps. 
 
 The purpose of this document is to present data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. This document supports the following DEQ tasks identified in the MOA:
 
 *	Review available data for water quality trends and whether waterbodies are achieving water quality criterion and meeting TMDL agricultural load allocations
 *	Evaluate and provide comment to ODA on the suitability of landscape conditions to achieve TMDL agricultural load allocations. 
 
-This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Additional data may exist but was not readily available at the time this report was compiled. DEQ will use available water quality data to answer the following questions:
+The report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ.  This water quality status and trends report can be used to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting.  The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what’s working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends.will use available water quality data to answer the following questions: 
 
-*	What is the status of water quality parameters downstream of agricultural land?
-*	What is the trend in water quality at key locations downstream of agricultural land?
-*	Are sites downstream of agricultural land meeting TMDL agricultural load allocations?
+*	What is the status of water quality parameters? 
+*	What is the trend in water quality? 
+*	Are TMDL load allocations being met?
+* Can water quality status and trends be attributed to a source or sources?
 
 DEQ basin coordinators review pertinent information including this report as part of ODA’s biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL agricultural load allocations through ODA’s survey. 
 
@@ -199,6 +190,9 @@ colnames(BC_table) <- c('AgWQ Management Area', 'DEQ Basin Coordinator', 'ODA Ag
 kable(BC_table, format = "markdown", padding = 2, digits = 1, caption = "Oregon DEQ and ODA basin contacts")
 ```
 
+<!-- ## Total Maximum Daily Load -->
+<!-- A TMDL was created for ([Yamhill Subbasin](http://www.oregon.gov/deq/FilterDocs/YamhillTMDL1992.pdf)) in 1992, identifying pH and total phosphorus pollutants of concern. The TMDL identifies a total phosphorus allocation of 70 ug/l (0.07 mg/l).  -->
+
 #- Methods
 
 ##Data Sources
@@ -212,9 +206,6 @@ Status and long-term trends of the data were assessed for evaluating water quali
 ![Monitoring station decision criteria to ensure the stations contain sufficient data to
 represent status and trends for the waterbody](Agreview_flowchart_V5.png)
 
-
-<!-- Station Monitoring station decision criteria to ensure the stations contain sufficient data to -->
-<!-- represent status and trends for the waterbody. -->
 
 #- Analysis
 DEQ compared pH results from both grab and continuous sample data to the water quality criterion. The bacteria standard is based on the presence of E. coli compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The temperature standard is based on the calculation of the seven day average of the daily maximum stream temperatures. When applicable, total suspended solids and total phosphorus were compared to the TMDL load allocation. If no allocation was present, total suspended solid and total phosphorus result values were plotted over time. Trends for pH, E. coli, total phosphorus, and total suspended solids were assessed using Seasonal Kendall Analysis, which removes the influence of season-to-season fluctuations .  The Seasonal Kendall Analysis also indicates the statistical significance and slope of the trend. 
@@ -234,31 +225,18 @@ Trends are more detectable with the average monthly daily degree hours that exce
 Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` out of `r length(unique(df.all$Station_ID))` monitoring stations fit the criteria to assess water quality status and trends. The following map shows monitoring stations that fit the criteria within the AgWQ Management Area. 
 
 ```{r map, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
-#library(ggmap)
-# library(ggrepel)
-# library(RgoogleMaps)
 library(raster)
 library(leaflet)
 
-#lulc <- raster('nlcd_2011_landcover_2011_edition_2014_03_31.img')
-
 agarea <- agwqma[agwqma$PlanName == input$select,]
 agarea<-spTransform(agarea, CRS("+proj=longlat +datum=NAD83"))
-
-#proj4string(lulc) <- proj4string(agarea)
-
-#lulc_clip <- mask(x = lulc, mask = agarea)
-#lulc_clip <- crop(x = lulc, y = agarea)
-
-#leaflet() %>%
- # addRasterImage(lulc)
 
 map <- leaflet(agarea) %>%
   addPolygons() %>%
   addTiles() %>%
   #addRasterImage(lulc) 
-  addMarkers(lng = stns$DECIMAL_LONG, 
-             lat = stns$DECIMAL_LAT, 
+  addMarkers(lng = stns$snap_Long, 
+             lat = stns$snap_Lat, 
              popup = paste(stns$Station_ID, stns$Station_Description, sep = "-")) %>%
   addWMSTiles(GetURL("USGSTopo"), 
               attribution = paste0("<a href='https://www.usgs.gov/'>",
@@ -271,7 +249,8 @@ map <- leaflet(agarea) %>%
               options = WMSTileOptions(format = "image/png", 
                                        transparent = TRUE),
               layers = "0") %>%
-  hideGroup("Hydropgraphy") 
+  hideGroup("Hydropgraphy") %>%
+  addLayersControl(baseGroups = c('Terrain','Satellite', 'USGS Topo'))
 map
   
 ```
@@ -279,7 +258,6 @@ map
 ##Land Use
 Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) developed by EPA was used to summarize the cumulative upstream catchment of each station for primary landuse characteristics, based on the National Hydrography Dataset Plus Version 2 geospatial framework.  
 
-Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. Source: 2011 NAIP
 ```{r landuse, echo = FALSE}
 library(knitr)
 library(dplyr)
@@ -287,21 +265,12 @@ library(plyr)
 library(raster)
 library(leaflet)
 
-stn_to_use<-c(unique(stns$Station_ID))
-
-landuse<-stn_nlcd_df%>%
-  filter(Station_ID %in% stn_to_use) %>%
-  arrange(desc(PerAgWs))
-colnames(landuse) <- c("Station ID", "Station Description", "Year", "Watershed Area (km^2^)",
-                       "%Urban", "%Forest", "%Ag", "%Range", "%Other")
-landuse<-landuse[, - 3]
-
 lulc <- leaflet(agarea) %>%
   addPolygons() %>%
   addTiles() %>%
   #addRasterImage(lulc) 
-  addMarkers(lng = stns$DECIMAL_LONG, 
-             lat = stns$DECIMAL_LAT, 
+  addMarkers(lng = stns$snap_Long, 
+             lat = stns$snap_Lat, 
              popup = paste(stns$Station_ID, stns$Station_Description, sep = "-")) %>%
   addWMSTiles('https://raster.nationalmap.gov/arcgis/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer/WMSServer?',
               group = "Land Use (NLCD 2011)",
@@ -317,10 +286,23 @@ lulc <- leaflet(agarea) %>%
   hideGroup("Hydropgraphy") 
 lulc
 
-kable(landuse, digits = 1, format = "markdown", padding = 2, caption = "Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. Source: 2011 NAIP")
-
 ```
 
+
+
+Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. Source: 2011 NAIP
+```{r landuse table, echo = FALSE}
+stn_to_use<-c(unique(stns$Station_ID))
+
+landuse<-stn_nlcd_df%>%
+  filter(Station_ID %in% stn_to_use) %>%
+  arrange(desc(PerAgWs))
+colnames(landuse) <- c("Station ID", "Station Description", "Year", "Watershed Area (km^2^)",
+                       "%Urban", "%Forest", "%Ag", "%Range", "%Other")
+landuse<-landuse[, - 3]
+
+kable(landuse, digits = 0, format = "markdown", padding = 2, caption = "Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. Source: 2011 NAIP")
+```
 
 ##Water Quality Limited Stream Segments
 Summary of Oregon's 2012 Integrated Report Assessment database and 303(d) list for parameters included in this report. Table based on the 2012 Integrated Report Listings by the EPA. Note that pH exceedances are values higher or lower than the given range.
@@ -813,7 +795,7 @@ library(dplyr)
 library(ggplot2)
 library(knitr)
 
-if(!(trend == "No Stations Meet Trend Criteria")) {
+if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   temp_stn<-trend %>%
     dplyr::filter(Analyte == "Temperature")
   # temp_stn_table<-c(unique(temp_stn$Station_ID))
@@ -940,19 +922,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
         
       }
       
-    # }else {
-    #   
-    #   temp_table <- as.data.frame(temp_stn_table)
-    #   if(length(temp_stn) > 0){
-    #     temp_table <- temp_table %>% filter(temp_stn_table != temp_stn)
-    #   }
-    #   colnames(temp_table) <- c("Station ID")
-    #   if (!is.null(temp_table)) {
-    #     print("In order to assess against water quality standard, need to add temperature beneficial uses and spawning time periods to stations.csv for stations:")
-    #     print(temp_table)
-    #        } 
-    # }
-    }
+       }
   }
 }
 temp_exc <- exc
@@ -1100,26 +1070,32 @@ DO_exc <- exc
 ```
 
 #- Summary 
-![](T:/AgWQM/DataAnalysis/Inland Rogue/Figures/WQassessment_V2.png)
+![](T:/AgWQM/DataAnalysis/Goose and Summer Lakes/Figures/WQassessment_V1.png)
 Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by significant trends associated with long-term datasets. 
 Summary of stations that fit the criteria for status and trend analysis. One or more exceedances of the applicable water quality criterion within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by statistically significant trends associated with long-term datasets.
 
 ```{r parm summary table, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
-# stnsformap <-  parm_summary(stns = stns,
-#                             ecoli = ecoli,
-#                             pH = pH, 
-#                             DO_eval = DO_eval, 
-#                             temp = temp,
-#                             SeaKen = SeaKen, 
-#                             status = status,
-#                             trend = trend)
-# 
-# colnames(stnsformap) <- c("Station ID", "Station Description", "Latitude", "Longitude", "Bacteria Status", 
-#                           "Bacteria Trend","Temperature Status", "Temperature Trend", "pH Status", "pH Trend", "DO Status", "DO Trend")
-# 
-# 
-# kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last two years of available data. Note: DO = dissolved oxygen")
-#write.csv(stnsformap, "T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/Inland Rogue_DataFrames/stationsformap.csv")
+stnsformap <-  parm_summary(stns = stns,
+                            ecoli = ecoli,
+                            pH = pH,
+                            DO_eval = DO_eval,
+                            temp = temp,
+                            SeaKen = SeaKen,
+                            status = status,
+                            trend = trend)
+
+#To take out tribal stations
+stnsformap <- stnsformap %>%
+  filter(!grepl('CTGR', Station_ID))
+
+colnames(stnsformap) <- c("Station ID", "Station Description", "Latitude", "Longitude", "Bacteria Status",
+                          "Bacteria Trend","Temperature Status", "Temperature Trend", "pH Status", "pH Trend", "DO Status", "DO Trend")
+
+#stnsformap <- stnsformap[,c(-1)]
+
+
+kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last two years of available data. Note: DO = dissolved oxygen")
+#write.csv(stnsformap, "T:/AgWQM/DataAnalysis/Yamhill/Data/parm_summary_stns.csv")
 
 # map2 <- leaflet(agarea) %>%
 #   addPolygons() %>%
@@ -1143,34 +1119,15 @@ Summary of stations that fit the criteria for status and trend analysis. One or 
 # map2
 
 ```
+
 #- Appendix
 ```{r appendix, echo=FALSE}
+org_summary <- summarizeByOrg(df.all)
+
+kable(org_summary,  padding = 2, digits = 1, caption = "Summary table of all unique organizations used in the data query")
+
 kable(status, padding = 2, digits = 1, caption = "Monitoring stations that fit the criteria to assess status")
 
 kable(trend, padding = 1, digits = 1, caption = "Monitoring stations that fit the criteria to assess trends")
-```
-
-```{r save workspace, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
-#df<-list('df.all', 'status', 'landuse', 'trend')
-
-#save.image("T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/ouput.RData")
-
-#dataframes saved in folder for AgArea
-#dir <- paste0(input$select,"_","DataFrames")
-#dir.create(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir))
 
 
-
-# write.csv(status, paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/status.csv'))
-# write.csv(trend, paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/trend.csv'))
-# write.csv(stn_nlcd_df, paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/landuse.csv'))
-# write.csv(df.all, paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/df.all.csv'))
-# write.csv(stns, paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/stns.csv'))
-
-# myenv <- new.env()
-# myenv$status <- status
-# myenv$trend <- trend
-# myenv$df.all <-df.all
-# myenv$stns <- stns
-# myenv$landuse <- stn_nlcd_df
-```

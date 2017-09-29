@@ -28,41 +28,24 @@ library(base)
 #to run rmarkdown
 #rmarkdown::render('Exec_Summary.Rmd', output_format = "word_document") 
 
-
-##knit('Exec_Summary.Rmd', envir = myenv) 
-
-
-#input <- list()
-# input$select <- "Inland Rogue"
-# dir <- paste0(input$select,"_","DataFrames")
-# 
-# df.all <- read.csv(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/df.all.csv'))
-# status <- read.csv(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/status.csv'))
-# trend <- read.csv(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/trend.csv'))
-# landuse <- read.csv(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/landuse.csv'))
-# stns <- read.csv(paste0('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/',dir,'/stns.csv'))
-
-
-#this is saved from the session Output_HTML.Rmd where all dataframes were created
-#It works, but is very slow
-#load("ouput.RData")
-
-
 ```
 #Executive Summary
 ###Purpose
-Present data and analysis that will help DEQ fulfull its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. This report presents an anlysis of water quality data readily accessible from public databases and available in sufficient  quantity to indicate status and trends. DEQ will use available water quality data to answer the following questions:
-*What is the status of water quality parameters downstream of agricultural land?
-*What is the trend in water quality at key locations downtream of agricultural land?
-*Are sites downstream of agricultural land meeting TMDL agricultural load allocations?
+The report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ.  This water quality status and trends report can be used to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting.  The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what’s working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. DEQ will use available water quality data to answer the following questions: 
+•	What is the status of water quality parameters? 
+•	What is the trend in water quality? 
+•	Are TMDL load allocations being met?
+•	Can water quality status and trends be attributed to a source or sources?
+
 
 ###Analysis
-Analysts retrieved data from DEQ, EPA and USGS databases. The time period for the query was from `r as.Date(min(as.POSIXct((df.all$Sampled))))` to `r as.Date(max(as.POSIXct(df.all$Sampled)))`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014 from the USGS was marked as provisional data and included in this analysis.
+The data returned were evaluated for data quality. DEQ data included `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014 from the USGS was marked as provisional data and included in this analysis. Data was evaluated against the applicable Oregon water quality criterion for each parameter. 
 
 ###Data Sources
-Analysts retrieved data from DEQ, EPA and USGS databases. The time period for the query was from `r as.Date(min(as.POSIXct(df.all$Sampled)))` to `r as.Date(max(as.POSIXct(df.all$Sampled)))`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria.
+Analysts retrieved data from DEQ, EPA and USGS databases. The time period for the query was from `r as.Date(min(as.POSIXct((df.all$Sampled))))` to `r as.Date(max(as.POSIXct(df.all$Sampled)))`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria.
 
 ###Land Use
+Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) developed by EPA was used to summarize the cumulative upstream catchment of each station for primary land use characteristics, based on the National Hydrography Dataset Plus Version 2 geospatial framework.
 
 ```{r landuse_exec, echo = FALSE}
 library(knitr)
@@ -73,18 +56,19 @@ stn_to_use<-c(unique(stns$Station_ID))
 
 landuse_exec<-stn_nlcd_df %>%
   filter(Station_ID %in% stn_to_use) %>%
-  arrange(desc(PerAgWs)) %>%
-  filter((PerAgWs + PerRangeWs) > 20)
+  arrange(desc(PerAgWs))
+  #filter((PerAgWs + PerRangeWs) > 20)
 colnames(landuse_exec) <- c("Station ID", "Station Description", "Year", "Watershed Area (km^2^)",
                        "%Urban", "%Forest", "%Ag", "%Range", "%Other")
 landuse_exec<-landuse_exec[, - 3]
 
-kable(landuse_exec, digits = 1, format = "markdown", padding = 2, caption = "Land use and land cover for upstream catchments of stations used in this analysis, stations which fit the decision criteria and have >20% Agriculture and Range coverage are included. Land use and land cover for all stations used in analysis can be found in full report. Source: 2011 NAIP")
+kable(landuse_exec, digits = 0, format = "markdown", padding = 2, caption = "Land use and land cover for upstream catchments of stations used in this analysis, stations which fit the decision criteria and have >20% Agriculture and Range coverage are included. Land use and land cover for all stations used in analysis can be found in full report. Source: 2011 NAIP")
 
 ```
 
 ###Results Summary
 `r length(unique(stn_to_use))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r input$select` AgWQ Management Area 
+
 
 Analyte         | Number of stns w/ sufficent data for status analysis | Number of stns w/ sufficent data for trend analysis
 ----------------|----------------------------------------------------- | ----------------------------------------------------
@@ -94,3 +78,8 @@ Dissolved Oxygen| `r nrow(unique(status[status$Analyte == "Dissolved Oxygen", ])
 pH              | `r nrow(unique(status[status$Analyte == "pH", ]))` | `r nrow(unique(trend[trend$Analyte == "pH",]))`
 TSS             | `r nrow(unique(status[status$Analyte == "Total Suspended Solids", ]))` | `r nrow(unique(trend[trend$Analyte == "Total Suspended Solids", ]))`
 Total Phosphorus| `r nrow(unique(status[status$Analyte == "Total Phosphorus", ]))` | `r nrow(unique(trend[trend$Analyte == "Total Phosphorus", ]))`
+
+```{r parm summary table, echo = false}
+kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last two years of available data. Note: DO = dissolved oxygen")
+
+```
