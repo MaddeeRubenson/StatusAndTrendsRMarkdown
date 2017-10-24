@@ -1,20 +1,19 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Goose and Summer Lakes AgWQ Management
-  Area'
+  DEQ Water Quality Status and Trends report for the Walla Walla AgWQ Management Area'
 author: ''
-date: "September 2017"
+date: "October 2017"
 output:
+  word_document:
+    fig_caption: yes
+    reference_docx: ReportTemplate.docx
+    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
-  word_document:
-    fig_caption: yes
-    reference_docx: ReportTemplate.docx
-    toc: yes
 always_allow_html: yes
 ---
 
@@ -45,8 +44,8 @@ input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen')
 #input$parms <- c("Dissolved Oxygen")
-input$select <- "Goose and Summer Lakes" #input
-input$dates <- c("2000-01-01", "2017-09-01") #input
+input$select <- "Walla Walla" #input
+input$dates <- c("2000-01-01", "2017-10-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 
 agwqma <- readOGR(dsn = 'app/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
@@ -158,19 +157,14 @@ stn_nlcd_df <- landUseAnalysis(all.sp, cats, NLCD2011)
 ##Purpose
 Area rules and plans have been adopted by the Oregon Department of Agriculture (ODA) for the `r input$select` Subbasin management area (`r OAR_LU[OAR_LU$AgArea %in% input$select,'OAR']`). Oregon statute and administrative rules require ODA to consult with the Department of Environmental Quality (DEQ) during the biennial review of Agricultural Water Quality Management Area Rules and Plans (ORS 568.930).  DEQ Total Maximum Daily Load (TMDL) and Nonpoint Source (NPS) program staff conduct these reviews based on ODA’s biennial review schedule of their area rules and plans. ODA’s Agriculture Water Quality Program is outcome based, explicitly describing prohibited conditions, similar to DEQ’s TMDL and NPS programs which explicitly define water quality targets and goals.  The analysis of landscape conditions and water quality data is used for implementing these programs as well as identifying data gaps. 
 
-The purpose of this document is to present data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. This document supports the following DEQ tasks identified in the MOA:
-
-*	Review available data for water quality trends and whether waterbodies are achieving water quality criterion and meeting TMDL agricultural load allocations
-*	Evaluate and provide comment to ODA on the suitability of landscape conditions to achieve TMDL agricultural load allocations. 
-
-The report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ.  This water quality status and trends report can be used to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting.  The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what’s working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends.will use available water quality data to answer the following questions: 
+The report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ.  This water quality status and trends report can be used to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what’s working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends to answer the following questions: 
 
 *	What is the status of water quality parameters? 
 *	What is the trend in water quality? 
 *	Are TMDL load allocations being met?
 * Can water quality status and trends be attributed to a source or sources?
 
-DEQ basin coordinators review pertinent information including this report as part of ODA’s biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL agricultural load allocations through ODA’s survey. 
+DEQ basin coordinators review pertinent information including this report as part of ODA’s biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL load allocations through ODA’s survey. 
 
 ##Basin Contact
 ```{r basin contact, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
@@ -268,7 +262,6 @@ library(leaflet)
 lulc <- leaflet(agarea) %>%
   addPolygons() %>%
   addTiles() %>%
-  #addRasterImage(lulc) 
   addMarkers(lng = stns$snap_Long, 
              lat = stns$snap_Lat, 
              popup = paste(stns$Station_ID, stns$Station_Description, sep = "-")) %>%
@@ -349,16 +342,24 @@ library(zoo)
 Ecoli_all <- df.all[df.all$Analyte == 'E. Coli',]
 Ecoli <- df.all[df.all$Analyte == 'E. Coli',]
 
+exc <- NULL
+e_stns <- NULL
+
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   e_stns<-trend %>%
     dplyr::filter(Analyte == "E. Coli")
   e_stns<-c(unique(e_stns$Station_ID))
+  }
   
   e_stat<-status %>%
     dplyr::filter(Analyte == "E. Coli")
   e_stat <- c(unique(e_stat$Station_ID))
   
+  if(!is.null(e_stns)){
   e_stns <- unique(append(e_stns, e_stat))
+  } else {
+    e_stns <- e_stat
+  }
   
   if(length(e_stns) > 0) {
     
@@ -408,9 +409,9 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
     print("No monitoring stations have sufficent data to assess status and/or trend of _E. Coli_" )
   }
   e_exc <- exc 
-} else {
-  print("No monitoring stations have sufficent data to assess status and/or trend of _E. Coli_" )
-}
+# } else {
+#   print("No monitoring stations have sufficent data to assess status and/or trend of _E. Coli_" )
+# }
 
 if(!is.null(exc)) {
   colnames(exc) <- c("Station ID", "Station Description", "Sample", "Obs", "Exceedances", "% Exceedance")
@@ -503,16 +504,23 @@ library(dplyr)
 library(ggplot2)
 library(knitr)
 
+tp_stn <- NULL
+
 if(!(trend == "No Stations Meet Trend Criteria")) {
   tp_stn<-trend %>%
     dplyr::filter(Analyte == "Total Phosphorus")
   tp_stn<-c(unique(tp_stn$Station_ID))
+}
   
   tp_stat<-status %>%
     dplyr::filter(Analyte == "Total Phosphorus")
   tp_stat <- c(unique(tp_stat$Station_ID))
-  
+
+if(!is.null(tp_stn)){
   tp_stn <- unique(append(tp_stn, tp_stat))
+}else{
+  tp_stn <- tp_stat
+}
   
   if(length(tp_stn) > 0) {
   
@@ -567,9 +575,9 @@ colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "
 exc <- exc[,c(1:5)]
   kable(exc, format = "markdown", padding = 2, digits = 1, caption = "Total Phosphorus status and trends" )
   
-}else {
-  print("No monitoring stations have sufficent data to assess status and/or trend of total phosphorus")
-}
+# }else {
+#   print("No monitoring stations have sufficent data to assess status and/or trend of total phosphorus")
+# }
 } 
 tp_exc <- exc
 ```
@@ -581,17 +589,23 @@ library(dplyr)
 library(ggplot2)
 library(knitr)
 
+tss_stn <- NULL
+
 if(!(trend == "No Stations Meet Trend Criteria")) {
   tss_stn<-trend %>%
     dplyr::filter(Analyte == "Total Suspended Solids")
   tss_stn<-c(unique(tss_stn$Station_ID))
-  
+}
+
   tss_stat<-status %>%
     dplyr::filter(Analyte == "Total Suspended Solids")
   tss_stat <- c(unique(tss_stat$Station_ID))
   
-  tss_stn <- (unique(append(tss_stn, tss_stat)))
-  
+  if (!is.null(tss_stn)) {
+    tss_stn <- (unique(append(tss_stn, tss_stat)))
+  }else{
+    tss_stn <- tss_stat
+  }
   if(length(tss_stn) > 0){
     
   TSS_all <- df.all[df.all$Analyte == 'Total Suspended Solids',]
@@ -648,9 +662,9 @@ colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "
 exc <- exc[,c(1:5)]
   kable(exc, format = "markdown", padding = 2, digits = 1, caption = "Total Suspended Solids status and trends" )
 
-}else {
-  "No monitoring stations have sufficent data to assess status and/or trend of total suspended solids"
-}
+# }else {
+#   "No monitoring stations have sufficent data to assess status and/or trend of total suspended solids"
+# }
 }
 tss_exc <- exc
 ```
@@ -662,17 +676,23 @@ library(dplyr)
 library(ggplot2)
 library(knitr)
 
+pH_stn_table <- NULL
+
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   pH_stn<-trend %>%
     dplyr::filter(Analyte == "pH")
   pH_stn_table<-c(unique(pH_stn$Station_ID))
+}
   
   p_stat<-status %>%
     dplyr::filter(Analyte == "pH")
   p_stat <- c(unique(p_stat$Station_ID))
   
+  if(!is.null(pH_stn_table)){
   pH_stn_table <- unique(append(pH_stn_table, p_stat))
-  
+  }else{
+    pH_stn_table <- p_stat
+  }
   if(length(pH_stn_table) > 0) {
     
   pH_all <- df.all[df.all$Analyte == 'pH',]
@@ -781,9 +801,9 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   if(!is.null(ph_exc)) {
     kable(ph_exc, format = "markdown", padding = 2, digits = 1, caption = "pH status and trends" )
   }
-  } else {
-    print("No monitoring stations have sufficient data to assess pH")
-  }
+  # } else {
+  #   print("No monitoring stations have sufficient data to assess pH")
+  # }
 }
 
 ```
@@ -936,17 +956,26 @@ library(ggplot2)
 library(knitr)
 library(base)
 
+DO_stn <- NULL
+DO_stn_table <- NULL
+
 if(any(trend != "No Stations Meet Trend Criteria")) {
   DO_stn<-trend %>%
     dplyr::filter(Analyte == "Dissolved Oxygen")
   DO_stn_table<-c(unique(DO_stn$Station_ID))
   DO_stn <- c(unique(DO_stn$Station_ID))
+}
   
   DO_stat<-status %>%
     dplyr::filter(Analyte == "Dissolved Oxygen")
   DO_stat <- c(unique(DO_stat$Station_ID))
   
+  
+  if(!is.null(DO_stn)) {
   DO_stn <- unique(append(DO_stn, DO_stat))
+  }else{
+    DO_stn <- DO_stat
+  }
   
   if(length(DO_stn) > 0) {
     
@@ -1062,9 +1091,9 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
       kable(exc, format = "markdown", padding = 2, digits = 1, caption = "Dissolved Oxygen status and trends" )
     }
     
-  } else {
-    print("No monitoring stations fit the criteria to assess Dissolved Oxygen")
-  }
+  # } else {
+  #   print("No monitoring stations fit the criteria to assess Dissolved Oxygen")
+  # }
 }
 DO_exc <- exc
 ```
@@ -1119,6 +1148,22 @@ kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stat
 # map2
 
 ```
+
+#- Conclusions
+**What are the overall trends?**
+
+* *E. coli*: 
+* *Temperature*: 
+* *pH*: 
+* *Dissolved Oxygen*:
+* *Total Phosphorus*: 
+* *Total Suspended Solids*: 
+
+**Additional Conclusions:**
+
+* 
+* 
+* Additional data is needed to evaluate site potential vegetation on the agricultural land, which would require remote sensing data to determine tree heights and calculate effective shade.
 
 #- Appendix
 ```{r appendix, echo=FALSE}
