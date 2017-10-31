@@ -13,6 +13,7 @@ clipToPlanArea <- function (df.all, agwqma, selected_planArea) {
   #First pull out stations and set the projection
   all.sp <- df.all[!duplicated(df.all$SD),c(3,1:2,4:17)]
   coordinates(all.sp) = ~DECIMAL_LONG+DECIMAL_LAT
+  #coordinates(all.sp) = ~snap_Long+snap_Lat
   proj4string(all.sp) <- CRS("+init=epsg:4269")
   #Transform agwqma to same projection as stations
   #agwqma <- spTransform(agwqma, CRS("+proj=longlat +datum=NAD83"))
@@ -190,12 +191,12 @@ generateStnLyrToPlot <- function(df.all, df.totals) {
   #all.sp = spatial points dataframe
   all.sp <- merge(df.all[,c('Station_ID',
                             'Station_Description',
-                            'DECIMAL_LAT',
-                            'DECIMAL_LONG')], 
+                            'snap_Lat',
+                            'snap_Long')], 
                   df.totals, 
                   by = 'Station_ID', all.x = TRUE)
   all.sp <- all.sp[!duplicated(all.sp$Station_ID),]
-  coordinates(all.sp) = ~DECIMAL_LONG+DECIMAL_LAT
+  coordinates(all.sp) = ~snap_Long+snap_Lat
   proj4string(all.sp) <- CRS("+init=epsg:4269")
   return(all.sp)
 }
@@ -215,9 +216,10 @@ extract_303d <- function (df.all, wq_limited, selectedPlanArea) {
                                wq_limited$HUC_4th_Co == strsplit(selectedPlanArea, 
                                                                  split = " - ")[[1]][1],]  
   } else {
-    wq_limited <- wq_limited[wq_limited$POLLUTANT %in% 
-                               unique(df.all$Analyte) & 
-                               wq_limited$PlanName == selectedPlanArea,]
+    wq_limited <- wq_limited[wq_limited$PlanName == selectedPlanArea,]
+    # wq_limited <- wq_limited[wq_limited$POLLUTANT %in% 
+    #                            unique(df.all$Analyte) & 
+    #                            wq_limited$PlanName == selectedPlanArea,]
   }
   
   if (nrow(wq_limited) >= 1) {
@@ -357,7 +359,7 @@ All_stns_fit_Criteria<-function(status, trend, df.all) {
   
   unique_stns<-unique(c(status_stns, trend_stns))
   
-  stns<-df.all[,c('Station_ID', 'Station_Description', 'DECIMAL_LAT', 'DECIMAL_LONG')]
+  stns<-df.all[,c('Station_ID', 'Station_Description', 'DECIMAL_LAT', 'DECIMAL_LONG', 'snap_Lat', 'snap_Long')]
   stns<-stns %>%
     filter(Station_ID %in% unique_stns)
   stns<-unique(stns)
@@ -1667,14 +1669,14 @@ parm_summary <- function(stns,
   e_trend_stns  <- unique(e_trend_stns$Station_ID)
   
   #Add columns to stns dataframe
-  stns$Status_bacteria <- 'NULL'
-  stns$Trend_bacteria <- 'NULL'
-  stns$Status_temp <- 'NULL'
-  stns$Trend_temp <- 'NULL'
-  stns$Status_pH <- 'NULL'
-  stns$Trend_pH <- 'NULL'
-  stns$Status_DO <- 'NULL'
-  stns$Trend_DO <- 'NULL'
+  stns$Status_bacteria <- '--'
+  stns$Trend_bacteria <- '--'
+  stns$Status_temp <- '--'
+  stns$Trend_temp <- '--'
+  stns$Status_pH <- '--'
+  stns$Trend_pH <- '--'
+  stns$Status_DO <- '--'
+  stns$Trend_DO <- '--'
   
   #status Ecoli
   for(i in 1:length(e_status_stns)) {
@@ -1727,7 +1729,7 @@ parm_summary <- function(stns,
     #status  
     pH_data <- pH_status[pH_status$Station_ID == pH_status_stns[i],]
     
-    if(any(pH_data$exceed) > 0) {
+    if(sum(pH_data$exceed) > 0) {
       stns[stns$Station_ID == pH_status_stns[i], ]$Status_pH <- 'Exceeds'
     } else {
       stns[stns$Station_ID == pH_status_stns[i], ]$Status_pH <- 'Meets'
@@ -1801,15 +1803,9 @@ parm_summary <- function(stns,
   temp$year<-as.numeric(format(temp$date, format="%Y"))
   
   #filter out stations that meet status and stations that meet trend
-  #temp_status_stns <- status %>% filter(Analyte == 'Temperature')
   temp_status_stns  <- unique(temp$Station_ID)
   
-  
-  
-  #temp_trend_stns <- trend %>% filter(Analyte == 'Temperature')
-  #temp_trend_stns  <- unique(temp_trend_stns$Station_ID)
-  
-  #status DO
+  #status temp
   if(length(temp_status_stns) > 0){
   for(i in 1:length(temp_status_stns)) {
     #status  
@@ -1821,31 +1817,41 @@ parm_summary <- function(stns,
     
     temp_status <- temp_data %>% filter(Station_ID %in% temp_status_stns) %>% filter(year %in% statyear)
     
-    if(any(unique((temp_status$exceed) == 'TRUE'))) {
-      stns[stns$Station_ID == temp_status_stns[i], ]$Status_temp <- 'Exceeds'
-    } else {
-      stns[stns$Station_ID == temp_status_stns[i], ]$Status_temp <- 'Meets'
+    if(any(!is.na(temp_status$exceed))) {
+      if(any(unique((temp_status$exceed) == 'TRUE'))) {
+        stns[stns$Station_ID == temp_status_stns[i], ]$Status_temp <- 'Exceeds'
+      } else {
+        stns[stns$Station_ID == temp_status_stns[i], ]$Status_temp <- 'Meets'
+      }
     }
     
   }
   }
   }
   
-  # #trend temp
-  # for(j in 1:unique(temp_trend_stns)) {
-  #   temp_seaken <- SeaKen %>% filter(analyte == 'Dissolved Oxygen')
-  #   temp_seaken <- temp_seaken[temp_seaken$Station_ID == temp_status_stns[j],]
-  #   
-  #   if(temp_seaken$pvalue < 0.05 & temp_seaken$slope > 0) {
-  #     stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <-'Improving'
-  #   } else if(temp_seaken$pvalue < 0.05 & temp_seaken$slope < 0){
-  #     stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <- 'Degrading'
-  #   } else if(temp_seaken$pvalue < 0.05 & temp_seaken$slope == 0) {
-  #     stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <-'Steady'
-  #   } else {
-  #     stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <- 'No Sig Trend'
-  #   }
-  # }
-  
   return(stns)
+}
+
+Snapped_Stations <- function(df.all) {
+  #This function connects to the snapped stations database and adds new columns to df.all (snap_LAT, snap_LONG) for 
+  #each unique monitoring station within df.all. The snapped Lat and Long should represent the monitoring station 
+  #on the NHD flowline and therefore properly delineate the upstream catchment. 
+  
+  #df.all is a dataframe containing:
+  #Station_ID : monitoring station ID
+  
+  library(RODBC)
+  
+  #connect to microsoft Access 2007 database
+  #table : STATIONS
+  #Note: must have R set up to 32 bit, via Tools -> options 
+  channel <- odbcConnectAccess2007("//deqlead03/GIS_WA/X-fer/LASAR_to_NHD/Test_StationInfo.accdb") #connect to Microsoft Access Database
+  data <- sqlQuery(channel, paste("select * from STATIONS")) #create table from STATIONS table
+  data <- data[,c(2,4,5)] #reduce data to just three columns: monitoring station id, snapped lat and snapped long
+  names(data) <- c('Station_ID','snap_Lat', 'snap_Long') #rename columns
+  
+  df.all <- merge(df.all, data, by = "Station_ID")
+  
+  return(df.all)
+  
 }
