@@ -79,7 +79,7 @@ pH              | `r nrow(unique(status[status$Analyte == "pH", ]))` | `r nrow(u
 TSS             | `r nrow(unique(status[status$Analyte == "Total Suspended Solids", ]))` | `r nrow(unique(trend[trend$Analyte == "Total Suspended Solids", ]))`
 Total Phosphorus| `r nrow(unique(status[status$Analyte == "Total Phosphorus", ]))` | `r nrow(unique(trend[trend$Analyte == "Total Phosphorus", ]))`
 
-```{r parm summary table, echo = false}
+```{r parm summary table, echo = false, warnings = FALSE}
 kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last two years of available data. Note: DO = dissolved oxygen")
 
 ```
