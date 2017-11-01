@@ -1,6 +1,6 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Yamhill AgWQ Management Area'
+  DEQ Water Quality Status and Trends report for the Greater Harney Basin AgWQ Management Area'
 author: ''
 date: "October 2017"
 output:
@@ -44,8 +44,8 @@ input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen')
 #input$parms <- c("Dissolved Oxygen")
-input$select <- "Yamhill" #input
-input$dates <- c("2000-01-01", "2017-09-01") #input
+input$select <- "Greater Harney Basin" #input
+input$dates <- c("2000-01-01", "2017-10-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 
 agwqma <- readOGR(dsn = 'app/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
@@ -59,6 +59,7 @@ wq_limited <- read.csv('app/wq_limited_df_temp_bact_ph_DO_TP_Sediment_2012.csv')
 OAR_LU <- read.csv("Lookups/OAR_LU.csv")
 Ben_use_LU <- read.csv("Lookups/stations.csv", na.strings = c("", "NA"))
 BC_LU <- read.csv("Lookups/BC_LU.csv")
+Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
 #filepath<-paste0('T:/AgWQM/DataAnalysis/', input$select, '/Figures/WQassessment_V1.png')
 
 source('functions/Rmarkdown_query.R')
@@ -1101,12 +1102,13 @@ DO_exc <- exc
 ```
 
 #- Summary 
-![](T:/AgWQM/DataAnalysis/Walla Walla/Figures/WQassessment_WallaWalla10252017.png)
+![](T:/AgWQM/DataAnalysis/Greater Harney Basin/Figures/WQassessment_Harney11012017.png)
 Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by significant trends associated with long-term datasets. 
 Summary of stations that fit the criteria for status and trend analysis. One or more exceedances of the applicable water quality criterion within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by statistically significant trends associated with long-term datasets.
 
 ```{r parm summary table, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
-stnsformap <-  parm_summary(stns = stns,
+
+stnsformap <-  parm_summary(stns = stns[,c(1:4)],
                             ecoli = ecoli,
                             pH = pH,
                             DO_eval = DO_eval,
@@ -1119,7 +1121,7 @@ stnsformap <-  parm_summary(stns = stns,
 stnsformap <- stnsformap %>%
   filter(!grepl('CTGR', Station_ID))
 
-colnames(stnsformap) <- c("Station ID", "Station Description", "Latitude", "Longitude", "Bacteria Status",
+colnames(stnsformap) <- c("Station ID", "Station Description", 'Latitude', 'Longitude', "Bacteria Status",
                           "Bacteria Trend","Temperature Status", "Temperature Trend", "pH Status", "pH Trend", "DO Status", "DO Trend")
 
 #stnsformap <- stnsformap[,c(-1)]
@@ -1154,19 +1156,18 @@ kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stat
 #- Conclusions
 **What are the overall trends?**
 
-* *E. coli*: One monitoring station had sufficient data to assess water quality status in relation to E. coli results in the Walla Walla AgWQ Management Area. Monitoring station 36786 has data from 2011-2017 and has exceedances of the E. coli water quality standard during that timeframe and within the last two years (2015-2017). 
-* *Temperature*: There is insufficient data to calculate the seven day average daily maximum and therefore assess status and/or trends of temperature in the Walla Walla AgWQ Management Area. 
-* *pH*: One monitoring station had sufficient data to assess water quality status in relation to pH results in the Walla Walla AgWQ Management Area. Monitoring station 36786 has data from 2011-2017 and does not have any exceedances of the water quality standard during that timeframe. 
-* *Dissolved Oxygen*: One monitoring station had sufficient data to assess water quality status in relation to dissolved oxygen results in the Walla Walla AgWQ Management Area. Monitoring station 36786 has data from 2011-2017 and has exceedances of the dissolved oxygen water quality standard during that timeframe and within the last two years (2015-2017). 
-* *Total Phosphorus*: One monitoring station (36786) has total phosphorus data in the Walla Walla AgWQ Management Area. There is no TMDL in this basin and therefore the data is not compared to a standard or TMDL load allocation. 
-* *Total Suspended Solids*: One monitoring station (36786) has total suspended solids data in the Walla Walla AgWQ Management Area. There is no TMDL in this basin and therefore the data is not compared to a standard or TMDL load allocation. 
+* *E. coli*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'Ecoli'])`
+* *Temperature*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'Temp'])`
+* *pH*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'pH'])`
+* *Dissolved Oxygen*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'DO'])`
+* *Total Phosphorus*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'TP'])`
+* *Total Suspended Solids*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'TSS'])`
 
 **Additional Conclusions:**
-
-* Little data exists in the Walla Walla AgWQ Management Area that is sufficient to assess water quality status and trends. One monitoring station has sufficient data to assess water quality status for E. coli, pH, and dissolved oxygen. There is no continuous temperature data and therefore insufficient data to assess the temperature water quality status and trends in relation to the water quality standard and TMDL load allocations.
-* Additional data is needed to evaluate site potential vegetation on the agricultural land, which would require remote sensing data to determine tree heights and calculate effective shade.
-* The monitoring station with sufficient data to assess status and/or trends does not give a representative analysis of the Walla AgWQ Management Area 
-* No monitoring stations that fit the criteria to assess status and/or trends have continuous dissolved oxygen pH, or temperature data, which is useful to understand the diurnal fluctuations. 
+`r a <- (head(Conc_LU$Add_conc, 3))`
+* `r a[1]`
+* `r a[2]`
+* `r a[3]`
 
 
 #- Appendix
