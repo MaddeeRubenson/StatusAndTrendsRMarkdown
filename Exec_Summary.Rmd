@@ -39,10 +39,10 @@ The report presents data and analysis that will help DEQ fulfill its roles in th
 
 
 ###Analysis
-The data returned were evaluated for data quality. DEQ data included `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014 from the USGS was marked as provisional data and included in this analysis. Data was evaluated against the applicable Oregon water quality criterion for each parameter. 
+Analysts retrieved data from DEQ (volunteer monitoring database was not included, however some volunteer data is queried from the Water Quality Portal), EPA and USGS databases. Many organizations provided data that was queried and evaluated for use in this report (see Appendix). The time period for the query was from `r input$dates[1]` to `r input$dates[2]`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. Monitoring stations which had at least two years of recent data and/or at least 8 years of data fit the criteria to assess status and trends (see flow chart in full report). 
 
 ###Data Sources
-Analysts retrieved data from DEQ, EPA and USGS databases. The time period for the query was from `r as.Date(min(as.POSIXct((df.all$Sampled))))` to `r as.Date(max(as.POSIXct(df.all$Sampled)))`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria.
+The data returned were evaluated for data quality. DEQ data included `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. Data was evaluated against the applicable Oregon water quality criterion. 
 
 ###Land Use
 Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) developed by EPA was used to summarize the cumulative upstream catchment of each station for primary land use characteristics, based on the National Hydrography Dataset Plus Version 2 geospatial framework.

@@ -190,7 +190,7 @@ kable(BC_table, format = "markdown", padding = 2, digits = 1, caption = "Oregon 
 #- Methods
 
 ##Data Sources
-Analysts retrieved data from DEQ, EPA and USGS databases. The time period for the query was from `r as.Date(min(df.all$Sampled))` to `r as.Date(max(df.all$Sampled))`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. 
+Analysts retrieved data from DEQ, EPA and USGS databases.A summary of all organizations that provided data that was queried and evaluated for use in this report is found in the Appendix. The time period for the query was from `r input$dates[1]` to `r input$dates[2]`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. 
 
 ##Decision Criteria
 
@@ -301,9 +301,11 @@ kable(landuse, digits = 0, format = "markdown", padding = 2, caption = "Summary 
 Summary of Oregon's 2012 Integrated Report Assessment database and 303(d) list for parameters included in this report. Table based on the 2012 Integrated Report Listings by the EPA. Note that pH exceedances are values higher or lower than the given range.
 ```{r wq_limited, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 
-wq_limited_df <- wq_lim_whole[, -2]
+wq_limited_df <- wq_lim_whole[, c('Waterbody', 'MILES', 'POLLUTANT', 'SEASON', 'Year Assessed', 'CRITERIA', 'Listing Status')]
 
-wq_limited_df <- wq_limited_df %>% arrange(desc(POLLUTANT))
+names(wq_limited_df) <- c('Waterbody', 'Miles', 'Pollutant', 'Season', 'Year Assessed', 'Criteria', 'Listing Status')
+
+wq_limited_df <- wq_limited_df %>% arrange(desc(Pollutant))
 
 wq_limited_df$`Listing Status` <- revalue(wq_limited_df$`Listing Status`, c("Cat 4A: Water quality limited, TMDL approved" = "Cat 4A",
                                                                             "Cat 5: Water quality limited, 303(d) list, TMDL needed" = "Cat 5",
