@@ -1,6 +1,6 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Walla Walla AgWQ Management Area'
+  DEQ Water Quality Status and Trends report for the Yamhill AgWQ Management Area'
 author: ''
 date: "October 2017"
 output:
@@ -44,8 +44,8 @@ input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen')
 #input$parms <- c("Dissolved Oxygen")
-input$select <- "Walla Walla" #input
-input$dates <- c("2000-01-01", "2017-10-01") #input
+input$select <- "Yamhill" #input
+input$dates <- c("2000-01-01", "2017-09-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 
 agwqma <- readOGR(dsn = 'app/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
@@ -132,7 +132,7 @@ wq_lim_whole <- extract_303d(df.all, wq_limited, input$select)
 wq_lim_whole <- wq_lim_whole[,c('STREAM_LAK', 'LLID_STREA', 
                                       'MILES', 'POLLUTANT', 'SEASON', 
                                       'ASSESSME_1', 'CRITERIA', 
-                                      'LISTING_ST')]
+                                      'LISTING_ST', 'TMDL_INFO')]
 wq_lim_whole <- plyr::rename(wq_lim_whole, 
                                    c('STREAM_LAK' = 'Waterbody',
                                      'LLID_STREA' = 'LLID',
