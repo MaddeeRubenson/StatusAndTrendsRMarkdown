@@ -340,6 +340,28 @@ Stations_Trend<-function(df.all){
  return(trend)
 }
 
+Stations_by_Year <- function(df.all) {
+  require(tidyr)
+  require(dplyr)
+  
+  
+  #remove data from Tribal land
+  #dta<-dta[- grep("TRIBES", dta$Station_ID),]
+  
+  df.all$Sampled <- as.POSIXct(strptime(df.all$Sampled, format = '%Y-%m-%d')) 
+  df.all$Sampled<-as.Date(df.all$Sampled)
+  df.all$year<-as.numeric(format(df.all$Sampled, format="%Y"))
+  
+  stns_by_year <- df.all %>% 
+    filter(Analyte != 'Dissolved oxygen saturation') %>%
+    group_by(Station_ID, year, Analyte) %>% 
+    dplyr::summarise(n = n()) %>% spread(year, n)
+  
+  stns_by_year <- stns_by_year %>%
+    arrange(desc(Analyte))
+  
+}
+
 All_stns_fit_Criteria<-function(status, trend, df.all) {
   
   if(status[1] == c("No stations meet Status criteria")) {
@@ -1645,7 +1667,7 @@ Delineation<-function(stns,
 parm_summary <- function(stns,
                          ecoli,
                          pH,
-                         temp,
+                         temp = NULL,
                          DO_eval,
                          SeaKen, 
                          status, 
@@ -1664,9 +1686,13 @@ parm_summary <- function(stns,
   e_status_stns <- status %>% filter(Analyte == 'E. Coli')
   e_status_stns  <- unique(e_status_stns$Station_ID)
   e_status <- ecoli %>% filter(Station_ID %in% e_status_stns) %>% filter(year %in% statyear)
-    
-  e_trend_stns <- trend %>% filter(Analyte == 'E. Coli')
-  e_trend_stns  <- unique(e_trend_stns$Station_ID)
+  
+  if(trend != 'No Stations Meet Trend Criteria')  {
+    e_trend_stns <- trend %>% filter(Analyte == 'E. Coli')
+    e_trend_stns  <- unique(e_trend_stns$Station_ID)
+  } else {
+    e_trend_stns <- NULL
+  }
   
   #Add columns to stns dataframe
   stns$Status_bacteria <- '--'
@@ -1721,8 +1747,12 @@ parm_summary <- function(stns,
   pH_status_stns  <- unique(pH_status_stns$Station_ID)
   pH_status <- pH %>% filter(Station_ID %in% pH_status_stns) %>% filter(year %in% statyear)
   
-  pH_trend_stns <- trend %>% filter(Analyte == 'pH')
-  pH_trend_stns  <- unique(pH_trend_stns$Station_ID)
+  if(trend != 'No Stations Meet Trend Criteria')  {
+    pH_trend_stns <- trend %>% filter(Analyte == 'pH')
+    pH_trend_stns  <- unique(pH_trend_stns$Station_ID)
+  }else{
+    pH_trend_stns <- NULL
+  }
   
   #status pH
   for(i in 1:length(pH_status_stns)) {
@@ -1763,8 +1793,12 @@ parm_summary <- function(stns,
   DO_status_stns  <- unique(DO_status_stns$Station_ID)
   DO_status <- DO_eval %>% filter(Station_ID %in% DO_status_stns) %>% filter(year %in% statyear)
   
-  DO_trend_stns <- trend %>% filter(Analyte == 'Dissolved Oxygen')
-  DO_trend_stns  <- unique(DO_trend_stns$Station_ID)
+  if(trend != 'No Stations Meet Trend Criteria')  {
+    DO_trend_stns <- trend %>% filter(Analyte == 'Dissolved Oxygen')
+    DO_trend_stns  <- unique(DO_trend_stns$Station_ID)
+  } else {
+    DO_trend_stns <- NULL
+  }
   
   #status DO
   for(i in 1:length(DO_status_stns)) {

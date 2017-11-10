@@ -1,8 +1,8 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Greater Harney Basin AgWQ Management Area'
+  DEQ Water Quality Status and Trends report for the Powder-Brownlee AgWQ Management Area'
 author: ''
-date: "October 2017"
+date: "November 2017"
 output:
   html_document:
     mode: selfcontained
@@ -42,10 +42,9 @@ library(lubridate)
 
 input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
-                'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen')
-#input$parms <- c("Dissolved Oxygen")
-input$select <- "Greater Harney Basin" #input
-input$dates <- c("2000-01-01", "2017-10-01") #input
+                'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen', 'Total Nitrogen')
+input$select <- "Powder-Brownlee" #input
+input$dates <- c("2000-01-01", "2017-11-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 
 agwqma <- readOGR(dsn = 'app/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
@@ -88,19 +87,6 @@ source("functions/funSeaKen.R")
 load('app/NLCD2011_OR.Rdata')
 load('app/OR_cats.Rdata')
 
-####################SPECIFIC TO INLAND ROGUE
-#####Fix lat and long for stations 11501, 36805, 11482
-# df.all$DECIMAL_LAT <- ifelse(df.all$Station_ID == '11051', '42.40442714179933',
-#                              ifelse(df.all$Station_ID == '11482', '42.24324139495159',
-#                                     ifelse(df.all$Station_ID == '36805', '42.343333052016355', df.all$DECIMAL_LAT)))
-# 
-# df.all$DECIMAL_LONG <- ifelse(df.all$Station_ID == '11051', '-122.93271666160818',
-#                              ifelse(df.all$Station_ID == '11482', '-123.68197565655716',
-#                                     ifelse(df.all$Station_ID == '36805', '-123.34341650590501', df.all$DECIMAL_LONG)))
-
-#df.all$DECIMAL_LAT <- as.numeric(df.all$DECIMAL_LAT)
-#df.all$DECIMAL_LONG <- as.numeric(df.all$DECIMAL_LONG)
-
 ##Add snapped stations
 df.all <- Snapped_Stations(df.all)
 
@@ -142,6 +128,7 @@ wq_lim_whole <- plyr::rename(wq_lim_whole,
 
 status <- Stations_Status(df.all)
 trend <- Stations_Trend(df.all)
+stns_by_year <- Stations_by_Year(df.all)
 stns<- All_stns_fit_Criteria(trend = trend, 
                              status = status,
                              df.all = df.all)
@@ -947,6 +934,8 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
       
        }
   }
+} else {
+  temp <- NULL
 }
 temp_exc <- exc
 ```
@@ -1102,9 +1091,10 @@ DO_exc <- exc
 ```
 
 #- Summary 
-![](T:/AgWQM/DataAnalysis/Greater Harney Basin/Figures/WQassessment_Harney11012017.png)
+![](T:/AgWQM/DataAnalysis/Walla Walla/Figures/WQassessment_WallaWalla10252017.png)
 Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by significant trends associated with long-term datasets. 
 Summary of stations that fit the criteria for status and trend analysis. One or more exceedances of the applicable water quality criterion within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by statistically significant trends associated with long-term datasets.
+
 
 ```{r parm summary table, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 
@@ -1122,13 +1112,14 @@ stnsformap <- stnsformap %>%
   filter(!grepl('CTGR', Station_ID))
 
 colnames(stnsformap) <- c("Station ID", "Station Description", 'Latitude', 'Longitude', "Bacteria Status",
-                          "Bacteria Trend","Temperature Status", "Temperature Trend", "pH Status", "pH Trend", "DO Status", "DO Trend")
+                          "Bacteria Trend","Temperature Status", "Temperature Trend", "pH Status", "pH Trend", 
+                          "DO Status", "DO Trend")
 
 #stnsformap <- stnsformap[,c(-1)]
 
 
 kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last two years of available data. Note: DO = dissolved oxygen")
-#write.csv(stnsformap, "T:/AgWQM/DataAnalysis/Yamhill/Data/parm_summary_stns.csv")
+#write.csv(stnsformap, "T:/AgWQM/DataAnalysis/Powder-Brownlee/Data/parm_summary_stns-11092017.csv")
 
 # map2 <- leaflet(agarea) %>%
 #   addPolygons() %>%
@@ -1164,20 +1155,23 @@ kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stat
 * *Total Suspended Solids*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'TSS'])`
 
 **Additional Conclusions:**
-`r a <- (head(Conc_LU$Add_conc, 3))`
+`r a <- Conc_LU[Conc_LU$AgArea == input$select, 'Add_conc']`
 * `r a[1]`
 * `r a[2]`
 * `r a[3]`
+* `r a[4]`
 
 
 #- Appendix
 ```{r appendix, echo=FALSE}
 org_summary <- summarizeByOrg(df.all)
 
-kable(org_summary,  padding = 2, digits = 1, caption = "Summary table of all unique organizations used in the data query")
+kable(org_summary,  padding = 2, digits = 1, caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report")
 
-kable(status, padding = 2, digits = 1, caption = "Monitoring stations that fit the criteria to assess status")
+kable(status, padding = 2, digits = 1, caption = "Monitoring stations that fit the criteria to assess status; note value represents the number of results for each monitoring station per year")
 
-kable(trend, padding = 1, digits = 1, caption = "Monitoring stations that fit the criteria to assess trends")
+kable(trend, padding = 1, digits = 1, caption = "Monitoring stations that fit the criteria to assess trends; note value represents the number of results for each monitoring station per year")
+
+kable(stns_by_year, padding = 1, digits = 1, caption = "All monitoring stations that were queried and the number of results per year from 2000 to 2017")
 
 
