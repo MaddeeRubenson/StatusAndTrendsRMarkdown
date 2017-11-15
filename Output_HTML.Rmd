@@ -1,6 +1,6 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Powder-Brownlee AgWQ Management Area'
+  DEQ Water Quality Status and Trends report for the Greater Harney Basin AgWQ Management Area'
 author: ''
 date: "November 2017"
 output:
@@ -43,7 +43,7 @@ library(lubridate)
 input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen', 'Total Nitrogen')
-input$select <- "Powder-Brownlee" #input
+input$select <- "Tualatin River Subbasin" #input
 input$dates <- c("2000-01-01", "2017-11-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 
@@ -178,7 +178,7 @@ kable(BC_table, format = "markdown", padding = 2, digits = 1, caption = "Oregon 
 #- Methods
 
 ##Data Sources
-Analysts retrieved data from DEQ, EPA and USGS databases.A summary of all organizations that provided data that was queried and evaluated for use in this report is found in the Appendix. The time period for the query was from `r input$dates[1]` to `r input$dates[2]`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. 
+Analysts retrieved data from [DEQ](http://www.oregon.gov/deq/wq/Pages/WQdata.aspx) (LASAR and ELEMENT), EPA ([Storet](https://www.epa.gov/waterdata/water-quality-data-wqx)) USGS ([NWIS](https://qwwebservices.usgs.gov/), [Water Quality Portal](https://www.waterqualitydata.us/), Storet) databases.A summary of all organizations that provided data that was queried and evaluated for use in this report is found in the Appendix. The time period for the query was from `r input$dates[1]` to `r input$dates[2]`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all$Status)` data determined following the [DEQ’s Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf). EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. 
 
 ##Decision Criteria
 
@@ -190,7 +190,7 @@ represent status and trends for the waterbody](Agreview_flowchart_V5.png)
 
 
 #- Analysis
-DEQ compared pH results from both grab and continuous sample data to the water quality criterion. The bacteria standard is based on the presence of E. coli compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The temperature standard is based on the calculation of the seven day average of the daily maximum stream temperatures. When applicable, total suspended solids and total phosphorus were compared to the TMDL load allocation. If no allocation was present, total suspended solid and total phosphorus result values were plotted over time. Trends for pH, E. coli, total phosphorus, and total suspended solids were assessed using Seasonal Kendall Analysis, which removes the influence of season-to-season fluctuations .  The Seasonal Kendall Analysis also indicates the statistical significance and slope of the trend. 
+DEQ compared pH results from both grab and continuous sample data to the water quality criterion. The bacteria standard is based on the presence of E. coli compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The temperature standard is based on the calculation of the seven day average of the daily maximum stream temperatures. When applicable, total suspended solids and total phosphorus were compared to the TMDL load allocation. If no allocation was present, total suspended solid and total phosphorus result values were plotted over time. Trends for pH, E. coli, total phosphorus, and total suspended solids were assessed using Seasonal Kendall Analysis, which removes the influence of season-to-season fluctuations .  The Seasonal Kendall Analysis also indicates the statistical significance and slope of the trend [Hirsch et al. 1982](https://profile.usgs.gov/myscience/upload_folder/ci2012Oct1508260828033Techniques%20of%20Trend%20Analysis%20for%20Monthly%20Water%20Quality%20Data.pdf). 
 
 Dissolved oxygen (DO) was assessed by comparing the concentration to the water quality criterion. If the DO concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality criterion. These points were noted in the plots using a different color. Fish use and spawning maps  and the DO criteria flow chart  were used to determine the applicable temperature and DO standards for the spawning and non-spawning time periods. 
 
@@ -305,8 +305,8 @@ kable(wq_limited_df, format = "markdown", padding = 2, caption = "Summary of Int
 ```
 
 ##Seasonal Kendall Trend Analysis
-For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal kendall trend analysis. Results are summarized in table. 
-Output for the Seasonal kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values. If no table is visible, there were no monitoring station that contained sufficient data to assess trends. 
+For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal kendall trend analysis. Results are summarized in table (If no table is visible, there were no monitoring station that contained sufficient data to assess trends.). 
+Output for the Seasonal kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values.  
 ```{r Seasonal Kendall, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 SK <- SeaKen %>% filter(Station_ID %in% unique(stns$Station_ID)) %>% filter(signif !=  "Need at least 8 years") %>% 
   filter(analyte != 'Dissolved oxygen saturation')
