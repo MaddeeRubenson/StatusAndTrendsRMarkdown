@@ -364,13 +364,13 @@ Stations_by_Year <- function(df.all) {
 
 All_stns_fit_Criteria<-function(status, trend, df.all) {
   
-  if(status[1] == c("No stations meet Status criteria")) {
+  if(unique(status[1] == c("No stations meet Status criteria"))) {
     status <- NULL
   } else {
     status = status
   }
   
-  if(trend[1] == c("No Stations Meet Trend Criteria")) {
+  if(unique(trend[1] == c("No Stations Meet Trend Criteria"))) {
     trend <- NULL
   } else {
     trend = trend
@@ -1884,7 +1884,19 @@ Snapped_Stations <- function(df.all) {
   data <- data[,c(2,4,5)] #reduce data to just three columns: monitoring station id, snapped lat and snapped long
   names(data) <- c('Station_ID','snap_Lat', 'snap_Long') #rename columns
   
-  df.all <- merge(df.all, data, by = "Station_ID")
+  df.all <- merge(df.all, data, by = "Station_ID", all.x = TRUE)
+  
+  if(any(grepl('USGS', df.all$Station_ID))) {
+    tmp_usgs <- df.all %>%
+      filter(grepl('USGS', Station_ID))
+    
+    tmp_usgs$snap_Lat <- tmp_usgs$DECIMAL_LAT
+    tmp_usgs$snap_Long <- tmp_usgs$DECIMAL_LONG
+    
+    df.all <- df.all %>% filter(!grepl('USGS', Station_ID))
+    
+    df.all <- rbind(df.all, tmp_usgs)
+  }
   
   return(df.all)
   

@@ -28,22 +28,22 @@ options(stringsAsFactors = FALSE)
 
 #source('functions/01_DataQuery.R')
 
- agwqma <- readOGR(dsn = 'app/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
- hucs <- readOGR(dsn = 'app/GIS', layer = 'WBD_HU8', verbose = FALSE)
+ #agwqma <- readOGR(dsn = 'app/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
+ #hucs <- readOGR(dsn = 'app/GIS', layer = 'WBD_HU8', verbose = FALSE)
 # #agwqma <- spTransform(agwqma, CRS("+proj=longlat +datum=NAD83"))
- HUClist <- read.csv('app/PlanHUC_LU.csv')
- stations_huc <- read.csv('app/station_wbd_12132016.csv')
- ph_crit <- read.csv('app/PlanOWRDBasinpH_LU.csv')
- ph_crit <- merge(ph_crit, HUClist, by.x = 'plan_name', by.y = 'PlanName', all.x = TRUE)
- parms <- read.csv('app/WQP_Table3040_Names.csv', stringsAsFactors = FALSE)
+ # HUClist <- read.csv('app/PlanHUC_LU.csv')
+ # stations_huc <- read.csv('app/station_wbd_12132016.csv')
+ # ph_crit <- read.csv('app/PlanOWRDBasinpH_LU.csv')
+ # ph_crit <- merge(ph_crit, HUClist, by.x = 'plan_name', by.y = 'PlanName', all.x = TRUE)
+ # parms <- read.csv('app/WQP_Table3040_Names.csv', stringsAsFactors = FALSE)
 # wq_limited <- read.csv('app/GIS/wq_limited_df_temp_bact_ph_DO_2012.csv')
 
-#For app purposes set up input 
+# #For app purposes set up input 
 # input <- list(action_button = c(0))
 # input$action_button <- 1
 # input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
-#                  'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen')
-# input$select <- "Powder"
+#                  'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen', 'Total Nitrogen')
+# input$select <- "Tualatin River Subbasin"
 # input$dates <- c("2000-01-01", "2017-01-01")
 # input$db <- c('DEQ', 'Water Quality Portal')
 # input$selectStation <-  "10764 - "
@@ -66,7 +66,8 @@ df.all <- NULL
 prog <- 0
 wqp_message <- ""
 
-if ('Water Quality Portal' %in% input$db) {
+if ('Water Quality Portal' %in% db) {
+  print(paste0('WQP'))
   wqpData <- tryCatch(wqpQuery(planArea = select,
                                HUClist = HUClist,
                                inParms = input$parms,
@@ -76,6 +77,7 @@ if ('Water Quality Portal' %in% input$db) {
                       error = function(err) {err <- geterrmessage()})
   
   if (any(c('Temperature', 'pH', 'Dissolved Oxygen', 'Total Suspended Solids', 'Total Phosphorus') %in% input$parms)) {
+    print(paste0('NWIS'))
     nwisData <- tryCatch(nwisQuery(planArea = select,
                                    HUClist = HUClist,
                                    inParms = input$parms,
@@ -93,8 +95,8 @@ if ('Water Quality Portal' %in% input$db) {
   }
 }
 
-if ('DEQ' %in% input$db) {
-  
+if ('DEQ' %in% db) {
+  print(paste0('LASAR'))
   lasarData <- lasarQuery(planArea = select,
                           HUClist = HUClist,
                           inParms = input$parms,
@@ -104,7 +106,7 @@ if ('DEQ' %in% input$db) {
   odbcCloseAll()
   if (nrow(lasarData) == 0) lasarData <- NULL
   
-  
+  print(paste0('ELEMENT'))
   elmData <- elementQuery(planArea = select,
                           HUClist = HUClist,
                           inParms = input$parms,

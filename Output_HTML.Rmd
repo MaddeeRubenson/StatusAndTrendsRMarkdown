@@ -1,19 +1,20 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Greater Harney Basin AgWQ Management Area'
+  DEQ Water Quality Status and Trends report for the Greater Harney Basin AgWQ Management
+  Area'
 author: ''
 date: "November 2017"
 output:
+  word_document:
+    fig_caption: yes
+    reference_docx: ReportTemplate.docx
+    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
-  word_document:
-    fig_caption: yes
-    reference_docx: ReportTemplate.docx
-    toc: yes
 always_allow_html: yes
 ---
 
@@ -46,6 +47,7 @@ input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
 input$select <- "Tualatin River Subbasin" #input
 input$dates <- c("2000-01-01", "2017-11-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
+#input$db2 <- c('Water Quality Portal')
 
 agwqma <- readOGR(dsn = 'app/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
 hucs <- readOGR(dsn = 'app/GIS', layer = 'WBD_HU8', verbose = FALSE)
@@ -69,11 +71,17 @@ df.all<-query(select =  input$select,
               dates = input$dates,
               db = input$db)
 
+# deq <- query(select =  input$select,
+#               parms = input$parms,
+#               dates = input$dates,
+#               db = input$db)
+# 
+# df.all <- rbind.fill(wqp, deq)
+
 ##take out data from tribal land
 df.all <- df.all %>%
   filter(!grepl('[Tt]ribe', Client)) %>%
   filter(!grepl('CTG', Station_ID))
-
 
 ```
 
