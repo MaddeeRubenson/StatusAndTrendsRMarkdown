@@ -440,7 +440,7 @@ plot.bacteria <- function(new_data,
   title <- paste0(min(new_data[,station_desc_column]), ", ID = ", 
                   min(new_data[,station_id_column]))
   x.lab <- "Date"
-  y.lab <- parm
+  y.lab <- paste(parm, '(#/100 mL)')
   ####definitions for drawing Seasonal Kendall slope line
   y.median <- median(new_data[,result_column])
   x.median <- ifelse(any(new_data[,result_column] ==  y.median),
@@ -928,7 +928,7 @@ plot.DO<-function(new_data,
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
                   min(new_data[, station_id_column]))
   x.lab <- "Date"
-  y.lab <- "Dissolved Oxygen"
+  y.lab <- "Dissolved Oxygen (mg/L)"
 
   ##Building the plot##
   ##Generate WQS Lines##
@@ -970,6 +970,10 @@ plot.DO<-function(new_data,
                                    unique(new_data[,station_id_column]) & 
                                    sea_ken_table$analyte == 
                                    unique(new_data[,analyte_column]),'signif']
+  N <- sea_ken_table[sea_ken_table$Station_ID == 
+                       unique(new_data[,station_id_column]) & 
+                       sea_ken_table$analyte == 
+                       unique(new_data[,analyte_column]),'N']
   x.delta <- as.numeric((x.max-x.min)/2)####average date
   SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
   SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
@@ -980,7 +984,7 @@ plot.DO<-function(new_data,
                      ", slope = ", 
                      round(slope, digits=2), 
                      ", n = ", 
-                     nrow(new_data))
+                     N)
   df_trend_line <- data.frame(x = c(x.min, x.max),
                               y = c(SK.min, SK.max),
                               variable = rep('Trend line', 2))
@@ -1360,7 +1364,7 @@ plot.TSS<-function(new_data,
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
                   min(new_data[, station_id_column]))
   x.lab <- "Date"
-  y.lab <- parm
+  y.lab <- paste(parm, '(mg/L)')
 
   y.min <- floor(min(new_data[, result_column])) 
   
@@ -1516,7 +1520,7 @@ plot.TP<-function(new_data,
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
                   min(new_data[, station_id_column]))
   x.lab <- "Date"
-  y.lab <- parm
+  y.lab <- paste(parm, '(mg/L)')
   
   y.min <- floor(min(new_data[, result_column])) 
   
