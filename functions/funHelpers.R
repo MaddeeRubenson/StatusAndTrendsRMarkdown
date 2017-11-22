@@ -376,8 +376,8 @@ All_stns_fit_Criteria<-function(status, trend, df.all) {
     trend = trend
   }
   
-  status_stns<-unique(status$Station_ID)
-  trend_stns<-unique(trend$Station_ID)
+  status_stns<-as.character(unique(status$Station_ID))
+  trend_stns<-as.character(unique(trend$Station_ID))
   
   unique_stns<-unique(c(status_stns, trend_stns))
   
