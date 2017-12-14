@@ -1,20 +1,20 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Greater Harney Basin AgWQ Management
-  Area'
+  DEQ Water Quality Status and Trends report for the Tualatin River Subbasin AgWQ
+  Management Area'
 author: ''
-date: "November 2017"
+date: "October 2017"
 output:
-  word_document:
-    fig_caption: yes
-    reference_docx: ReportTemplate.docx
-    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
+  word_document:
+    fig_caption: yes
+    reference_docx: ReportTemplate.docx
+    toc: yes
 always_allow_html: yes
 ---
 
@@ -35,7 +35,7 @@ library(DT)
 library(wq)
 library(chron)
 library(reshape)
-library(ggplot2)
+#library(ggplot2)
 library(zoo)
 library(spatialEco)
 library(dplyr)
@@ -71,13 +71,6 @@ df.all<-query(select =  input$select,
               dates = input$dates,
               db = input$db)
 
-# deq <- query(select =  input$select,
-#               parms = input$parms,
-#               dates = input$dates,
-#               db = input$db)
-# 
-# df.all <- rbind.fill(wqp, deq)
-
 ##take out data from tribal land
 df.all <- df.all %>%
   filter(!grepl('[Tt]ribe', Client)) %>%
@@ -99,6 +92,12 @@ load('app/OR_cats.Rdata')
 df.all <- Snapped_Stations(df.all)
 
 df.all <- clipToPlanArea(df.all, agwqma, input$select)
+
+#df.all_backup <- df.all
+
+# test <- df.all %>% 
+#   filter(grepl('Dairy | Mckay', Station_Description, ignore.case = TRUE))
+
 df.all$Result <- clean(df.all$Result)
 df.all$Result <- suppressWarnings(as.numeric(df.all$Result))
 df.all <- MRLhandling(df.all)
@@ -141,7 +140,7 @@ stns<- All_stns_fit_Criteria(trend = trend,
                              status = status,
                              df.all = df.all)
 
-
+print(stns)
 
 stn_totals<-summarizeByStation(df.all)
 all.sp <- generateStnLyrToPlot(df.all, stn_totals) #changed lat and long names
@@ -290,7 +289,7 @@ colnames(landuse) <- c("Station ID", "Station Description", "Year", "Watershed A
                        "%Urban", "%Forest", "%Ag", "%Range", "%Other")
 landuse<-landuse[, - 3]
 
-kable(landuse, digits = 0, format = "markdown", padding = 2, caption = "Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. Source: 2011 NAIP")
+kable(landuse, digits = 0, format = "markdown", padding = 2, caption = "Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. ")
 ```
 
 ##Water Quality Limited Stream Segments
@@ -498,6 +497,7 @@ if(any(df.all$Analyte == 'Enterococcus')){
 ##Total Phosphorus
 ```{r Total Phosphorus, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Total phosphorus water quality status and trends'}
 source("functions/funPlots.R")
+source('functions/TualatinR_Allocations.R')
 library(dplyr)
 library(ggplot2)
 library(knitr)
@@ -507,77 +507,113 @@ tp_stn <- NULL
 if(!(trend == "No Stations Meet Trend Criteria")) {
   tp_stn<-trend %>%
     dplyr::filter(Analyte == "Total Phosphorus")
-  tp_stn<-c(unique(tp_stn$Station_ID))
+  tp_stn<-c(as.character(unique(tp_stn$Station_ID)))
 }
-  
-  tp_stat<-status %>%
-    dplyr::filter(Analyte == "Total Phosphorus")
-  tp_stat <- c(unique(tp_stat$Station_ID))
+
+tp_stat<-status %>%
+  dplyr::filter(Analyte == "Total Phosphorus")
+tp_stat <- c(as.character(unique(tp_stat$Station_ID)))
 
 if(!is.null(tp_stn)){
   tp_stn <- unique(append(tp_stn, tp_stat))
 }else{
   tp_stn <- tp_stat
 }
-  
-  if(length(tp_stn) > 0) {
+
+if(length(tp_stn) > 0) {
   
   TP_all <- df.all[df.all$Analyte == 'Total Phosphorus',]
   TP <- df.all[df.all$Analyte == 'Total Phosphorus',]
   
-  TP_list<- list()
-  TP_exclist<- list()
-  for(j in 1: length(tp_stn)) {
-    new_data <- TP[TP$Station_ID == tp_stn[j],]
+  if (input$select == 'Tualatin River Subbasin') {
     
-    tmp_df <- new_data
+    TP_alloc <- evaluate_tp_alloc(TP_all, tp_stn) ####TMDL load allocation
+    #trib <- tp_list[[1]]
+    #summer <- tp_list[[2]]
+  }
+  #} else {
+    
+    TP_list<- list()
+    TP_exclist<- list()
+    for(j in 1: length(tp_stn)) {
+      new_data <- TP[TP$Station_ID == tp_stn[j],]
+      
+      tmp_df <- new_data
       tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
       tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
       sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
       tmp_df_MRL <- tmp_df[sub,]
       tmp_df <- remove.dups(tmp_df_MRL, max)
+      
+      if(input$select == 'Powder-Brownlee') { #Snake River Hells Canyon TMDL allocation 2004
+        TP_evaluate <- EvaluateTPWQS(tmp_df, 
+                                     selectWQSTP = 0.07)
+      } else {
+        
+        TP_evaluate <- EvaluateTPWQS(tmp_df, 
+                                     selectWQSTP = 0)
+      }
+      
+      TP_eval <- attr(TP_evaluate, 'ex_df')
+      TP_list[[j]] <- TP_evaluate
+      TP_exclist[[j]] <- TP_eval
+    }
     
-    TP_evaluate <- EvaluateTPWQS(tmp_df, 
-                                 selectWQSTP = 0)
-    TP_eval <- attr(TP_evaluate, 'ex_df')
-    TP_list[[j]] <- TP_evaluate
-    TP_exclist[[j]] <- TP_eval
+    TP<-rbind.fill(TP_list[])
+    exc<-rbind.fill(TP_exclist[])
+    exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
+    
   }
+    
+    results_seaken<-SeaKen %>% filter(analyte == 'Total Phosphorus')
+    
+    tp_plots<-list()
+    for (i in 1:length(tp_stn)) {
+      mydata_sub <- TP_all[TP_all$Station_ID == tp_stn[i],]
+      
+      trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE,
+                          ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE, TRUE))
+      
+      if(input$select == 'Powder-Brownlee') {
+        b <- plot.TP(new_data=mydata_sub,
+                     df.all = df.all,
+                     sea_ken_table=results_seaken ,
+                     plot_trend = trend_logic,
+                     selectWQSTP = 0.07,
+                     parm = unique(mydata_sub$Analyte))
+      } else if (input$select == 'Tualatin River Subbasin') {
+        new_data <- TP_alloc[TP_alloc$Station_ID == unique(TP_alloc$Station_ID)[i],]
+        b <- tp_alloc_plot(TP_alloc = new_data,
+                           sea_ken_table = results_seaken,
+                           plot_trend = trend_logic)
+      } else {
+        b <- plot.TP(new_data=mydata_sub,
+                     df.all = df.all,
+                     sea_ken_table=results_seaken ,
+                     plot_trend = trend_logic,
+                     selectWQSTP = 0,
+                     parm = unique(mydata_sub$Analyte))
+      }
+      
+      #ggsave(plot = b, filename = paste('TP_plots', unique(new_data$Station_ID), '.png'), width = 6, height = 6)
+      
+      tp_plots[[i]]<-b
+      
+      print(tp_plots[[i]])
+      
+    } 
+    
+    colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
+    exc <- exc[,c(1:5)]
+    kable(exc, format = "markdown", padding = 2, digits = 1, caption = "Total Phosphorus status and trends" )
+    
+    # }else {
+    #   print("No monitoring stations have sufficent data to assess status and/or trend of total phosphorus")
+    # }
+  #} 
   
-  TP<-rbind.fill(TP_list[])
-  exc<-rbind.fill(TP_exclist[])
-  exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
-  
-  results_seaken<-SeaKen %>% filter(analyte == 'Total Phosphorus')
-  
-  tp_plots<-list()
-  for (i in 1:length(tp_stn)) {
-    mydata_sub <- TP_all[TP_all$Station_ID == tp_stn[i],]
-    
-    trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE,
-                        ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE, TRUE))
-    
-    b <- plot.TP(new_data=mydata_sub,
-                 df.all = df.all,
-                 sea_ken_table=results_seaken ,
-                 plot_trend = trend_logic,
-                 selectWQSTP = 0,
-                 parm = unique(mydata_sub$Analyte))
-    
-    tp_plots[[i]]<-b
-    
-    print(tp_plots[[i]])
-    
-  } 
-colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
-exc <- exc[,c(1:5)]
-  kable(exc, format = "markdown", padding = 2, digits = 1, caption = "Total Phosphorus status and trends" )
-  
-# }else {
-#   print("No monitoring stations have sufficent data to assess status and/or trend of total phosphorus")
-# }
-} 
-tp_exc <- exc
+  tp_exc <- exc
+#}
 ```
 
 ##Total Suspended Solids
@@ -621,9 +657,13 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
       tmp_df_MRL <- tmp_df[sub,]
       tmp_df <- remove.dups(tmp_df_MRL, max)
     
-    
+    if (input$select == 'Powder-Brownlee') {
     TSS_evaluate <- EvaluateTSSWQS(tmp_df, 
+                                   selectWQSTSS = 50)
+    } else {
+      TSS_evaluate <- EvaluateTSSWQS(tmp_df, 
                                    selectWQSTSS = 0)
+    }
     TSS_eval <- attr(TSS_evaluate, 'ex_df')
     TSS_list[[j]] <- TSS_evaluate
     TSS_exclist[[j]] <- TSS_eval
@@ -643,13 +683,21 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
     trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == tss_stn[i],'signif']), FALSE,
                         ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == tss_stn[i],'signif']), FALSE, TRUE))
     
-    
+    if (input$select == 'Powder-Brownlee') {
     b <- plot.TSS(new_data=mydata_sub,
+                  df.all = df.all,
+                  sea_ken_table=results_seaken ,
+                  plot_trend = trend_logic,
+                  selectWQSTSS = 50,
+                  parm = unique(mydata_sub$Analyte))
+    } else {
+      b <- plot.TSS(new_data=mydata_sub,
                   df.all = df.all,
                   sea_ken_table=results_seaken ,
                   plot_trend = trend_logic,
                   selectWQSTSS = 0,
                   parm = unique(mydata_sub$Analyte))
+    }
     
     tss_plots[[i]]<-b
     
@@ -761,6 +809,12 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
       crit_selected <- Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'pH_benuse']
       plan_area <- Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'AgArea']
       
+      ########### continuous stations that should not have trend lines
+      contstns <- c('USGS-14207200', 'USGS-14202980', 'USGS-423026123063401', "USGS-453040123065201")
+      if(pH_stn[i] %in% contstns) {
+        trend_logic <- FALSE
+      }
+      ###########
       
       b <- plot.ph(new_data = mydata_sub, 
                    sea_ken_table=SeaKen,
@@ -1012,6 +1066,7 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
         DO_Benuse <- (Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[j], 'DO_use'])
         spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[j], 'spwn_time'])
         
+        
         DO_evaluate <- EvaluateDOWQS(new_data = tmp_df,
                                      selectUseDO = DO_Benuse,
                                      df.all = df.all, 
@@ -1050,6 +1105,12 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
         
         DO_Benuse <- (Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[i], 'DO_use'])
         spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[i], 'spwn_time'])
+        
+        contstns <- c('USGS-14202980', 'USGS-14206694', 'USGS-453004122510301', 'USGS-453030122560101', 'USGS-453040123065201')
+
+       if(DO_stn[i] %in% contstns) {
+         trend_logic <- FALSE
+       }
         
         b <- plot.DO(new_data = new_data,
                      df.all = df.all,
@@ -1099,9 +1160,9 @@ DO_exc <- exc
 ```
 
 #- Summary 
-![](T:/AgWQM/DataAnalysis/Walla Walla/Figures/WQassessment_WallaWalla10252017.png)
+![](T:/AgWQM/DataAnalysis/Greater Harney Basin/Figures/WQassessment_Harney12122017.png)
 Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by significant trends associated with long-term datasets. 
-Summary of stations that fit the criteria for status and trend analysis. One or more exceedances of the applicable water quality criterion within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by statistically significant trends associated with long-term datasets.
+
 
 
 ```{r parm summary table, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
@@ -1168,6 +1229,7 @@ kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stat
 * `r a[2]`
 * `r a[3]`
 * `r a[4]`
+* `r a[5]`
 
 
 #- Appendix

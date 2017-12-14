@@ -767,7 +767,7 @@ EvaluatepHWQS <- function(new_data) {
 
 EvaluateEColiWQS <- function(new_data) {
   new_data$exceed <- ifelse(new_data[, 'Result'] > 406, 1, 0)
-  ecoli_gm_eval <- gm_mean_30_day(new_data, 
+  ecoli_gm_eval <- gm_mean_90_day(new_data, 
                                   unique(new_data$Analyte), 
                                   unique(new_data$Station_ID))
   ecoli_gm_eval$exceed <- ifelse(ecoli_gm_eval$gm > 126, 1, 0)
@@ -788,7 +788,7 @@ EvaluateEColiWQS <- function(new_data) {
 
 EvaluateEnteroWQS <- function(new_data) {
   new_data$exceed <- ifelse(new_data[, 'Result'] > 130, 1, 0) #updated from 158 for coastal contact recreation and NPDES permits
-  entero_gm_eval <- gm_mean_30_day(new_data, 
+  entero_gm_eval <- gm_mean_90_day(new_data, 
                                    unique(new_data$Analyte), 
                                    unique(new_data$Station_ID))
   entero_gm_eval$exceed <- ifelse(entero_gm_eval$gm > 35, 1, 0)
@@ -1187,6 +1187,82 @@ gm_mean_30_day <- function(df, parameter, station) {
       
       for (j in 1:nrow(gm_df_all)) {
         sub_sub <- sub_long_max[(which(sub_long_max$day == gm_df_all[j,'day'])-29):which(sub_long_max$day == gm_df_all[j,'day']),]
+        gm_df_all[j,'ind'] <- paste(sub_sub[which(sub_sub$Result != 0),'ind'],collapse = ",")
+      }
+      
+      gm_df_min5 <- gm_df_all[gm_df_all$n >= 5,]
+      
+      gm_df_5_first <- gm_df_min5[!duplicated(gm_df_min5$ind),]
+      
+      if (nrow(gm_df_5_first) > 0) {
+        gm_df_5_first$id <- unique(sub_start$Station_ID)[i]
+        
+        gm_df <-  rbind(gm_df, gm_df_5_first)
+      }
+    } 
+  }
+  
+  if ("ind" %in% names(gm_df)) {
+    gm_df <- within(gm_df, rm(ind))
+  }
+  
+  return(gm_df)
+}
+
+gm_mean_90_day <- function(df, parameter, station) {
+  #  df = new_data 
+  # parameter = unique(new_data$Analyte)
+  # station = unique(new_data$Station_ID)
+  # 
+  #sub <- df[df$Analyte == parameter &
+  #           df$Station_ID == station,]
+  
+  sub_start <- df[df$Analyte == parameter,]
+  
+  gm_df <- data.frame()
+  for (i in 1:length(unique(sub_start$Station_ID))) {
+    sub <- sub_start[sub_start$Station_ID == unique(sub_start$Station_ID)[i],]
+    
+    #sort(sub[,'Sampled'])
+    
+    sub$Sampled <- as.POSIXct(strptime(sub$Sampled, format = "%Y-%m-%d")) #%H:%M:%S"))
+    sub$day <- as.Date(sub$Sampled, format = "%Y-%m-%d")
+    
+    if ((as.Date(max(sub$Sampled)) - as.Date(min(sub$Sampled)) < 90)) { ## changed from 30day
+      day <- as.Date((seq(min(sub$Sampled),min(sub$Sampled) + 29*24*60*60,by=86400)), format = "%Y-%m-%d")
+    } else {
+      day <- as.Date((seq(min(sub$Sampled),max(sub$Sampled),by=86400)), format = "%Y-%m-%d")
+    }
+    
+    Result <- rep(NA, length(day))
+    sub_long <- rbind(sub[,c('day','Result')], data.frame(day, Result))
+    
+    sub_long_max <- aggregate(sub_long, by = list(sub_long$day), FUN = function(x) {if(all(is.na(x))) {
+      NA
+    } else {
+      max(x, na.rm = TRUE)}
+    })
+    
+    sub_long_max$n <- ifelse(is.na(sub_long_max$Result), 0, 1)
+    
+    sub_long_max$ind <- rownames(sub_long_max)
+    
+    if (nrow(sub_long_max) > 1) {
+      obs_in_90 <- rollapplyr(sub_long_max$n, width = 90, FUN = sum)
+      
+      #print(paste(any(obs_in_30 >= 5),unique(sub[,'Station_ID'])))
+      
+      
+      
+      geo_mean_90 <- rollapplyr(sub_long_max$Result, width = 90, FUN = gm_mean)
+      
+      gm_df_all <- data.frame("day" = sub_long_max[90:nrow(sub_long_max),'day'],
+                              "n" = obs_in_90,
+                              "gm" = geo_mean_90,
+                              "ind" = rep(NA, length(geo_mean_90)))
+      
+      for (j in 1:nrow(gm_df_all)) {
+        sub_sub <- sub_long_max[(which(sub_long_max$day == gm_df_all[j,'day'])-89):which(sub_long_max$day == gm_df_all[j,'day']),]
         gm_df_all[j,'ind'] <- paste(sub_sub[which(sub_sub$Result != 0),'ind'],collapse = ",")
       }
       
@@ -1893,10 +1969,10 @@ Snapped_Stations <- function(df.all) {
     tmp_usgs$snap_Lat <- tmp_usgs$DECIMAL_LAT
     tmp_usgs$snap_Long <- tmp_usgs$DECIMAL_LONG
     
-    df.all <- df.all %>% filter(!grepl('USGS', Station_ID))
+    tmp_df.all <- df.all %>% filter(!grepl('USGS', Station_ID))
     
-    df.all <- rbind(df.all, tmp_usgs)
-  }
+    df.all <- rbind(tmp_df.all, tmp_usgs)
+  } 
   
   return(df.all)
   
