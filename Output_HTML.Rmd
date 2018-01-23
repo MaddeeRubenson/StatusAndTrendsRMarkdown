@@ -1,20 +1,20 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Tualatin River Subbasin AgWQ
+  DEQ Water Quality Status and Trends report for the Middle Willamette AgWQ
   Management Area'
 author: ''
-date: "October 2017"
+date: "December 2017"
 output:
+  word_document:
+    fig_caption: yes
+    reference_docx: ReportTemplate.docx
+    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
-  word_document:
-    fig_caption: yes
-    reference_docx: ReportTemplate.docx
-    toc: yes
 always_allow_html: yes
 ---
 
@@ -44,8 +44,8 @@ library(lubridate)
 input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen', 'Total Nitrogen')
-input$select <- "Tualatin River Subbasin" #input
-input$dates <- c("2000-01-01", "2017-11-01") #input
+input$select <- "Middle Willamette" #input
+input$dates <- c("2000-01-01", "2018-01-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 #input$db2 <- c('Water Quality Portal')
 
@@ -55,7 +55,7 @@ HUClist <- read.csv('app/PlanHUC_LU.csv')
 stations_huc <- read.csv('app/station_wbd_12132016.csv')
 ph_crit <- read.csv('app/PlanOWRDBasinpH_LU.csv')
 ph_crit <- merge(ph_crit, HUClist, by.x = 'plan_name', by.y = 'PlanName', all.x = TRUE)
-parms <- read.csv('app/WQP_Table3040_Names.csv', stringsAsFactors = FALSE)
+lu_parms <- read.csv('app/WQP_Table3040_Names.csv', stringsAsFactors = FALSE)
 wq_limited <- read.csv('app/wq_limited_df_temp_bact_ph_DO_TP_Sediment_2012.csv')
 OAR_LU <- read.csv("Lookups/OAR_LU.csv")
 Ben_use_LU <- read.csv("Lookups/stations.csv", na.strings = c("", "NA"))
@@ -66,15 +66,29 @@ Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
 source('functions/Rmarkdown_query.R')
 source('functions/01_DataQuery.R')
 
-df.all<-query(select =  input$select,
-              parms = input$parms,
-              dates = input$dates,
-              db = input$db)
+if(input$select == 'Middle Willamette') {
+  load("RdataFiles/Middle Willamette.df.all.2018-01-22.Rdata")
+} else {
+  
+  df.all<-query(select =  input$select,
+                parms = input$parms,
+                dates = input$dates,
+                db = input$db)
+}
+  
+  ##take out data from tribal land
+  df.all <- df.all %>%
+    filter(!grepl('[Tt]ribe', Client)) %>%
+    filter(!grepl('CTG', Station_ID))
+  
+  if(any(grepl('OREGONDEQ', df.all$Station_ID))) {
+    sub <- df.all[grepl('OREGONDEQ', df.all$Station_ID),]
+    sub$Station_ID <- gsub("[A-Z]", "", sub$Station_ID)
+    sub$Station_ID <- gsub("-", "", sub$Station_ID)
+    df.all <- rbind(sub, df.all)
+  } 
 
-##take out data from tribal land
-df.all <- df.all %>%
-  filter(!grepl('[Tt]ribe', Client)) %>%
-  filter(!grepl('CTG', Station_ID))
+
 
 ```
 
@@ -88,15 +102,13 @@ source("functions/funSeaKen.R")
 load('app/NLCD2011_OR.Rdata')
 load('app/OR_cats.Rdata')
 
+#if there are duplicate lat and longs per station, use this function. 
+df.all <- remove_stn_dups(df.all)
+
 ##Add snapped stations
 df.all <- Snapped_Stations(df.all)
 
 df.all <- clipToPlanArea(df.all, agwqma, input$select)
-
-#df.all_backup <- df.all
-
-# test <- df.all %>% 
-#   filter(grepl('Dairy | Mckay', Station_Description, ignore.case = TRUE))
 
 df.all$Result <- clean(df.all$Result)
 df.all$Result <- suppressWarnings(as.numeric(df.all$Result))
@@ -146,17 +158,32 @@ stn_totals<-summarizeByStation(df.all)
 all.sp <- generateStnLyrToPlot(df.all, stn_totals) #changed lat and long names
 stn_nlcd_df <- landUseAnalysis(all.sp, cats, NLCD2011)
 
+# if(any(grepl('OREGONDEQ', df.all$Station_ID))) {
+#   sub <- df.all[grepl('OREGONDEQ', df.all$Station_ID),]
+#   sub$Station_ID <- gsub("[A-Z]", "", sub$Station_ID)
+#   sub$Station_ID <- gsub("-", "", sub$Station_ID)
+#   
+#   df.all <- rbind(sub, df.all)
+#   rm(sub)
+# }
+
+
+
+#save(df.all, file = paste0("RdataFiles/", input$select, ".df.all.", Sys.Date(), ".Rdata"))
+
+#load("")
+
 ```
 
 #- Introduction
 ##Purpose
 Area rules and plans have been adopted by the Oregon Department of Agriculture (ODA) for the `r input$select` Subbasin management area (`r OAR_LU[OAR_LU$AgArea %in% input$select,'OAR']`). Oregon statute and administrative rules require ODA to consult with the Department of Environmental Quality (DEQ) during the biennial review of Agricultural Water Quality Management Area Rules and Plans (ORS 568.930).  DEQ Total Maximum Daily Load (TMDL) and Nonpoint Source (NPS) program staff conduct these reviews based on ODA’s biennial review schedule of their area rules and plans. ODA’s Agriculture Water Quality Program is outcome based, explicitly describing prohibited conditions, similar to DEQ’s TMDL and NPS programs which explicitly define water quality targets and goals.  The analysis of landscape conditions and water quality data is used for implementing these programs as well as identifying data gaps. 
 
-The report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ.  This water quality status and trends report can be used to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what’s working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends to answer the following questions: 
+The report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. This water quality status and trends report can be used to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what’s working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Dependent on data availability, DEQ will use the available water quality data to answer the first three bullets and for the fourth bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources:
 
 *	What is the status of water quality parameters? 
 *	What is the trend in water quality? 
-*	Are TMDL load allocations being met?
+*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
 * Can water quality status and trends be attributed to a source or sources?
 
 DEQ basin coordinators review pertinent information including this report as part of ODA’s biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL load allocations through ODA’s survey. 
@@ -185,11 +212,11 @@ kable(BC_table, format = "markdown", padding = 2, digits = 1, caption = "Oregon 
 #- Methods
 
 ##Data Sources
-Analysts retrieved data from [DEQ](http://www.oregon.gov/deq/wq/Pages/WQdata.aspx) (LASAR and ELEMENT), EPA ([Storet](https://www.epa.gov/waterdata/water-quality-data-wqx)) USGS ([NWIS](https://qwwebservices.usgs.gov/), [Water Quality Portal](https://www.waterqualitydata.us/), Storet) databases.A summary of all organizations that provided data that was queried and evaluated for use in this report is found in the Appendix. The time period for the query was from `r input$dates[1]` to `r input$dates[2]`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all$Status)` data determined following the [DEQ’s Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf). EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. 
+Analysts retrieved data from [DEQ](http://www.oregon.gov/deq/wq/Pages/WQdata.aspx) (LASAR and ELEMENT), EPA ([Storet](https://www.epa.gov/waterdata/water-quality-data-wqx)) USGS ([NWIS](https://qwwebservices.usgs.gov/), [Water Quality Portal](https://www.waterqualitydata.us/)) databases.A summary of all organizations that provided data that was queried and evaluated for use in this report is found in the Appendix. The time period for the query was from `r input$dates[1]` to `r input$dates[2]`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` data determined following the [DEQ’s Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf). EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. 
 
 ##Decision Criteria
 
-Status and long-term trends of the data were assessed for evaluating water quality in relation to water quality criterion or TMDL allocations. A decision criterion has been created for selecting stations that had greater than eight years of data and/or data to address water quality status. Stations that fit the criteria were sent to DEQ basin coordinator for their input on stations in the basin that had sufficient data that was not in one of the queried databases and that should also be included in this analysis. Monitoring data from tribal lands were not included in this analysis. Dominant land use characteristics were used as a station descriptor, not a deciding factor.
+Status and long-term trends of the data were assessed for evaluating water quality in relation to water quality criterion or TMDL allocations. A decision criterion has been created for selecting stations that had greater than eight years of data and/or data to address water quality status. Monitoring data from tribal lands were not included in this analysis. Dominant land use characteristics were used as a station descriptor, not a deciding factor.
 
 
 ![Monitoring station decision criteria to ensure the stations contain sufficient data to
@@ -224,8 +251,8 @@ map <- leaflet(agarea) %>%
   addPolygons() %>%
   addTiles() %>%
   #addRasterImage(lulc) 
-  addMarkers(lng = stns$snap_Long, 
-             lat = stns$snap_Lat, 
+  addMarkers(lng = stns$DECIMAL_LONG, 
+             lat = stns$DECIMAL_LAT, 
              popup = paste(stns$Station_ID, stns$Station_Description, sep = "-")) %>%
   addWMSTiles(GetURL("USGSTopo"), 
               attribution = paste0("<a href='https://www.usgs.gov/'>",
@@ -257,8 +284,8 @@ library(leaflet)
 lulc <- leaflet(agarea) %>%
   addPolygons() %>%
   addTiles() %>%
-  addMarkers(lng = stns$snap_Long, 
-             lat = stns$snap_Lat, 
+  addMarkers(lng = stns$DECIMAL_LONG, 
+             lat = stns$DECIMAL_LAT, 
              popup = paste(stns$Station_ID, stns$Station_Description, sep = "-")) %>%
   addWMSTiles('https://raster.nationalmap.gov/arcgis/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer/WMSServer?',
               group = "Land Use (NLCD 2011)",
@@ -300,7 +327,7 @@ wq_limited_df <- wq_lim_whole[, c('Waterbody', 'MILES', 'POLLUTANT', 'SEASON', '
 
 names(wq_limited_df) <- c('Waterbody', 'Miles', 'Pollutant', 'Season', 'Year Assessed', 'Criteria', 'Listing Status')
 
-wq_limited_df <- wq_limited_df %>% arrange(desc(Pollutant))
+wq_limited_df <- wq_limited_df %>% arrange(desc(Waterbody))
 
 wq_limited_df$`Listing Status` <- revalue(wq_limited_df$`Listing Status`, c("Cat 4A: Water quality limited, TMDL approved" = "Cat 4A",
                                                                             "Cat 5: Water quality limited, 303(d) list, TMDL needed" = "Cat 5",
@@ -312,8 +339,10 @@ kable(wq_limited_df, format = "markdown", padding = 2, caption = "Summary of Int
 ```
 
 ##Seasonal Kendall Trend Analysis
-For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal kendall trend analysis. Results are summarized in table (If no table is visible, there were no monitoring station that contained sufficient data to assess trends.). 
-Output for the Seasonal kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values.  
+For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal kendall trend analysis. Results are summarized in table (If no table is visible, there were no monitoring station that contained sufficient data to assess trends).
+
+
+Output for the Seasonal kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.  
 ```{r Seasonal Kendall, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 SK <- SeaKen %>% filter(Station_ID %in% unique(stns$Station_ID)) %>% filter(signif !=  "Need at least 8 years") %>% 
   filter(analyte != 'Dissolved oxygen saturation')
@@ -914,8 +943,8 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
             spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[j], 'spwn_time'])
             
             temp_evaluate <- EvaluateTempWQS(sdadm_df = new_data,
-                                             selectUse = Temp_Benuse,
-                                             selectSpawning = spwn_time,
+                                             selectUse = Temp_Benuse[1],
+                                             selectSpawning = spwn_time[1],
                                              station_column_name = 'Station_ID')
             
             temp_eval <- attr(temp_evaluate, 'result_summary')
@@ -948,14 +977,14 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
             spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[i], 'spwn_time'])
             
             temp_evaluate <- EvaluateTempWQS(sdadm_df = new_data,
-                                             selectUse = Temp_Benuse,
-                                             selectSpawning = spwn_time,
+                                             selectUse = Temp_Benuse[1],
+                                             selectSpawning = spwn_time[1],
                                              station_column_name = 'Station_ID')
             
             b <- plot.Temperature(new_data = temp_evaluate,
                                   all_data = df.all,
-                                  selectUse = Temp_Benuse,
-                                  selectSpawning = spwn_time,
+                                  selectUse = Temp_Benuse[1],
+                                  selectSpawning = spwn_time[1],
                                   station_id_column = 'Station_ID',
                                   station_desc_column = 'Station_Description',
                                   datetime_column = 'date',
@@ -1114,10 +1143,10 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
         
         b <- plot.DO(new_data = new_data,
                      df.all = df.all,
-                     selectUseDO = DO_Benuse,
+                     selectUseDO = DO_Benuse[1],
                      sea_ken_table = results_seaken,
                      plot_trend = trend_logic,
-                     selectSpawning = spwn_time,
+                     selectSpawning = spwn_time[1],
                      analyte_column = 'Analyte',
                      station_id_column = 'Station_ID',
                      station_desc_column = 'Station_Description',
@@ -1160,7 +1189,7 @@ DO_exc <- exc
 ```
 
 #- Summary 
-![](T:/AgWQM/DataAnalysis/Greater Harney Basin/Figures/WQassessment_Harney12122017.png)
+![](T:/AgWQM/DataAnalysis/Middle Deschutes/Figures/WQassessment_MiddleDeschutes_01182018.png)
 Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by significant trends associated with long-term datasets. 
 
 
@@ -1228,8 +1257,6 @@ kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stat
 * `r a[1]`
 * `r a[2]`
 * `r a[3]`
-* `r a[4]`
-* `r a[5]`
 
 
 #- Appendix
