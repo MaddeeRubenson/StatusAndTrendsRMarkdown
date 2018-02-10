@@ -11,8 +11,11 @@ plot.ph <- function(new_data,
                     ph_crit_max = NULL)
                      {
   require(ggplot2)
+  # new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column], 
+  #                                         format = datetime_format))  
   new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column], 
-                                          format = datetime_format))  
+                                           format = '%Y-%m-%d'))  
+  
   x.min <- min(new_data$Sampled)
   x.max <- max(new_data$Sampled)
   x.lim <- c(x.min, x.max) 
@@ -184,12 +187,11 @@ plot.Temperature <- function(new_data,
                                             c('Cool water species', 
                                               'No Salmonid Use/Out of State'))) {
     g <- ggplot(data = new_data, aes(x = Sampled, y = sdadm), color = 'black') + 
-      geom_point() + 
+      geom_point() + theme_bw() +
       xlab(x.lab) + 
       ylab(y.lab) + 
       xlim(x.lim) +
       ylim(y.lim) +
-      theme_bw() +
       ggtitle(title) + 
       theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))
     g <- g + theme(legend.position = "top",
@@ -197,12 +199,11 @@ plot.Temperature <- function(new_data,
                    legend.direction = 'horizontal')
   } else {
     g <- ggplot(data = new_data, aes(x = Sampled, y = sdadm, color = exceed)) + 
-      geom_point() + 
+      geom_point() + theme_bw() +
       xlab(x.lab) + 
       ylab(y.lab) + 
       xlim(x.lim) +
       ylim(y.lim) +
-      theme_bw() +
       ggtitle(title) + 
       theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))
     if (all(new_data$exceed == 'Meets', na.rm = TRUE)) {
@@ -548,7 +549,7 @@ plot.bacteria <- function(new_data,
   g <- ggplot(data = plot_data, aes_string(x = 'Sampled', y = result_column, 
                                            colour = 'exceed_type', 
                                            shape = 'exceed_type')) + 
-    geom_point() + 
+    geom_point() + theme_bw() +
     ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
     theme(legend.position = "top",
           legend.title = element_blank(),
@@ -557,8 +558,8 @@ plot.bacteria <- function(new_data,
     xlab(x.lab) + 
     ylab(y.lab) + 
     xlim(x.lim) +
-    ylim(y.lim) + 
-    theme_bw()
+    ylim(y.lim) 
+    
   
   if (plot_trend & !is.na(p.value)) {
     g <- g + geom_line(aes(x = x, y = y, color = variable, shape = '', group = variable), 
@@ -893,7 +894,7 @@ plot.DOsat<-function(new_data,
   
   ##Building the plot
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point() +
+    geom_point() +theme_bw()+
     ggtitle(bquote(atop(.(title)))) +
     theme(legend.position = "top",
           legend.title = element_blank(),
@@ -901,8 +902,8 @@ plot.DOsat<-function(new_data,
     xlab(x.lab) +
     ylab(y.lab) +
     xlim(x.lim) +
-    ylim(y.lim) +
-    theme_bw()
+    ylim(y.lim) 
+    
   g
 }
 
@@ -1007,7 +1008,7 @@ plot.DO<-function(new_data,
   #BCsat_spwn$BCsat_spwn_exceed <- 'Meets b/c %Sat'
   ##PLOT THE TIMESERIES
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point(aes(color = exceed, shape = exceed)) +
+    geom_point(aes(color = exceed, shape = exceed)) + theme_bw() +
     xlim(x.lim) +
     ylim(y.lim) +
     theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
@@ -1016,8 +1017,8 @@ plot.DO<-function(new_data,
           legend.title = element_blank(),
           legend.direction = 'horizontal') +
     xlab(x.lab) +
-    ylab(y.lab) +
-    theme_bw()
+    ylab(y.lab) 
+   
   
   #g <- g + geom_line(data = d, aes(x=x, y=y, linetype = selectUseDO))
   g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
@@ -1405,6 +1406,10 @@ plot.TSS<-function(new_data,
                       unique(new_data[, analyte_column]), 'slope']
     )
   )
+  median <- sea_ken_table[sea_ken_table$Station_ID == 
+                                   unique(new_data[,station_id_column]) & 
+                                   sea_ken_table$analyte == 
+                                   unique(new_data[,analyte_column]),'median']
   p.value <- suppressWarnings(
     as.numeric(
       sea_ken_table[sea_ken_table$Station_ID == 
@@ -1427,7 +1432,9 @@ plot.TSS<-function(new_data,
                      ", slope = ", 
                      round(slope, digits=2), 
                      ", n = ", 
-                     nrow(new_data))
+                     nrow(new_data),
+                     ", median = ", 
+                     median)
   
   df_trend_line <- data.frame(x = c(x.min, x.max),
                               y = c(SK.min, SK.max),
@@ -1440,7 +1447,7 @@ plot.TSS<-function(new_data,
    ##PLOT THE TIMESERIES
 if(selectWQSTSS != 0){ #Allocation
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point(aes(color = exceed)) +
+    geom_point(aes(color = exceed)) + theme_bw() +
     xlim(x.lim) +
     ylim(y.lim) +
     theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
@@ -1449,12 +1456,12 @@ if(selectWQSTSS != 0){ #Allocation
           legend.title = element_blank(),
           legend.direction = 'horizontal') +
     xlab(x.lab) +
-    ylab(y.lab) +
-    theme_bw()
+    ylab(y.lab) 
+    
   g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
 } else { #no allocation 
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point() +
+    geom_point() + theme_bw() +
     xlim(x.lim) +
     ylim(y.lim) +
     theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
@@ -1463,8 +1470,8 @@ if(selectWQSTSS != 0){ #Allocation
           legend.title = element_blank(),
           legend.direction = 'horizontal') +
     xlab(x.lab) +
-    ylab(y.lab) +
-    theme_bw()
+    ylab(y.lab) 
+    
 }
   
   #trend line 
@@ -1574,6 +1581,10 @@ plot.TP<-function(new_data,
                                    unique(new_data[,station_id_column]) & 
                                    sea_ken_table$analyte == 
                                    unique(new_data[,analyte_column]),'signif']
+  median <- sea_ken_table[sea_ken_table$Station_ID == 
+                            unique(new_data[,station_id_column]) & 
+                            sea_ken_table$analyte == 
+                            unique(new_data[,analyte_column]),'median']
   x.delta <- as.numeric((x.max-x.min)/2)####average date
   SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
   SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
@@ -1584,7 +1595,9 @@ plot.TP<-function(new_data,
                      ", slope = ", 
                      round(slope, digits=2), 
                      ", n = ", 
-                     nrow(new_data))
+                     nrow(new_data),
+                     ", median = ", 
+                     median)
   
   df_trend_line <- data.frame(x = c(x.min, x.max),
                               y = c(SK.min, SK.max),
@@ -1593,33 +1606,36 @@ plot.TP<-function(new_data,
   d<-data.frame(x = c(x.min, x.max), y = rep(selectWQSTP, 2),
                 variable = rep("Total Phosphorus Allocation", 2))
   
+  elem_text <- element_text(face = 'bold')
+  
   if(selectWQSTP != 0){ #Allocation
     g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-      geom_point(aes(color = exceed)) +
+      geom_point(aes(color = exceed)) + theme_gdocs() + theme(axis.title = elem_text)+
       xlim(x.lim) +
       ylim(y.lim) +
-      theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
+      theme(title = element_text(vjust=1.5, face=elem_text, size = 10))+
       ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
       theme(legend.position = "top",
             legend.title = element_blank(),
-            legend.direction = 'horizontal') +
+            legend.direction = 'horizontal',
+            title = elem_text) +
       xlab(x.lab) +
-      ylab(y.lab) +
-      theme_bw()
+      ylab(y.lab) 
+      
     g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
   } else { #no allocation 
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) + theme_gdocs() + theme(axis.title = elem_text) +
       geom_point() +
       xlim(x.lim) +
       ylim(y.lim) +
-      theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
+      theme(title = element_text(vjust=1.5, face=elem_text, size = 10))+
       ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
       theme(legend.position = "top",
             legend.title = element_blank(),
             legend.direction = 'horizontal') +
       xlab(x.lab) +
-      ylab(y.lab) +
-      theme_bw()
+      ylab(y.lab) 
+      
   }
   
   #trend line 
