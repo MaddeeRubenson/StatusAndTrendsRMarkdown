@@ -94,9 +94,11 @@ plot.ph <- function(new_data,
                                variable = rep('pH Criteria', 2))
   
     ####plot the timeseries
+  elem_text <- element_text(face = "bold")
+  
   g <- ggplot(data = new_data, aes_string(x = 'Sampled', y = result_column, colour = 'exceed')) + 
     geom_point() + 
-    theme_bw() +
+    theme_gdocs() + theme(axis.title = elem_text) +
     ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
     theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
     theme(legend.position = "top",
@@ -183,11 +185,13 @@ plot.Temperature <- function(new_data,
   y.lab <- "Temperature (7DADM)"
   
   ####plot the timeseries
+  elem_text <- element_text(face = "bold")
+  
   if (selectSpawning == 'No spawning' & any(selectUse %in% 
                                             c('Cool water species', 
                                               'No Salmonid Use/Out of State'))) {
     g <- ggplot(data = new_data, aes(x = Sampled, y = sdadm), color = 'black') + 
-      geom_point() + theme_bw() +
+      geom_point() +   theme_gdocs() + theme(axis.title = elem_text) +
       xlab(x.lab) + 
       ylab(y.lab) + 
       xlim(x.lim) +
@@ -199,7 +203,7 @@ plot.Temperature <- function(new_data,
                    legend.direction = 'horizontal')
   } else {
     g <- ggplot(data = new_data, aes(x = Sampled, y = sdadm, color = exceed)) + 
-      geom_point() + theme_bw() +
+      geom_point() +   theme_gdocs() + theme(axis.title = elem_text) +
       xlab(x.lab) + 
       ylab(y.lab) + 
       xlim(x.lim) +
@@ -535,6 +539,8 @@ plot.bacteria <- function(new_data,
   
 
   ####plot the timeseries
+  elem_text <- element_text(face = "bold")
+  
   if (nrow(gm_table) > 0) {
     gm_table <- plyr::rename(gm_table, c('gm' = 'Result'))
     gm_table$Type <- 'Geometric mean'
@@ -549,7 +555,8 @@ plot.bacteria <- function(new_data,
   g <- ggplot(data = plot_data, aes_string(x = 'Sampled', y = result_column, 
                                            colour = 'exceed_type', 
                                            shape = 'exceed_type')) + 
-    geom_point() + theme_bw() +
+    geom_point() +   theme_gdocs() + theme(axis.title = elem_text) +
+
     ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
     theme(legend.position = "top",
           legend.title = element_blank(),
@@ -1006,9 +1013,12 @@ plot.DO<-function(new_data,
                               variable = rep('Trend line', 2))
 
   #BCsat_spwn$BCsat_spwn_exceed <- 'Meets b/c %Sat'
+  
+  elem_text <- element_text(face = 'bold') 
+  
   ##PLOT THE TIMESERIES
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point(aes(color = exceed, shape = exceed)) + theme_bw() +
+    geom_point(aes(color = exceed, shape = exceed)) + theme_gdocs() + theme(axis.title = elem_text) +
     xlim(x.lim) +
     ylim(y.lim) +
     theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
@@ -1443,11 +1453,11 @@ plot.TSS<-function(new_data,
   d<-data.frame(x = c(x.min, x.max), y = rep(selectWQSTSS, 2),
                 variable = rep("TSS Allocation", 2))
   
-
+  elem_text <- element_text(face = 'bold')
    ##PLOT THE TIMESERIES
 if(selectWQSTSS != 0){ #Allocation
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point(aes(color = exceed)) + theme_bw() +
+    geom_point(aes(color = exceed)) + theme_gdocs() + theme(axis.title = elem_text) +
     xlim(x.lim) +
     ylim(y.lim) +
     theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
@@ -1461,7 +1471,7 @@ if(selectWQSTSS != 0){ #Allocation
   g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
 } else { #no allocation 
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point() + theme_bw() +
+    geom_point() + theme_gdocs() + theme(axis.title = elem_text) +
     xlim(x.lim) +
     ylim(y.lim) +
     theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
