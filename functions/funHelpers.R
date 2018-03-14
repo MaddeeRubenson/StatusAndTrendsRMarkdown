@@ -11,9 +11,11 @@ clipToPlanArea <- function (df.all, agwqma, selected_planArea) {
   }
   
   #First pull out stations and set the projection
+  #all.sp <- df.all[!duplicated(df.all$SD),c(3,1:2,4:17, 20, 21)]
   all.sp <- df.all[!duplicated(df.all$SD),c(3,1:2,4:17)]
+  
   coordinates(all.sp) = ~DECIMAL_LONG+DECIMAL_LAT
-  #coordinates(all.sp) = ~snap_Long+snap_Lat
+  #coordinates(all.sp) = ~snap_Long + snap_Lat
   proj4string(all.sp) <- CRS("+init=epsg:4269")
   #Transform agwqma to same projection as stations
   #agwqma <- spTransform(agwqma, CRS("+proj=longlat +datum=NAD83"))
@@ -189,14 +191,30 @@ generateStnLyrToPlot <- function(df.all, df.totals) {
   #df.totals = data frame of tabulated results by analyte and by station
   #Returns:
   #all.sp = spatial points dataframe
+  # all.sp <- merge(df.all[,c('Station_ID',
+  #                           'Station_Description',
+  #                           'snap_Lat',
+  #                           'snap_Long',
+  #                           'DECIMAL_LAT', 'DECIMAL_LONG')],
+  #                 df.totals,
+  #                 by = 'Station_ID', all.x = TRUE)
   all.sp <- merge(df.all[,c('Station_ID',
                             'Station_Description',
-                            'snap_Lat',
-                            'snap_Long')], 
-                  df.totals, 
+                            'DECIMAL_LAT', 'DECIMAL_LONG')],
+                  df.totals,
                   by = 'Station_ID', all.x = TRUE)
   all.sp <- all.sp[!duplicated(all.sp$Station_ID),]
-  coordinates(all.sp) = ~snap_Long+snap_Lat
+  
+  if(any(names(all.sp) == "snap_Lat")) {
+    if(any(is.na(all.sp$snap_Lat))) {
+      coordinates(all.sp) = ~DECIMAL_LONG+DECIMAL_LAT
+    }else{
+      coordinates(all.sp) = ~snap_Long+snap_Lat
+    }
+  } else {
+    coordinates(all.sp) = ~DECIMAL_LONG+DECIMAL_LAT
+  }
+  
   proj4string(all.sp) <- CRS("+init=epsg:4269")
   return(all.sp)
 }
@@ -272,7 +290,8 @@ Stations_Status<-function(df.all) {
       lst_stat[[j]] <- dcast(dta_stns, Station_ID ~ year, value.var = 'year',
                              fun.aggregate = length)
       lst_stat[[j]]$Analyte<-sub_data$Analyte[[j]]
-      dta_stns$Analyte<-as.character(dta_stns$Analyte[[j]])
+     # dta_stns$Analyte<-as.character(dta_stns$Analyte[[j]])
+      dta_stns$Analyte<-unique(dta_stns$Analyte)
       names(lst_stat)[j]<-unique(dta_stns$Analyte)[j]
           }
     }
@@ -381,7 +400,9 @@ All_stns_fit_Criteria<-function(status, trend, df.all) {
   
   unique_stns<-unique(c(status_stns, trend_stns))
   
-  stns<-df.all[,c('Station_ID', 'Station_Description', 'DECIMAL_LAT', 'DECIMAL_LONG', 'snap_Lat', 'snap_Long')]
+  stns<-df.all[,c('Station_ID', 'Station_Description', 'DECIMAL_LAT', 'DECIMAL_LONG')]
+  
+  #stns<-df.all[,c('Station_ID', 'Station_Description', 'DECIMAL_LAT', 'DECIMAL_LONG', 'snap_Lat', 'snap_Long')]
   stns<-stns %>%
     filter(Station_ID %in% unique_stns)
   stns<-unique(stns)
@@ -816,6 +837,8 @@ EvaluateDOWQS<-function(new_data,
                         datetime_column = 'Sampled',
                         result_column = 'Result',
                         datetime_format = '%Y-%m-%d %H:%M:%S'){
+  
+  #datetime_format = '%Y-%m-%d %H:%M:%S'
   require(dplyr)
  
   new_data$Result <- as.numeric(new_data$Result)
@@ -1248,34 +1271,36 @@ gm_mean_90_day <- function(df, parameter, station) {
     sub_long_max$ind <- rownames(sub_long_max)
     
     if (nrow(sub_long_max) > 1) {
-      obs_in_90 <- rollapplyr(sub_long_max$n, width = 90, FUN = sum)
-      
-      #print(paste(any(obs_in_30 >= 5),unique(sub[,'Station_ID'])))
-      
-      
-      
-      geo_mean_90 <- rollapplyr(sub_long_max$Result, width = 90, FUN = gm_mean)
-      
-      gm_df_all <- data.frame("day" = sub_long_max[90:nrow(sub_long_max),'day'],
-                              "n" = obs_in_90,
-                              "gm" = geo_mean_90,
-                              "ind" = rep(NA, length(geo_mean_90)))
-      
-      for (j in 1:nrow(gm_df_all)) {
-        sub_sub <- sub_long_max[(which(sub_long_max$day == gm_df_all[j,'day'])-89):which(sub_long_max$day == gm_df_all[j,'day']),]
-        gm_df_all[j,'ind'] <- paste(sub_sub[which(sub_sub$Result != 0),'ind'],collapse = ",")
-      }
-      
-      gm_df_min5 <- gm_df_all[gm_df_all$n >= 5,]
-      
-      gm_df_5_first <- gm_df_min5[!duplicated(gm_df_min5$ind),]
-      
-      if (nrow(gm_df_5_first) > 0) {
-        gm_df_5_first$id <- unique(sub_start$Station_ID)[i]
+      tryCatch({
+        obs_in_90 <- rollapplyr(sub_long_max$n, width = 90, FUN = sum)
         
-        gm_df <-  rbind(gm_df, gm_df_5_first)
-      }
-    } 
+        #print(paste(any(obs_in_30 >= 5),unique(sub[,'Station_ID'])))
+        
+        
+        sub_long_max$Result <- as.numeric(sub_long_max$Result)
+        geo_mean_90 <- rollapplyr(sub_long_max$Result, width = 90, FUN = gm_mean)
+        
+        gm_df_all <- data.frame("day" = sub_long_max[90:nrow(sub_long_max),'day'],
+                                "n" = obs_in_90,
+                                "gm" = geo_mean_90,
+                                "ind" = rep(NA, length(geo_mean_90)))
+        
+        for (j in 1:nrow(gm_df_all)) {
+          sub_sub <- sub_long_max[(which(sub_long_max$day == gm_df_all[j,'day'])-89):which(sub_long_max$day == gm_df_all[j,'day']),]
+          gm_df_all[j,'ind'] <- paste(sub_sub[which(sub_sub$Result != 0),'ind'],collapse = ",")
+        }
+        
+        gm_df_min5 <- gm_df_all[gm_df_all$n >= 5,]
+        
+        gm_df_5_first <- gm_df_min5[!duplicated(gm_df_min5$ind),]
+        
+        if (nrow(gm_df_5_first) > 0) {
+          gm_df_5_first$id <- unique(sub_start$Station_ID)[i]
+          
+          gm_df <-  rbind(gm_df, gm_df_5_first)
+        }
+      } , error=function(e){cat("ERROR :",conditionMessage(e), "\n")})
+    }
   }
   
   if ("ind" %in% names(gm_df)) {
@@ -1312,7 +1337,8 @@ remove.dups <- function(tname, fun_type) {
   #tname$tResult <- round(tname$tResult.x, 2)
   tname$Result <- tname$Result.x
   tname <- within(tname, rm(Result.x, Result.y))
-}
+
+  }
 
 landUseAnalysis <- function(all.sp, cats, nlcd) {
   all.sp <- spTransform(all.sp, CRS(proj4string(cats)))
@@ -1763,7 +1789,7 @@ parm_summary <- function(stns,
   e_status_stns  <- unique(e_status_stns$Station_ID)
   e_status <- ecoli %>% filter(Station_ID %in% e_status_stns) %>% filter(year %in% statyear)
   
-  if(trend != 'No Stations Meet Trend Criteria')  {
+  if(any(trend != 'No Stations Meet Trend Criteria'))  {
     e_trend_stns <- trend %>% filter(Analyte == 'E. Coli')
     e_trend_stns  <- unique(e_trend_stns$Station_ID)
   } else {
@@ -1797,13 +1823,13 @@ parm_summary <- function(stns,
   if(length(e_trend_stns) > 0) {
   for(j in 1:length(e_trend_stns)) {
   e_seaken <- SeaKen %>% filter(analyte == 'E. Coli')
-  e_seaken <- e_seaken[e_seaken$Station_ID == e_status_stns[j],]
+  e_seaken <- e_seaken[e_seaken$Station_ID == e_trend_stns[j],]
   
-  if(e_seaken$pvalue < 0.05 & e_seaken$slope > 0) {
+  if(e_seaken$pvalue < 0.2 & e_seaken$slope > 0) {
     stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <-'Degrading'
-  } else if(e_seaken$pvalue < 0.05 & e_seaken$slope < 0){
+  } else if(e_seaken$pvalue < 0.2 & e_seaken$slope < 0){
     stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <- 'Improving'
-  } else if(e_seaken$pvalue < 0.05 & e_seaken$slope == 0) {
+  } else if(e_seaken$pvalue < 0.2 & e_seaken$slope == 0) {
     stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <-'Steady'
   } else {
     stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <- 'No Sig Trend'
@@ -1823,7 +1849,7 @@ parm_summary <- function(stns,
   pH_status_stns  <- unique(pH_status_stns$Station_ID)
   pH_status <- pH %>% filter(Station_ID %in% pH_status_stns) %>% filter(year %in% statyear)
   
-  if(trend != 'No Stations Meet Trend Criteria')  {
+  if(any(trend != 'No Stations Meet Trend Criteria'))  {
     pH_trend_stns <- trend %>% filter(Analyte == 'pH')
     pH_trend_stns  <- unique(pH_trend_stns$Station_ID)
   }else{
@@ -1847,13 +1873,13 @@ parm_summary <- function(stns,
   if(length(pH_trend_stns) > 0 ) {
   for(j in 1:length(pH_trend_stns)) {
     pH_seaken <- SeaKen %>% filter(analyte == 'pH')
-    pH_seaken <- pH_seaken[pH_seaken$Station_ID == pH_status_stns[j],]
+    pH_seaken <- pH_seaken[pH_seaken$Station_ID == pH_trend_stns[j],]
     
-    if(pH_seaken$pvalue < 0.05 & pH_seaken$slope > 0) {
+    if(pH_seaken$pvalue < 0.2 & pH_seaken$slope > 0) {
       stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <-'Degrading'
-    } else if(pH_seaken$pvalue < 0.05 & pH_seaken$slope < 0){
+    } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope < 0){
       stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <- 'Improving'
-    } else if(pH_seaken$pvalue < 0.05 & pH_seaken$slope == 0) {
+    } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope == 0) {
       stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <-'Steady'
     } else {
       stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <- 'No Sig Trend'
@@ -1869,7 +1895,7 @@ parm_summary <- function(stns,
   DO_status_stns  <- unique(DO_status_stns$Station_ID)
   DO_status <- DO_eval %>% filter(Station_ID %in% DO_status_stns) %>% filter(year %in% statyear)
   
-  if(trend != 'No Stations Meet Trend Criteria')  {
+  if(any(trend != 'No Stations Meet Trend Criteria'))  {
     DO_trend_stns <- trend %>% filter(Analyte == 'Dissolved Oxygen')
     DO_trend_stns  <- unique(DO_trend_stns$Station_ID)
   } else {
@@ -1881,7 +1907,7 @@ parm_summary <- function(stns,
     #status  
     DO_data <- DO_status[DO_status$Station_ID == DO_status_stns[i],]
     
-    if(any(unique((DO_data$exceed) == 'Exceeds'))) {
+    if(any(as.character(DO_data$exceed) == 'Exceeds')) {
       stns[stns$Station_ID == DO_status_stns[i], ]$Status_DO <- 'Exceeds'
     } else {
       stns[stns$Station_ID == DO_status_stns[i], ]$Status_DO <- 'Meets'
@@ -1895,11 +1921,11 @@ parm_summary <- function(stns,
     DO_seaken <- SeaKen %>% filter(analyte == 'Dissolved Oxygen')
     DO_seaken <- DO_seaken[DO_seaken$Station_ID == DO_status_stns[j],]
     
-    if(DO_seaken$pvalue < 0.05 & DO_seaken$slope > 0) {
+    if(DO_seaken$pvalue < 0.2 & DO_seaken$slope > 0) {
       stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <-'Improving'
-    } else if(DO_seaken$pvalue < 0.05 & DO_seaken$slope < 0){
+    } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope < 0){
       stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <- 'Degrading'
-    } else if(DO_seaken$pvalue < 0.05 & DO_seaken$slope == 0) {
+    } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope == 0) {
       stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <-'Steady'
     } else {
       stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <- 'No Sig Trend'
@@ -1950,15 +1976,21 @@ Snapped_Stations <- function(df.all) {
   #df.all is a dataframe containing:
   #Station_ID : monitoring station ID
   
-  library(RODBC)
+  #library(RODBC)
+  library(dplyr)
   
   #connect to microsoft Access 2007 database
   #table : STATIONS
   #Note: must have R set up to 32 bit, via Tools -> options 
-  channel <- odbcConnectAccess2007("//deqlead03/GIS_WA/X-fer/LASAR_to_NHD/Test_StationInfo.accdb") #connect to Microsoft Access Database
-  data <- sqlQuery(channel, paste("select * from STATIONS")) #create table from STATIONS table
-  data <- data[,c(2,4,5)] #reduce data to just three columns: monitoring station id, snapped lat and snapped long
-  names(data) <- c('Station_ID','snap_Lat', 'snap_Long') #rename columns
+  #-----------------------------------------
+  #This is how the dataframe was queried:
+  # channel <- odbcConnectAccess2007("//deqlab1/GIS_WA/X-fer/LASAR_to_NHD/Test_StationInfo.accdb") #connect to Microsoft Access Database
+  # data <- sqlQuery(channel, paste("select * from STATIONS")) #create table from STATIONS table
+  # data <- data[,c(2,4,5)] #reduce data to just three columns: monitoring station id, snapped lat and snapped long
+  # names(data) <- c('Station_ID','snap_Lat', 'snap_Long') #rename columns
+  # save(data, file = "Lookups/Snapped_Stations_LU.Rdata")
+  
+  load('Lookups/Snapped_Stations_LU.Rdata')
   
   df.all <- merge(df.all, data, by = "Station_ID", all.x = TRUE)
   
@@ -1976,4 +2008,42 @@ Snapped_Stations <- function(df.all) {
   
   return(df.all)
   
+}
+
+remove_stn_dups <- function(df.all) {
+  #When there are duplicate station lat and longs, this function assigns the first lat and long to each station_ID
+  
+  list <- list()
+  stn <- unique(df.all$Station_ID)
+  for(i in 1:length(stn)) {
+    tmp <- df.all[df.all$Station_ID == stn[i], ]
+    tmp <- unique(tmp[,c('Station_ID', 'DECIMAL_LAT', 'DECIMAL_LONG')])
+    tmp <- tmp[c(1),]
+    
+    list[[i]] <- tmp
+  }
+  
+  df <- ldply(list, data.frame)
+  
+  df <- merge(df, df.all, by.x = 'Station_ID', by.y = "Station_ID") #want .x
+  df <- subset(df, select= -c(DECIMAL_LAT.y, DECIMAL_LONG.y))
+  
+  colnames(df)[2] <- 'DECIMAL_LAT'
+  colnames(df)[3] <- 'DECIMAL_LONG'
+  
+  return(df)
+}
+
+all_stn_sp <- function(df.all) {
+  stn_totals<-summarizeByStation(df.all)
+  all_stn_sp <- merge(df.all[,c('Station_ID',
+                                      'Station_Description',
+                                      'DECIMAL_LAT', 'DECIMAL_LONG')], 
+                      stn_totals, 
+                      by = 'Station_ID', all.x = TRUE)
+  all_stn_sp <- all_stn_sp[!duplicated(all_stn_sp$Station_ID),]
+  all_stn_sp <- all_stn_sp[!is.na(all_stn_sp$DECIMAL_LAT & all_stn_sp$DECIMAL_LONG),]
+  coordinates(all_stn_sp) = ~DECIMAL_LONG+DECIMAL_LAT
+  proj4string(all_stn_sp) <- CRS("+init=epsg:4269")
+  return(all_stn_sp)
 }

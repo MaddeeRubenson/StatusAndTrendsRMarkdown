@@ -71,11 +71,11 @@ if ('Water Quality Portal' %in% db) {
   wqpData <- tryCatch(wqpQuery(planArea = select,
                                HUClist = HUClist,
                                inParms = input$parms,
-                               luParms = parms,
+                               luParms = lu_parms,
                                startDate = input$dates[1],
                                endDate = input$dates[2]),
                       error = function(err) {err <- geterrmessage()})
-  
+
   if (any(c('Temperature', 'pH', 'Dissolved Oxygen', 'Total Suspended Solids', 'Total Phosphorus') %in% input$parms)) {
     print(paste0('NWIS'))
     nwisData <- tryCatch(nwisQuery(planArea = select,

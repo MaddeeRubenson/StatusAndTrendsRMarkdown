@@ -195,6 +195,9 @@ elementQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate,
   if(any(inParms == 'Total Phosphorus')) {
     qryParms <- c(qryParms, c('Phosphate, Total as P'))
   }
+  if(any(inParms == 'Total Nitrogen')) {
+    qryParms <- c(qryParms, c('Nitrogen', 'Total Nitrogen'))
+  }
   qryParms <- paste(qryParms,collapse="','")
   #### Restrict Matrix to surface water ####
   siteType <- c("'River/Stream','Estuary','Ocean','Lake'")
@@ -232,10 +235,10 @@ lasarQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate,
 # hucs <- readOGR(dsn = 'app/data/GIS', layer = 'WBD_HU8', verbose = FALSE)
 # HUClist <- read.csv('app/data/PlanHUC_LU.csv')
 # stations_huc <- read.csv('app/data/station_wbd_12132016.csv')
-# planArea <- 'South Santiam'
+# planArea <- 'Tualatin River Subbasin'
 # startDate <- "2000-01-01 00:00:00.000"
 # endDate <- "2010-03-01 00:00:00.000"
-# inParms <- c('Total Phosphorus')
+# inParms <- c('Total Nitrogen')
   
   #### Establish connection to database ####
   channel <- odbcConnect('DEQLEAD-LIMS')
@@ -283,6 +286,9 @@ lasarQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate,
   }
   if(any(inParms =='Total Phosphorus')) {
     qryParms <- c(qryParms, 'Total Phosphorus', 'Total Total Phosphorus')
+  }
+  if(any(inParms == 'Total Nitrogen')) {
+    qryParms <- c(qryParms, 'Nitrogen')
   }
   qryParms <- paste(qryParms, collapse = "','")
   
@@ -433,14 +439,17 @@ wqp.data <- readWQPdata(#stateCode = myArea,
   siteType = siteType)
 
 Wx <- attr(wqp.data, "siteInfo")
+
 # ##REMOVE dissolved P##
 if(any('Total Phosphorus' %in% c(myParms))) {
   wqp.data[c("ResultSampleFractionText")][is.na(wqp.data[c("ResultSampleFractionText")])] <- 'Total'
+  
   wqp.data<- wqp.data[wqp.data$ResultSampleFractionText == 'Total' , ]
-    if(any(unique(wqp.data$ResultMeasure.MeasureUnitCode == 'ug/l'))){
+    if(unique(wqp.data$ResultMeasure.MeasureUnitCode == 'ug/l' & !is.na(wqp.data$ResultMeasure.MeasureUnitCode))){
         wqp.data[which(wqp.data$ResultMeasure.MeasureUnitCode == 'ug/l'), 'ResultMeasureValue'] <- 
               (wqp.data[which(wqp.data$ResultMeasure.MeasureUnitCode == 'ug/l'), 'ResultMeasureValue'])/1000
     }
+ 
   wqp.data[which(wqp.data$ResultMeasure.MeasureUnitCode == 'ug/l'), 'ResultMeasure.MeasureUnitCode'] <- 'mg/l'
   wqp.data[which(wqp.data$ResultMeasure.MeasureUnitCode == 'mg/kg as P'), 'ResultMeasure.MeasureUnitCode'] <- 'mg/l'
   wqp.data[which(wqp.data$ResultMeasure.MeasureUnitCode == 'mg/l as P'), 'ResultMeasure.MeasureUnitCode'] <- 'mg/l'
@@ -527,6 +536,8 @@ nwisQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate) {
   TSS_data<-NULL
   TP_sites<-NULL
   TP_data<-NULL
+  TN_sites <- NULL
+  TN_data <- NULL
   
   #### Define parameters to query ####
   if ('Temperature' %in% inParms) {
@@ -644,6 +655,27 @@ nwisQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate) {
     }
   }
   
+  if('Total Nitrogen' %in% inParms) {
+    parmatercode <- c('00600', '00601', '00602')
+    TN_data <- readNWISdata(service = "iv",
+                            huc=myHUCs,
+                            siteTypeCd=siteTypeCd,
+                            startDate=startDate,
+                            endDate=endDate,
+                            parameterCd = parmatercode)
+    if (nrow(TN_data) > 0) {
+      TN_sites <- attr(TN_data, 'siteInfo')
+      TN_data <- TN_data[,names(TN_data) != 'tz_cd']
+      TN_data$Analyte <- 'Total Nitrogen'
+      TN_data$Unit <- 'mg/l'
+      TN_data$SampleType <- 'grab'
+      if (any(grepl('Mid|Lower', names(TN_data)))) {
+        TN_data <- TN_data[,-grep('Mid|Lower', names(TN_data))]
+      }
+    } else {
+      TN_data <- NULL 
+    }
+  }
   
   df_list <- list(temp_data_c, temp_data_f, ph_data, DO_data, TSS_data)
   df_list_rows <- lapply(df_list, nrow)

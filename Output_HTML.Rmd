@@ -1,20 +1,20 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Middle Willamette AgWQ
+  DEQ Water Quality Status and Trends report for the Crooked River AgWQ
   Management Area'
 author: ''
-date: "December 2017"
+date: "January 2018"
 output:
-  word_document:
-    fig_caption: yes
-    reference_docx: ReportTemplate.docx
-    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
+  word_document:
+    fig_caption: yes
+    reference_docx: ReportTemplate.docx
+    toc: yes
 always_allow_html: yes
 ---
 
@@ -35,17 +35,19 @@ library(DT)
 library(wq)
 library(chron)
 library(reshape)
+library(reshape2)
 #library(ggplot2)
 library(zoo)
 library(spatialEco)
 library(dplyr)
 library(lubridate)
+library(ggthemes)
 
 input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen', 'Total Nitrogen')
-input$select <- "Middle Willamette" #input
-input$dates <- c("2000-01-01", "2018-01-01") #input
+input$select <- "Crooked River" #input
+input$dates <- c("2000-01-01", "2018-03-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 #input$db2 <- c('Water Quality Portal')
 
@@ -68,8 +70,13 @@ source('functions/01_DataQuery.R')
 
 if(input$select == 'Middle Willamette') {
   load("RdataFiles/Middle Willamette.df.all.2018-01-22.Rdata")
+} else if(input$select == 'Tualatin River Subbasin'){
+  load(file = "RdataFiles/Tualatin River Subbasin.df.all.2018-01-25.Rdata")
+} else if(input$select == 'Upper Deschutes') {
+  load(file = "RdataFiles/Upper Deschutes.df.all.2018-01-18.Rdata")
+} else if (input$select == "Crooked River") {
+  load(file = "RdataFiles/Crooked River.df.all.2018-03-08.Rdata")
 } else {
-  
   df.all<-query(select =  input$select,
                 parms = input$parms,
                 dates = input$dates,
@@ -87,8 +94,10 @@ if(input$select == 'Middle Willamette') {
     sub$Station_ID <- gsub("-", "", sub$Station_ID)
     df.all <- rbind(sub, df.all)
   } 
+  
+#save(df.all, file = paste0("RdataFiles/", input$select, ".df.all.", Sys.Date(), ".Rdata"))
 
-
+#load(file = "RdataFiles/Mid Coast.df.all.2018-02-12.Rdata")
 
 ```
 
@@ -106,7 +115,7 @@ load('app/OR_cats.Rdata')
 df.all <- remove_stn_dups(df.all)
 
 ##Add snapped stations
-df.all <- Snapped_Stations(df.all)
+#df.all <- Snapped_Stations(df.all)
 
 df.all <- clipToPlanArea(df.all, agwqma, input$select)
 
@@ -152,10 +161,13 @@ stns<- All_stns_fit_Criteria(trend = trend,
                              status = status,
                              df.all = df.all)
 
-print(stns)
+#print(stns)
 
-stn_totals<-summarizeByStation(df.all)
-all.sp <- generateStnLyrToPlot(df.all, stn_totals) #changed lat and long names
+df.stns <- df.all[df.all$Station_ID %in% unique(stns$Station_ID),]
+stn_totals<-summarizeByStation(df.stns)
+all.sp <- generateStnLyrToPlot(df.stns, stn_totals) #changed lat and long names
+
+all_stn_sp <- all_stn_sp(df.all)
 stn_nlcd_df <- landUseAnalysis(all.sp, cats, NLCD2011)
 
 # if(any(grepl('OREGONDEQ', df.all$Station_ID))) {
@@ -167,11 +179,6 @@ stn_nlcd_df <- landUseAnalysis(all.sp, cats, NLCD2011)
 #   rm(sub)
 # }
 
-
-
-#save(df.all, file = paste0("RdataFiles/", input$select, ".df.all.", Sys.Date(), ".Rdata"))
-
-#load("")
 
 ```
 
@@ -238,10 +245,9 @@ Trends are more detectable with the average monthly daily degree hours that exce
 #- Results
 
 ##Station Locations
-Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` out of `r length(unique(df.all$Station_ID))` monitoring stations fit the criteria to assess water quality status and trends. The following map shows monitoring stations that fit the criteria within the AgWQ Management Area. 
+Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` out of `r length(unique(df.all$Station_ID))` monitoring stations fit the criteria to assess water quality status and trends. The following map shows monitoring stations that fit the criteria within the watershed, all stations that were queried, and multiple background layer options. 
 
 ```{r map, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
-library(raster)
 library(leaflet)
 
 agarea <- agwqma[agwqma$PlanName == input$select,]
@@ -250,10 +256,38 @@ agarea<-spTransform(agarea, CRS("+proj=longlat +datum=NAD83"))
 map <- leaflet(agarea) %>%
   addPolygons() %>%
   addTiles() %>%
-  #addRasterImage(lulc) 
-  addMarkers(lng = stns$DECIMAL_LONG, 
-             lat = stns$DECIMAL_LAT, 
-             popup = paste(stns$Station_ID, stns$Station_Description, sep = "-")) %>%
+  addMarkers(data = all.sp, 
+             lng = all.sp@coords[,1], 
+             lat = all.sp@coords[,2], 
+             popup = paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
+                           lapply(rownames(all.sp@data), 
+                                  function(row) {
+                                    htmlTable::htmlTable(all.sp@data[row,],
+                                                         header = c('Stn_ID', 'Stn_Name',
+                                                                    names(all.sp@data)[-c(1,2)]),
+                                                         rnames = FALSE)
+                                  })),
+             group = 'Stations That Fit Criteria') %>%
+  addMarkers(data = all_stn_sp, 
+             lng = all_stn_sp@coords[,1], 
+             lat = all_stn_sp@coords[,2], 
+             popup = paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
+                           lapply(rownames(all_stn_sp@data),
+                                  function(row) {
+                                    htmlTable::htmlTable(all_stn_sp@data[row,],
+                                                         header = c('Stn_ID', 'Stn_Name',
+                                                                    names(all_stn_sp@data)[-c(1,2)]),
+                                                         rnames = FALSE)
+                                  })),
+             group = 'All Stations Queried') %>%
+  hideGroup('All Stations Queried') %>%
+  addWMSTiles('https://raster.nationalmap.gov/arcgis/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer/WMSServer?',
+              group = "Land Use (NLCD 2011)",
+              layers = '33',
+              options = WMSTileOptions(format = 'image/png',
+                                       version = '1.3.0',
+                                       transparent = TRUE)) %>% 
+  hideGroup('Land Use (NLCD 2011)') %>%
   addWMSTiles(GetURL("USGSTopo"), 
               attribution = paste0("<a href='https://www.usgs.gov/'>",
                                    "U.S. Geological Survey</a> | ",
@@ -265,45 +299,17 @@ map <- leaflet(agarea) %>%
               options = WMSTileOptions(format = "image/png", 
                                        transparent = TRUE),
               layers = "0") %>%
-  hideGroup("Hydropgraphy") %>%
-  addLayersControl(baseGroups = c('Terrain','Satellite', 'USGS Topo'))
+  hideGroup("Hydrography") %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
+  addLayersControl(baseGroups = c('Land Use (NLCD 2011)', 'USGS Topo', 'ESRI NatGEO World Map'),
+                   overlayGroups = c('Stns That Fit Criteria', 'All Stations Queried', 'Hydrography'),
+                   options = layersControlOptions(collapsed = FALSE))
 map
   
 ```
 
 ##Land Use
-Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) developed by EPA was used to summarize the cumulative upstream catchment of each station for primary landuse characteristics, based on the National Hydrography Dataset Plus Version 2 geospatial framework.  
-
-```{r landuse, echo = FALSE}
-library(knitr)
-library(dplyr)
-library(plyr)
-library(raster)
-library(leaflet)
-
-lulc <- leaflet(agarea) %>%
-  addPolygons() %>%
-  addTiles() %>%
-  addMarkers(lng = stns$DECIMAL_LONG, 
-             lat = stns$DECIMAL_LAT, 
-             popup = paste(stns$Station_ID, stns$Station_Description, sep = "-")) %>%
-  addWMSTiles('https://raster.nationalmap.gov/arcgis/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer/WMSServer?',
-              group = "Land Use (NLCD 2011)",
-              layers = '33',
-              options = WMSTileOptions(format = 'image/png',
-                                       version = '1.3.0',
-                                       transparent = TRUE)) %>% 
-  addWMSTiles(GetURL("USGSHydroCached"), 
-              group = "Hydrography", 
-              options = WMSTileOptions(format = "image/png", 
-                                       transparent = TRUE),
-              layers = "0") %>%
-  hideGroup("Hydropgraphy") 
-lulc
-
-```
-
-
+Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) developed by EPA was used to summarize the cumulative upstream catchment of each station for primary landuse characteristics, based on the National Hydrography Dataset Plus Version 2 geospatial framework. The land use and land cover raster (NLCD 2011) can be viewed as an option in the station locations map above. 
 
 Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. Source: 2011 NAIP
 ```{r landuse table, echo = FALSE}
@@ -358,7 +364,7 @@ kable(SK, format = "markdown", padding = 2, format.args = list(scientific = TRUE
 }
 ```
 ##E.coli
-```{r Ecoli, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = '_E. Coli_ water quality status and trends'}
+```{r Ecoli, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 7, fig.height = 7, fig.cap = '_E. Coli_ water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
 library(ggplot2)
@@ -524,12 +530,13 @@ if(any(df.all$Analyte == 'Enterococcus')){
 ```
 
 ##Total Phosphorus
-```{r Total Phosphorus, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Total phosphorus water quality status and trends'}
+```{r Total Phosphorus, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 7, fig.height = 7, fig.cap = 'Total phosphorus water quality status and trends'}
 source("functions/funPlots.R")
 source('functions/TualatinR_Allocations.R')
 library(dplyr)
 library(ggplot2)
 library(knitr)
+library(ggthemes)
 
 tp_stn <- NULL
 
@@ -554,12 +561,12 @@ if(length(tp_stn) > 0) {
   TP_all <- df.all[df.all$Analyte == 'Total Phosphorus',]
   TP <- df.all[df.all$Analyte == 'Total Phosphorus',]
   
-  if (input$select == 'Tualatin River Subbasin') {
-    
-    TP_alloc <- evaluate_tp_alloc(TP_all, tp_stn) ####TMDL load allocation
-    #trib <- tp_list[[1]]
-    #summer <- tp_list[[2]]
-  }
+  # if (input$select == 'Tualatin River Subbasin') {
+  #   
+  #   TP_alloc <- evaluate_tp_alloc(TP_all, tp_stn) ####TMDL load allocation
+  #   #trib <- tp_list[[1]]
+  #   #summer <- tp_list[[2]]
+  # }
   #} else {
     
     TP_list<- list()
@@ -574,7 +581,7 @@ if(length(tp_stn) > 0) {
       tmp_df_MRL <- tmp_df[sub,]
       tmp_df <- remove.dups(tmp_df_MRL, max)
       
-      if(input$select == 'Powder-Brownlee') { #Snake River Hells Canyon TMDL allocation 2004
+      if(input$select == 'Powder-Brownlee'| input$select == 'Burnt River') { #Snake River Hells Canyon TMDL allocation 2004
         TP_evaluate <- EvaluateTPWQS(tmp_df, 
                                      selectWQSTP = 0.07)
       } else {
@@ -603,18 +610,18 @@ if(length(tp_stn) > 0) {
       trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE,
                           ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE, TRUE))
       
-      if(input$select == 'Powder-Brownlee') {
+      if(input$select == 'Powder-Brownlee' | input$select == 'Burnt River') {
         b <- plot.TP(new_data=mydata_sub,
                      df.all = df.all,
                      sea_ken_table=results_seaken ,
                      plot_trend = trend_logic,
                      selectWQSTP = 0.07,
                      parm = unique(mydata_sub$Analyte))
-      } else if (input$select == 'Tualatin River Subbasin') {
-        new_data <- TP_alloc[TP_alloc$Station_ID == unique(TP_alloc$Station_ID)[i],]
-        b <- tp_alloc_plot(TP_alloc = new_data,
-                           sea_ken_table = results_seaken,
-                           plot_trend = trend_logic)
+      # } else if (input$select == 'Tualatin River Subbasin') {
+      #   new_data <- TP_alloc[TP_alloc$Station_ID == unique(TP_alloc$Station_ID)[i],]
+      #   b <- tp_alloc_plot(TP_alloc = new_data,
+      #                      sea_ken_table = results_seaken,
+      #                      plot_trend = trend_logic)
       } else {
         b <- plot.TP(new_data=mydata_sub,
                      df.all = df.all,
@@ -644,9 +651,27 @@ if(length(tp_stn) > 0) {
   tp_exc <- exc
 #}
 ```
+<!-- ###Total Phosphorus TMDL Loading Capacity Evaluation -->
+<!-- The 2001/2012 Tualatin River Subbasin TMDL loading capacity values were applied to total phosphorus results within the Tualatin River Subbasin. The loading capacity (or TMDL target) defines the total amount of pollutant that a waterbody can receive and still meet water quality standards. This definition includes both natural and human sources. The loading capacity is defined as a summer (June - September) median. Boxplots are presented to show the summer distribution of total phosphorus as well as the median and how it compares to the loading capacity target ([Tualatin Total Maximum Daily Load (TMDL) and Water Quality Management Plan (WQMP)](http://www.oregon.gov/deq/FilterDocs/tmdlwqmp.pdf]) .    -->
+
+<!-- ```{r TP loading capacity evaluation, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 8, fig.height = 8, fig.cap = "Median total phosphorus results relative to the applicable loading capacity (identified in the Tualatin River TMDL 2001/2012). The loading capacity is shown as the dark green dashed line. The median value of results for each summer is marked as a red dot and labeled numerically above. If the median is above the load capacity, it is in exceedance of the TMDL allotted loading capacity." } -->
+<!-- source('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/functions/TualatinR_Allocations.R') -->
+
+<!-- plots<-list() -->
+<!-- for (i in 1:length(tp_stn)) { -->
+<!--   mydata_sub <- TP_all[TP_all$Station_ID == tp_stn[i],] -->
+
+<!--   b <- tp_alloc_boxplot(TP_alloc = mydata_sub) -->
+
+<!--   plots[[i]]<-b -->
+
+<!--   print(plots[[i]]) -->
+
+<!-- }  -->
+<!-- ``` -->
 
 ##Total Suspended Solids
-```{r TSS, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Total Suspended Solids water quality status and trends'}
+```{r TSS, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 7, fig.height = 7, fig.cap = 'Total Suspended Solids water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
 library(ggplot2)
@@ -745,7 +770,7 @@ tss_exc <- exc
 ```
 
 ##pH
-```{r pH, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'pH water quality status and trends'}
+```{r pH, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 7, fig.height = 7, fig.cap = 'pH water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
 library(ggplot2)
@@ -858,7 +883,6 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
                    ph_crit_max = ph_crit_max)
       
       
-      
       pH_plots[[i]]<-b
       
       print(pH_plots[[i]])
@@ -890,7 +914,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
 ```
 
 ##Temperature
-```{r Temperature, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Temperature water quality status and trends'}
+```{r Temperature, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 7, fig.height = 7, fig.cap = 'Temperature water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
 library(ggplot2)
@@ -1032,7 +1056,7 @@ temp_exc <- exc
 ```
 
 ##Dissolved Oxygen
-```{r Dissolved Oxygen, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Dissolved Oxygen water quality status and trends'}
+```{r Dissolved Oxygen, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 7, fig.height = 7, fig.cap = 'Dissolved Oxygen water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
 library(ggplot2)
@@ -1152,7 +1176,7 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
                      station_desc_column = 'Station_Description',
                      datetime_column = 'Sampled',
                      result_column = 'Result',
-                     datetime_format = '%Y-%m-%d',
+                     datetime_format = '%Y-%m-%d %H:%M:%S',
                      parm = 'Dissolved Oxygen')
         
         DO_plots[[i]]<-b
@@ -1189,9 +1213,8 @@ DO_exc <- exc
 ```
 
 #- Summary 
-![](T:/AgWQM/DataAnalysis/Middle Deschutes/Figures/WQassessment_MiddleDeschutes_01182018.png)
+![](T:/AgWQM/DataAnalysis/Crooked River/Figures/WQassessment_CrookedRiver_03122018.png)
 Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by significant trends associated with long-term datasets. 
-
 
 
 ```{r parm summary table, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
@@ -1256,7 +1279,7 @@ kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stat
 `r a <- Conc_LU[Conc_LU$AgArea == input$select, 'Add_conc']`
 * `r a[1]`
 * `r a[2]`
-* `r a[3]`
+<!-- * `r a[3]` -->
 
 
 #- Appendix
