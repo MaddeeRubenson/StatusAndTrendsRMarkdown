@@ -10,7 +10,7 @@ run_seaKen <- function (df.all) {
                             signif="none",
                             stringsAsFactors=FALSE)
   parms <- unique(df.all$Analyte)
-  parms <- parms[parms != 'Temperature']
+  # parms <- parms[parms != 'Temperature']
   for (p in 1:length(parms)) {
     parm <- parms[p]
     for(ii in 1:length(sea_ken_int$Station_ID)) { 

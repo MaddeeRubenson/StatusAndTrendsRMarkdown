@@ -262,7 +262,7 @@ Stations_Status<-function(df.all) {
   dta$Sampled<-as.Date(dta$Sampled)
   dta$year<-as.numeric(format(dta$Sampled, format="%Y"))
   
-  maxyear <- max(dta$year)
+  maxyear <- max(dta$year, na.rm = TRUE)
   statyear<-seq(maxyear-3, maxyear, by = 1)
   # statyear<-c('2014', '2015', '2016', '2017')
   
@@ -563,9 +563,9 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
   dummy<- cbind(dummy, datetime99, date99)
   
   colnames(dummy)[1] <- "id"
-  colnames(dummy)[2] <- "t"
-  colnames(dummy)[3] <- "t_c"
-  colnames(dummy)[4] <- "datetime"
+  colnames(dummy)[2] <- "datetime"
+  colnames(dummy)[3] <- "t"
+  colnames(dummy)[4] <- "t_c"
   colnames(dummy)[5] <- "date"
   
   dummy$t_c <- as.numeric(dummy$t_c)
@@ -1375,7 +1375,9 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
   return(stn_cat_use_2011)
 }
 
-temp_sufficiency_analysis <- function(df.all, sdadm) {
+temp_sufficiency_analysis <- function(df.all) {
+  df.all <- filter(df.all, Analyte == "Temperature")
+  df.all$isMax <- ifelse(df.all$SampleType == "Maximum", TRUE, FALSE)
   stns <- unique(df.all$Station_ID)
   qc.results.1 <- NULL
   qc.results.2 <- NULL
@@ -1383,11 +1385,12 @@ temp_sufficiency_analysis <- function(df.all, sdadm) {
   for (i in 1:length(stns)) {
     tmp <- df.all[df.all$Station_ID == stns[i], ]
     
-    tmp$date <- as.POSIXct(strptime(tmp$Sampled, format = "%Y-%m-%d %H:%M:%OS"))
-    tmp$month <- month(tmp$date)
-    tmp$year <- year(tmp$date)
-    tmp$day <- day(tmp$date)
-    tmp$hour <- hour(tmp$date)
+    tmp$datetime <- as.POSIXct(strptime(tmp$Sampled, format = "%Y-%m-%d %H:%M:%OS"))
+    tmp$date <- date(tmp$datetime)
+    tmp$month <- month(tmp$datetime)
+    tmp$year <- year(tmp$datetime)
+    tmp$day <- day(tmp$datetime)
+    tmp$hour <- hour(tmp$datetime)
     
     # subset to data to the months of interest
     #tmp <- tmp[tmp$month %in% c(6,7,8,9,10),]
@@ -1397,13 +1400,13 @@ temp_sufficiency_analysis <- function(df.all, sdadm) {
     
     # First determine number of hours collected within each day
     qc.hr <- as.tbl(tmp) %>%
-      group_by(HUC, Station_ID, month, year, day) %>%
+      group_by(HUC, Station_ID, isMax, date, month, year, day) %>%
       summarise(n = length(unique(hour)))
     qc.hr <- as.data.frame(qc.hr)
     
     # Isolate to days with 22 or more hours represented
     qc.hr$n_threshold <- '>= 22 hours'
-    qc.hr$result <- ifelse(qc.hr$n >= 22,'pass','fail')
+    qc.hr$result <- ifelse(qc.hr$n >= 22 | qc.hr$isMax == TRUE,'pass','fail')
     
     qc.results.1 <- rbind(qc.results.1,qc.hr)
     
@@ -1475,12 +1478,11 @@ temp_sufficiency_analysis <- function(df.all, sdadm) {
   
   stns_pass <- unique(qc.results.3[qc.results.3$result == 'pass', "Station_ID"])
   
-  if (length(stns_pass) > 0) {
-    attr(stns_pass, "day_test") <- qc.results.1
-    attr(stns_pass, "month_test") <- qc.results.2
-    attr(stns_pass, "year_test") <- qc.results.3
-  }
-  
+  attr(stns_pass, "day_test") <- qc.results.1
+  attr(stns_pass, "month_test") <- qc.results.2
+  attr(stns_pass, "year_test") <- qc.results.3
+    
+  print(qc.results.1)
   return(stns_pass)
 }
 
@@ -1941,27 +1943,53 @@ parm_summary <- function(stns,
   #filter out stations that meet status and stations that meet trend
   temp_status_stns  <- unique(temp$Station_ID)
   
+  if(any(trend != 'No Stations Meet Trend Criteria'))  {
+    temp_trend_stns <- trend %>% filter(Analyte == 'Temperature')
+    temp_trend_stns  <- unique(temp_trend_stns$Station_ID)
+  } else {
+    temp_trend_stns <- NULL
+  }
+  print(temp_trend_stns)
   #status temp
   if(length(temp_status_stns) > 0){
-  for(i in 1:length(temp_status_stns)) {
-    #status  
-    temp_data <- temp[temp$Station_ID == temp_status_stns[i],]
-    
-    
-    maxyear <- max(temp_data$year)
-    statyear<-seq(maxyear-3, maxyear, by = 1)
-    
-    temp_status <- temp_data %>% filter(Station_ID %in% temp_status_stns) %>% filter(year %in% statyear)
-    
-    if(any(!is.na(temp_status$exceed))) {
-      if(any(unique((temp_status$exceed) == 'TRUE'))) {
-        stns[stns$Station_ID == temp_status_stns[i], ]$Status_temp <- 'Exceeds'
+    for(i in 1:length(temp_status_stns)) {
+      #status  
+      temp_data <- temp[temp$Station_ID == temp_status_stns[i],]
+      
+      
+      maxyear <- max(temp_data$year)
+      statyear<-seq(maxyear-3, maxyear, by = 1)
+      
+      temp_status <- temp_data %>% filter(Station_ID %in% temp_status_stns) %>% filter(year %in% statyear)
+      
+      if(any(!is.na(temp_status$exceed))) {
+        if(any(unique((temp_status$exceed) == 'TRUE'))) {
+          stns[stns$Station_ID == temp_status_stns[i], ]$Status_temp <- 'Exceeds'
+        } else {
+          stns[stns$Station_ID == temp_status_stns[i], ]$Status_temp <- 'Meets'
+        }
+      }
+      
+    }
+  }
+
+  #trend temp
+  if(length(temp_trend_stns) > 0){
+    for(j in 1:length(temp_trend_stns)) {
+      temp_seaken <- SeaKen %>% filter(analyte == 'Temperature')
+      temp_seaken <- temp_seaken[temp_seaken$Station_ID == temp_trend_stns[j],]
+      
+      
+      if(temp_seaken$pvalue < 0.2 & temp_seaken$slope < 0) {
+        stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <-'Improving'
+      } else if(temp_seaken$pvalue < 0.2 & temp_seaken$slope > 0){
+        stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <- 'Degrading'
+      } else if(temp_seaken$pvalue < 0.2 & temp_seaken$slope == 0) {
+        stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <-'Steady'
       } else {
-        stns[stns$Station_ID == temp_status_stns[i], ]$Status_temp <- 'Meets'
+        stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <- 'No Sig Trend'
       }
     }
-    
-  }
   }
   }
   
