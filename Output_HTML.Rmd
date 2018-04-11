@@ -1,28 +1,26 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Crooked River AgWQ
+  DEQ Water Quality Status and Trends report for the Middle John Day AgWQ
   Management Area'
 author: ''
-date: "January 2018"
+date: "March 2018"
 output:
+  word_document:
+    fig_caption: yes
+    reference_docx: //deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/ReportTemplate.docx
+    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
-  word_document:
-    fig_caption: yes
-    reference_docx: ReportTemplate.docx
-    toc: yes
 always_allow_html: yes
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-
-```{r Query, echo = FALSE, cache = FALSE, results = 'hide', include = FALSE}
+knitr::opts_knit$set(root.dir = '//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown')
 library(RCurl)
 library(XML)
 library(dataRetrieval)
@@ -42,11 +40,18 @@ library(spatialEco)
 library(dplyr)
 library(lubridate)
 library(ggthemes)
+library(captioner)
+
+tbls  <- captioner(prefix="**Table")
+figs <- captioner(prefix="**Figure")
+```
+
+```{r Query, echo = FALSE, cache = FALSE, results = 'hide', include = FALSE}
 
 input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen', 'Total Nitrogen')
-input$select <- "Crooked River" #input
+input$select <- "Middle John Day" #input
 input$dates <- c("2000-01-01", "2018-03-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 #input$db2 <- c('Water Quality Portal')
@@ -76,6 +81,8 @@ if(input$select == 'Middle Willamette') {
   load(file = "RdataFiles/Upper Deschutes.df.all.2018-01-18.Rdata")
 } else if (input$select == "Crooked River") {
   load(file = "RdataFiles/Crooked River.df.all.2018-03-08.Rdata")
+} else if (input$select == "Middle John Day") {
+  load(file = "//deqhq1/tmdl/AgWQM/DataAnalysis/Middle John Day/2018/Middle John Day.df.all.2018-03-12.Rdata")
 } else {
   df.all<-query(select =  input$select,
                 parms = input$parms,
@@ -96,6 +103,7 @@ if(input$select == 'Middle Willamette') {
   } 
   
 #save(df.all, file = paste0("RdataFiles/", input$select, ".df.all.", Sys.Date(), ".Rdata"))
+  # save(df.all, file = "//deqhq1/tmdl/AgWQM/DataAnalysis/Middle John Day/2018/Middle John Day.df.all.2018-04-04.Rdata")
 
 #load(file = "RdataFiles/Mid Coast.df.all.2018-02-12.Rdata")
 
@@ -127,7 +135,14 @@ if ("Fecal Coliform" %in% df.all$Analyte) {
 }
 
 if (any('Temperature' %in% df.all$Analyte)) {
-  sdadm <- Calculate.sdadm(df.all, "Result", "Station_ID", "Sampled",
+  
+  tempStns <- temp_sufficiency_analysis(df.all)
+  
+  qc.1.pass <- filter(attributes(tempStns)$day_test, result == "pass")
+  
+  df.all.sdadm <- df.all %>% mutate(date = date(Sampled)) %>% filter(Analyte == "Temperature") %>% merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE)
+  
+  sdadm <- Calculate.sdadm(df.all.sdadm, "Result", "Station_ID", "Sampled",
                            '%Y-%m-%d %H:%M:%S')
 } else {
   sdadm <- NULL
@@ -184,19 +199,19 @@ stn_nlcd_df <- landUseAnalysis(all.sp, cats, NLCD2011)
 
 #- Introduction
 ##Purpose
-Area rules and plans have been adopted by the Oregon Department of Agriculture (ODA) for the `r input$select` Subbasin management area (`r OAR_LU[OAR_LU$AgArea %in% input$select,'OAR']`). Oregon statute and administrative rules require ODA to consult with the Department of Environmental Quality (DEQ) during the biennial review of Agricultural Water Quality Management Area Rules and Plans (ORS 568.930).  DEQ Total Maximum Daily Load (TMDL) and Nonpoint Source (NPS) program staff conduct these reviews based on ODA’s biennial review schedule of their area rules and plans. ODA’s Agriculture Water Quality Program is outcome based, explicitly describing prohibited conditions, similar to DEQ’s TMDL and NPS programs which explicitly define water quality targets and goals.  The analysis of landscape conditions and water quality data is used for implementing these programs as well as identifying data gaps. 
+Area rules and plans have been adopted by the Oregon Department of Agriculture (ODA) for the `r input$select` Subbasin management area (`r OAR_LU[OAR_LU$AgArea %in% input$select,'OAR']`). Oregon statute and administrative rules require ODA to consult with the Department of Environmental Quality (DEQ) during the biennial review of Agricultural Water Quality Management Area Rules and Plans (ORS 568.930).  DEQ Total Maximum Daily Load (TMDL) and Nonpoint Source (NPS) program staff conduct these reviews based on ODA's biennial review schedule of their area rules and plans. ODA's Agriculture Water Quality Program is outcome based, explicitly describing prohibited conditions, similar to DEQ's TMDL and NPS programs which explicitly define water quality targets and goals.  The analysis of landscape conditions and water quality data is used for implementing these programs as well as identifying data gaps. 
 
-The report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. This water quality status and trends report can be used to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what’s working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Dependent on data availability, DEQ will use the available water quality data to answer the first three bullets and for the fourth bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources:
+The report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. This water quality status and trends report can be used to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Dependent on data availability, DEQ will use the available water quality data to answer the first three bullets and for the fourth bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources:
 
 *	What is the status of water quality parameters? 
 *	What is the trend in water quality? 
 *	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
 * Can water quality status and trends be attributed to a source or sources?
 
-DEQ basin coordinators review pertinent information including this report as part of ODA’s biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL load allocations through ODA’s survey. 
+DEQ basin coordinators review pertinent information including this report as part of ODA's biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL load allocations through ODA's survey. 
 
 ##Basin Contact
-```{r basin contact, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
+```{r basin contact, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, results="asis"}
 library(knitr)
 library(dplyr)
 library(plyr)
@@ -210,7 +225,12 @@ agarea <- input$select
 BC_table<-data.frame(agarea, deq, oda)
 colnames(BC_table) <- c('AgWQ Management Area', 'DEQ Basin Coordinator', 'ODA AgWQ Specialist')
 
-kable(BC_table, format = "markdown", padding = 2, digits = 1, caption = "Oregon DEQ and ODA basin contacts")
+kable(BC_table, 
+      # format = "markdown", 
+      padding = 2, digits = 1, caption = 
+        tbls(name = "basinContact", caption =
+               "Oregon DEQ and ODA basin contacts**")
+      )
 ```
 
 <!-- ## Total Maximum Daily Load -->
@@ -219,7 +239,7 @@ kable(BC_table, format = "markdown", padding = 2, digits = 1, caption = "Oregon 
 #- Methods
 
 ##Data Sources
-Analysts retrieved data from [DEQ](http://www.oregon.gov/deq/wq/Pages/WQdata.aspx) (LASAR and ELEMENT), EPA ([Storet](https://www.epa.gov/waterdata/water-quality-data-wqx)) USGS ([NWIS](https://qwwebservices.usgs.gov/), [Water Quality Portal](https://www.waterqualitydata.us/)) databases.A summary of all organizations that provided data that was queried and evaluated for use in this report is found in the Appendix. The time period for the query was from `r input$dates[1]` to `r input$dates[2]`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` data determined following the [DEQ’s Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf). EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. 
+Analysts retrieved data from [DEQ](http://www.oregon.gov/deq/wq/Pages/WQdata.aspx) (LASAR and ELEMENT), EPA ([Storet](https://www.epa.gov/waterdata/water-quality-data-wqx)) USGS ([NWIS](https://qwwebservices.usgs.gov/), [Water Quality Portal](https://www.waterqualitydata.us/)) databases.A summary of all organizations that provided data that was queried and evaluated for use in this report is found in the Appendix. The time period for the query was from `r input$dates[1]` to `r input$dates[2]`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. The data returned were evaluated for data quality. DEQ data included  `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` data determined following the [figs(name = "labManual", caption = "DEQ's Laboratory Quality Manual**")](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf). EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. 
 
 ##Decision Criteria
 
@@ -312,7 +332,7 @@ map
 Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) developed by EPA was used to summarize the cumulative upstream catchment of each station for primary landuse characteristics, based on the National Hydrography Dataset Plus Version 2 geospatial framework. The land use and land cover raster (NLCD 2011) can be viewed as an option in the station locations map above. 
 
 Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. Source: 2011 NAIP
-```{r landuse table, echo = FALSE}
+```{r landuse table, echo = FALSE, results='asis'}
 stn_to_use<-c(unique(stns$Station_ID))
 
 landuse<-stn_nlcd_df%>%
@@ -322,7 +342,9 @@ colnames(landuse) <- c("Station ID", "Station Description", "Year", "Watershed A
                        "%Urban", "%Forest", "%Ag", "%Range", "%Other")
 landuse<-landuse[, - 3]
 
-kable(landuse, digits = 0, format = "markdown", padding = 2, caption = "Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. ")
+kable(landuse, digits = 0, 
+      # format = "markdown", 
+      padding = 2, caption = tbls(name = "landUse", caption = "Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status.**"))
 ```
 
 ##Water Quality Limited Stream Segments
@@ -340,7 +362,7 @@ wq_limited_df$`Listing Status` <- revalue(wq_limited_df$`Listing Status`, c("Cat
                                                                             "TMDL approved" = "Cat 4A",
                                                                             "303(d)" = "Cat 5"))
 
-kable(wq_limited_df, format = "markdown", padding = 2, caption = "Summary of Integrated Report listings for parameters included in this report. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA")
+kable(wq_limited_df, padding = 2, caption = tbls(name = "wqLimited", caption = "Summary of Integrated Report listings for parameters included in this report. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA**"))
 
 ```
 
@@ -348,7 +370,7 @@ kable(wq_limited_df, format = "markdown", padding = 2, caption = "Summary of Int
 For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal kendall trend analysis. Results are summarized in table (If no table is visible, there were no monitoring station that contained sufficient data to assess trends).
 
 
-Output for the Seasonal kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.  
+<!-- Output for the Seasonal kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.   -->
 ```{r Seasonal Kendall, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 SK <- SeaKen %>% filter(Station_ID %in% unique(stns$Station_ID)) %>% filter(signif !=  "Need at least 8 years") %>% 
   filter(analyte != 'Dissolved oxygen saturation')
@@ -360,11 +382,11 @@ SK <- SK[,c(1, 2, 3, 4, 5, 8, 9)]
 SK$slope <- as.numeric(SK$slope)
 SK$pvalue <- as.numeric(SK$pvalue)
 
-kable(SK, format = "markdown", padding = 2, format.args = list(scientific = TRUE))
+kable(SK, padding = 2, format.args = list(scientific = TRUE), caption = tbls(name = "seakenTable", caption = "Output for the Seasonal kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.**"))
 }
 ```
 ##E.coli
-```{r Ecoli, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 7, fig.height = 7, fig.cap = '_E. Coli_ water quality status and trends'}
+```{r Ecoli, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = '_E. Coli_ water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
 library(ggplot2)
@@ -447,7 +469,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
 
 if(!is.null(exc)) {
   colnames(exc) <- c("Station ID", "Station Description", "Sample", "Obs", "Exceedances", "% Exceedance")
-    kable(exc, format = "markdown", padding = 2, digits = 1, caption = "E.coli status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table." )
+    kable(exc, padding = 2, digits = 1, caption = tbls(name = "bacExcTable", caption = "E.coli status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
 }
 ```
 
@@ -520,7 +542,7 @@ if(any(df.all$Analyte == 'Enterococcus')){
       print(ent_plots[[i]])
     }
     
-    kable(exc, format = "markdown", padding = 2, digits = 1, caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table." )
+    kable(exc, padding = 2, digits = 1, caption = tbls(name = "enterExcTable", caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
     
   } 
   ent_exc <- exc
@@ -530,7 +552,7 @@ if(any(df.all$Analyte == 'Enterococcus')){
 ```
 
 ##Total Phosphorus
-```{r Total Phosphorus, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 7, fig.height = 7, fig.cap = 'Total phosphorus water quality status and trends'}
+```{r Total Phosphorus, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Total phosphorus water quality status and trends'}
 source("functions/funPlots.R")
 source('functions/TualatinR_Allocations.R')
 library(dplyr)
@@ -599,60 +621,60 @@ if(length(tp_stn) > 0) {
     exc<-rbind.fill(TP_exclist[])
     exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
     
-  }
-    
-    results_seaken<-SeaKen %>% filter(analyte == 'Total Phosphorus')
-    
-    tp_plots<-list()
-    for (i in 1:length(tp_stn)) {
-      mydata_sub <- TP_all[TP_all$Station_ID == tp_stn[i],]
-      
-      trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE,
-                          ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE, TRUE))
-      
-      if(input$select == 'Powder-Brownlee' | input$select == 'Burnt River') {
-        b <- plot.TP(new_data=mydata_sub,
-                     df.all = df.all,
-                     sea_ken_table=results_seaken ,
-                     plot_trend = trend_logic,
-                     selectWQSTP = 0.07,
-                     parm = unique(mydata_sub$Analyte))
-      # } else if (input$select == 'Tualatin River Subbasin') {
-      #   new_data <- TP_alloc[TP_alloc$Station_ID == unique(TP_alloc$Station_ID)[i],]
-      #   b <- tp_alloc_plot(TP_alloc = new_data,
-      #                      sea_ken_table = results_seaken,
-      #                      plot_trend = trend_logic)
-      } else {
-        b <- plot.TP(new_data=mydata_sub,
-                     df.all = df.all,
-                     sea_ken_table=results_seaken ,
-                     plot_trend = trend_logic,
-                     selectWQSTP = 0,
-                     parm = unique(mydata_sub$Analyte))
-      }
-      
-      #ggsave(plot = b, filename = paste('TP_plots', unique(new_data$Station_ID), '.png'), width = 6, height = 6)
-      
-      tp_plots[[i]]<-b
-      
-      print(tp_plots[[i]])
-      
-    } 
-    
-    colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
-    exc <- exc[,c(1:5)]
-    kable(exc, format = "markdown", padding = 2, digits = 1, caption = "Total Phosphorus status and trends" )
-    
-    # }else {
-    #   print("No monitoring stations have sufficent data to assess status and/or trend of total phosphorus")
-    # }
-  #} 
+}
+
+results_seaken<-SeaKen %>% filter(analyte == 'Total Phosphorus')
+
+tp_plots<-list()
+for (i in 1:length(tp_stn)) {
+  mydata_sub <- TP_all[TP_all$Station_ID == tp_stn[i],]
   
-  tp_exc <- exc
+  trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE,
+                      ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE, TRUE))
+  
+  if(input$select == 'Powder-Brownlee' | input$select == 'Burnt River') {
+    b <- plot.TP(new_data=mydata_sub,
+                 df.all = df.all,
+                 sea_ken_table=results_seaken ,
+                 plot_trend = trend_logic,
+                 selectWQSTP = 0.07,
+                 parm = unique(mydata_sub$Analyte))
+    # } else if (input$select == 'Tualatin River Subbasin') {
+    #   new_data <- TP_alloc[TP_alloc$Station_ID == unique(TP_alloc$Station_ID)[i],]
+    #   b <- tp_alloc_plot(TP_alloc = new_data,
+    #                      sea_ken_table = results_seaken,
+    #                      plot_trend = trend_logic)
+  } else {
+    b <- plot.TP(new_data=mydata_sub,
+                 df.all = df.all,
+                 sea_ken_table=results_seaken ,
+                 plot_trend = trend_logic,
+                 selectWQSTP = 0,
+                 parm = unique(mydata_sub$Analyte))
+  }
+  
+  #ggsave(plot = b, filename = paste('TP_plots', unique(new_data$Station_ID), '.png'), width = 6, height = 6)
+  
+  tp_plots[[i]]<-b
+  
+  print(tp_plots[[i]])
+  
+} 
+
+colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
+exc <- exc[,c(1:5)]
+kable(exc,padding = 2, digits = 1, caption = tbls(name = "tpExcTable", caption = "Total Phosphorus status and trends**"))
+
+# }else {
+#   print("No monitoring stations have sufficent data to assess status and/or trend of total phosphorus")
+# }
+#} 
+
+tp_exc <- exc
 #}
 ```
-<!-- ###Total Phosphorus TMDL Loading Capacity Evaluation -->
-<!-- The 2001/2012 Tualatin River Subbasin TMDL loading capacity values were applied to total phosphorus results within the Tualatin River Subbasin. The loading capacity (or TMDL target) defines the total amount of pollutant that a waterbody can receive and still meet water quality standards. This definition includes both natural and human sources. The loading capacity is defined as a summer (June - September) median. Boxplots are presented to show the summer distribution of total phosphorus as well as the median and how it compares to the loading capacity target ([Tualatin Total Maximum Daily Load (TMDL) and Water Quality Management Plan (WQMP)](http://www.oregon.gov/deq/FilterDocs/tmdlwqmp.pdf]) .    -->
+<!-- Total Phosphorus TMDL Loading Capacity Evaluation -->
+<!-- The 2001/2012 Tualatin River Subbasin TMDL loading capacity values were applied to total phosphorus results within the Tualatin River Subbasin. The loading capacity (or TMDL target) defines the total amount of pollutant that a waterbody can receive and still meet water quality standards. This definition includes both natural and human sources. The loading capacity is defined as a summer (June - September) median. Boxplots are presented to show the summer distribution of total phosphorus as well as the median and how it compares to the loading capacity target ([Tualatin Total Maximum Daily Load (TMDL) and Water Quality Management Plan (WQMP)](http://www.oregon.gov/deq/FilterDocs/tmdlwqmp.pdf]) . -->
 
 <!-- ```{r TP loading capacity evaluation, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 8, fig.height = 8, fig.cap = "Median total phosphorus results relative to the applicable loading capacity (identified in the Tualatin River TMDL 2001/2012). The loading capacity is shown as the dark green dashed line. The median value of results for each summer is marked as a red dot and labeled numerically above. If the median is above the load capacity, it is in exceedance of the TMDL allotted loading capacity." } -->
 <!-- source('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/functions/TualatinR_Allocations.R') -->
@@ -671,7 +693,7 @@ if(length(tp_stn) > 0) {
 <!-- ``` -->
 
 ##Total Suspended Solids
-```{r TSS, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 7, fig.height = 7, fig.cap = 'Total Suspended Solids water quality status and trends'}
+```{r TSS, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Total Suspended Solids water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
 library(ggplot2)
@@ -760,7 +782,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
   } 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
 exc <- exc[,c(1:5)]
-  kable(exc, format = "markdown", padding = 2, digits = 1, caption = "Total Suspended Solids status and trends" )
+  kable(exc, padding = 2, digits = 1, caption = tbls(name = "tssExcTable", caption = "Total Suspended Solids status and trends**"))
 
 # }else {
 #   "No monitoring stations have sufficent data to assess status and/or trend of total suspended solids"
@@ -770,7 +792,7 @@ tss_exc <- exc
 ```
 
 ##pH
-```{r pH, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 7, fig.height = 7, fig.cap = 'pH water quality status and trends'}
+```{r pH, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'pH water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
 library(ggplot2)
@@ -904,7 +926,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   }
   
   if(!is.null(ph_exc)) {
-    kable(ph_exc, format = "markdown", padding = 2, digits = 1, caption = "pH status and trends" )
+    kable(ph_exc, padding = 2, digits = 1, caption = tbls(name = "phExcTable", caption = "pH status and trends**"))
   }
   # } else {
   #   print("No monitoring stations have sufficient data to assess pH")
@@ -914,7 +936,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
 ```
 
 ##Temperature
-```{r Temperature, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 7, fig.height = 7, fig.cap = 'Temperature water quality status and trends'}
+```{r Temperature, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Temperature water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
 library(ggplot2)
@@ -1007,13 +1029,14 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
             
             b <- plot.Temperature(new_data = temp_evaluate,
                                   all_data = df.all,
+                                  sea_ken_table = SeaKen,
                                   selectUse = Temp_Benuse[1],
                                   selectSpawning = spwn_time[1],
                                   station_id_column = 'Station_ID',
                                   station_desc_column = 'Station_Description',
                                   datetime_column = 'date',
                                   datetime_format = '%Y-%m-%d',
-                                  plot_trend = FALSE)
+                                  plot_trend = TRUE)
             
             
             temp_plots[[i]]<-b
@@ -1043,8 +1066,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
       
       if(!is.null(exc)){ #prints exceedance table, if temperature stns exist 
        #fix column names
-         kable(exc, format = "markdown", padding = 2, digits = 1, caption = "Temperature status and trends" )
-        
+         kable(exc, padding = 2, digits = 1, caption = tbls(name = "tempExcTable", caption = "Temperature status and trends**"))
       }
       
        }
@@ -1056,7 +1078,7 @@ temp_exc <- exc
 ```
 
 ##Dissolved Oxygen
-```{r Dissolved Oxygen, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 7, fig.height = 7, fig.cap = 'Dissolved Oxygen water quality status and trends'}
+```{r Dissolved Oxygen, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Dissolved Oxygen water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
 library(ggplot2)
@@ -1202,7 +1224,7 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
     
     colnames(exc) <- c("Station ID", "Station Description", "Obs", "Exceedances", "Meets b/c %Sat", "Min Date", "Max Date")
     if(!is.null(exc)){
-      kable(exc, format = "markdown", padding = 2, digits = 1, caption = "Dissolved Oxygen status and trends" )
+      kable(exc, padding = 2, digits = 1, caption = tbls(name = "doExcTable", caption = "Dissolved Oxygen status and trends**"))
     }
     
   # } else {
@@ -1213,8 +1235,8 @@ DO_exc <- exc
 ```
 
 #- Summary 
-![](T:/AgWQM/DataAnalysis/Crooked River/Figures/WQassessment_CrookedRiver_03122018.png)
-Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two years of available data defined whether a station was ‘Meeting’ or ‘Not Meeting’. Trend was determined by significant trends associated with long-term datasets. 
+<!-- ![](T:/AgWQM/DataAnalysis/Middle Willamette/Figures/WQassessment_MiddleWillamette_01232018.png) -->
+Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two years of available data defined whether a station was 'Meeting' or 'Not Meeting'. Trend was determined by significant trends associated with long-term datasets.
 
 
 ```{r parm summary table, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
@@ -1232,6 +1254,8 @@ stnsformap <-  parm_summary(stns = stns[,c(1:4)],
 stnsformap <- stnsformap %>%
   filter(!grepl('CTGR', Station_ID))
 
+write.csv(stnsformap, "//deqhq1/tmdl/AgWQM/DataAnalysis/Middle John Day/2018/parm_summary_stns_03-16-2018.csv")
+
 colnames(stnsformap) <- c("Station ID", "Station Description", 'Latitude', 'Longitude', "Bacteria Status",
                           "Bacteria Trend","Temperature Status", "Temperature Trend", "pH Status", "pH Trend", 
                           "DO Status", "DO Trend")
@@ -1239,8 +1263,7 @@ colnames(stnsformap) <- c("Station ID", "Station Description", 'Latitude', 'Long
 #stnsformap <- stnsformap[,c(-1)]
 
 
-kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last two years of available data. Note: DO = dissolved oxygen")
-#write.csv(stnsformap, "T:/AgWQM/DataAnalysis/Powder-Brownlee/Data/parm_summary_stns-11092017.csv")
+kable(stnsformap, padding = 2, digits = 3, caption = tbls(name = "parmSumTable", caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last two years of available data. Note: DO = dissolved oxygen**"))
 
 # map2 <- leaflet(agarea) %>%
 #   addPolygons() %>%
@@ -1286,12 +1309,12 @@ kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stat
 ```{r appendix, echo=FALSE}
 org_summary <- summarizeByOrg(df.all)
 
-kable(org_summary,  padding = 2, digits = 1, caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report")
+kable(org_summary,  padding = 2, digits = 1, caption = tbls(name = "orgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report**"))
 
-kable(status, padding = 2, digits = 1, caption = "Monitoring stations that fit the criteria to assess status; note value represents the number of results for each monitoring station per year")
+kable(status, padding = 2, digits = 1, caption = tbls(name = "statusTable", caption = "Monitoring stations that fit the criteria to assess status; note value represents the number of results for each monitoring station per year**"))
 
-kable(trend, padding = 1, digits = 1, caption = "Monitoring stations that fit the criteria to assess trends; note value represents the number of results for each monitoring station per year")
+kable(trend, padding = 1, digits = 1, caption = tbls(name = "trendTable", caption = "Monitoring stations that fit the criteria to assess trends; note value represents the number of results for each monitoring station per year**"))
 
-kable(stns_by_year, padding = 1, digits = 1, caption = "All monitoring stations that were queried and the number of results per year from 2000 to 2017")
+kable(stns_by_year, padding = 1, digits = 1, caption = tbls(name = "stnByYrTable", caption = "All monitoring stations that were queried and the number of results per year from 2000 to 2017**"))
 
 

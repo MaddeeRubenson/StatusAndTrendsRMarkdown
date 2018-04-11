@@ -144,6 +144,7 @@ plot.ph <- function(new_data,
 plot.Temperature <- function(new_data, 
                              all_data,
                              selectUse,
+                             sea_ken_table,
                              selectSpawning,
                              station_id_column = 'Station_ID',
                              station_desc_column = 'Station_Description',
@@ -152,7 +153,7 @@ plot.Temperature <- function(new_data,
                                plot_trend = FALSE) {
   require(ggplot2)
   
-  new_data <- temp_evaluate
+  # new_data <- temp_evaluate
   new_data$Sampled <- as.POSIXct(strptime(new_data[,datetime_column], 
                                           format = datetime_format))  
   new_data[!is.na(new_data$sdadm) & is.na(new_data$exceed), 'exceed'] <- FALSE
@@ -176,13 +177,49 @@ plot.Temperature <- function(new_data,
   } else if (y.max < 13) {
     y.max <- 14
   }
-  y.lim <- c(y.min,y.max) 
+  y.lim <- c(y.min,y.max)
+  y.median <- median(new_data$sdadm)
+  slope <- suppressWarnings(
+    as.numeric(
+      sea_ken_table[sea_ken_table$Station_ID == 
+                      unique(new_data[, station_id_column]) & 
+                      sea_ken_table$analyte == "Temperature", 'slope']
+    )
+  )
+  p.value <- suppressWarnings(
+    as.numeric(
+      sea_ken_table[sea_ken_table$Station_ID == 
+                      unique(new_data[,station_id_column]) & 
+                      sea_ken_table$analyte == "Temperature",'pvalue']
+    )
+  )
+  p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
+                                   unique(new_data[,station_id_column]) & 
+                                   sea_ken_table$analyte == "Temperature",'signif']
+  x.delta <- as.numeric((x.max-x.min)/2)####average date
+  SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
+  SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
+  sub.text <- paste0("p value = " ,
+                     round(p.value, digits=3),
+                     ", ",  
+                     p.value.label, 
+                     ", slope = ", 
+                     round(slope, digits=2), 
+                     ", n = ", 
+                     nrow(new_data))
+  df_trend_line <- data.frame(x = c(x.min, x.max),
+                              y = c(SK.min, SK.max),
+                              variable = rep('Trend line', 2))
   title <- paste0(unique(all_data[all_data[,station_id_column] == 
                                     new_data[1, station_id_column],station_desc_column]), 
                   ", ID = ", 
                   new_data[1, station_id_column])
   x.lab <- "Date"
   y.lab <- "Temperature (7DADM)"
+  
+  # df_trend_line <- data.frame(x = c(x.min, x.max),
+  #                             y = c(SK.min, SK.max),
+  #                             variable = rep('Trend line', 2))
   
   ####plot the timeseries
   elem_text <- element_text(face = "bold")
@@ -417,8 +454,22 @@ plot.Temperature <- function(new_data,
       }
     }
     
-    g <- g + scale_linetype_manual(values = c('Non-spawning' = 5,
-                                              'Spawning' = 2))
+    if (plot_trend & !is.na(p.value)) {
+      g <- g + geom_line(aes(x = x, y = y, linetype = "Trend"), color = "blue", data = df_trend_line, inherit.aes = FALSE)
+      
+      g <- g + ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
+        theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))
+    }
+    
+    g <- g + guides(color = guide_legend(override.aes = list(linetype = 0)))
+    
+    g <- g + scale_linetype_manual(values = c('Non-spawning' = "longdash",
+                                              'Spawning' = "dotted",
+                                              'Trend' = "solid"))
+    
+    # g <- g + scale_linetype_manual(values = c('Non-spawning' = 5,
+    #                                           'Spawning' = 2,
+    #                                           'Trend' = 1))
     g <- g + theme(legend.position = "top",
                    legend.title = element_blank(),
                    legend.direction = 'horizontal')
@@ -938,7 +989,7 @@ plot.DO<-function(new_data,
                             df.all = df.all,
                             selectUseDO = selectUseDO,
                             selectSpawning = selectSpawning,
-                            datetime_format = '%Y-%m-%d')
+                            datetime_format = '%Y-%m-%d %H:%M:%S')
   
   x.min <- min(as.POSIXct(new_data$Sampled)) 
   x.max <- max(new_data$Sampled) 
