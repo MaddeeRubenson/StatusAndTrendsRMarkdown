@@ -1383,6 +1383,7 @@ temp_sufficiency_analysis <- function(df.all) {
   qc.results.2 <- NULL
   qc.results.3 <- NULL
   for (i in 1:length(stns)) {
+    print(paste(i, ": ", stns[i]))
     tmp <- df.all[df.all$Station_ID == stns[i], ]
     
     tmp$datetime <- as.POSIXct(strptime(tmp$Sampled, format = "%Y-%m-%d %H:%M:%OS"))
@@ -1392,21 +1393,20 @@ temp_sufficiency_analysis <- function(df.all) {
     tmp$day <- day(tmp$datetime)
     tmp$hour <- hour(tmp$datetime)
     
-    # subset to data to the months of interest
-    #tmp <- tmp[tmp$month %in% c(6,7,8,9,10),]
-    
     # QC Test #1 -------------------------------------------------------------
     # Must be at least one observation in a minimum of 22 hours during the day
+    # or have the daily max provided via the published data
     
     # First determine number of hours collected within each day
-    qc.hr <- as.tbl(tmp) %>%
+    qc.hr <- as.tbl(tmp) %>% filter((hour >=12 & hour <= 24) | isMax == TRUE) %>% 
       group_by(HUC, Station_ID, isMax, date, month, year, day) %>%
       summarise(n = length(unique(hour)))
     qc.hr <- as.data.frame(qc.hr)
     
+    if (nrow(qc.hr) > 0) {
     # Isolate to days with 22 or more hours represented
     qc.hr$n_threshold <- '>= 22 hours'
-    qc.hr$result <- ifelse(qc.hr$n >= 22 | qc.hr$isMax == TRUE,'pass','fail')
+    qc.hr$result <- ifelse(qc.hr$n >= 12 | qc.hr$isMax == TRUE,'pass','fail')
     
     qc.results.1 <- rbind(qc.results.1,qc.hr)
     
@@ -1416,12 +1416,14 @@ temp_sufficiency_analysis <- function(df.all) {
     
     # subset to just days that pass QC test #1
     tmp <- tmp[tmp$code %in% qc.hr.p$code,]
+    }
     
     if (any(qc.hr$result == 'pass')) {
       # QC Test #2 -------------------------------------------------------------
       # No more than one day for each monthly period without observations
+      # and subset to data to the months of interest
       
-      qc.dy <- as.data.frame(as.tbl(qc.hr.p) %>% 
+      qc.dy <- as.data.frame(as.tbl(qc.hr.p) %>% filter(month %in% c(6,7,8,9,10)) %>% 
                                group_by(HUC, Station_ID, year, month) %>% 
                                summarise(n = n()))
       qc.dy$n_threshold <- ifelse(qc.dy$month %in% c(1,3,5,7,8,10,12), 30, 
@@ -1919,20 +1921,21 @@ parm_summary <- function(stns,
   
   #trend DO
   if(length(DO_trend_stns) > 0){
-  for(j in 1:length(DO_trend_stns)) {
-    DO_seaken <- SeaKen %>% filter(analyte == 'Dissolved Oxygen')
-    DO_seaken <- DO_seaken[DO_seaken$Station_ID == DO_status_stns[j],]
-    
-    if(DO_seaken$pvalue < 0.2 & DO_seaken$slope > 0) {
-      stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <-'Improving'
-    } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope < 0){
-      stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <- 'Degrading'
-    } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope == 0) {
-      stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <-'Steady'
-    } else {
-      stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <- 'No Sig Trend'
+    for(j in 1:length(DO_trend_stns)) {
+      # print(j)
+      DO_seaken <- SeaKen %>% filter(analyte == 'Dissolved Oxygen')
+      DO_seaken <- DO_seaken[DO_seaken$Station_ID == DO_trend_stns[j],]
+      
+      if(DO_seaken$pvalue < 0.2 & DO_seaken$slope > 0) {
+        stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <-'Improving'
+      } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope < 0){
+        stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <- 'Degrading'
+      } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope == 0) {
+        stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <-'Steady'
+      } else {
+        stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <- 'No Sig Trend'
+      }
     }
-  }
   }
  
   ##############Temperature######################################################################
@@ -1949,7 +1952,7 @@ parm_summary <- function(stns,
   } else {
     temp_trend_stns <- NULL
   }
-  print(temp_trend_stns)
+  # print(temp_trend_stns)
   #status temp
   if(length(temp_status_stns) > 0){
     for(i in 1:length(temp_status_stns)) {
