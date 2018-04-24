@@ -1,6 +1,6 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Middle John Day AgWQ
+  DEQ Water Quality Status and Trends report for the North Coast AgWQ
   Management Area'
 author: ''
 date: "March 2018"
@@ -51,7 +51,7 @@ figs <- captioner(prefix="**Figure")
 input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen', 'Total Nitrogen')
-input$select <- "Middle John Day" #input
+input$select <- "North Coast" #input
 input$dates <- c("2000-01-01", "2018-03-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 #input$db2 <- c('Water Quality Portal')
@@ -102,7 +102,7 @@ if(input$select == 'Middle Willamette') {
     df.all <- rbind(sub, df.all)
   } 
   
-#save(df.all, file = paste0("RdataFiles/", input$select, ".df.all.", Sys.Date(), ".Rdata"))
+#save(df.all, file = paste0("RdataFiles/", input$select, "_df_all_", Sys.Date(), ".Rdata"))
   # save(df.all, file = "//deqhq1/tmdl/AgWQM/DataAnalysis/Middle John Day/2018/Middle John Day.df.all.2018-04-04.Rdata")
 
 #load(file = "RdataFiles/Mid Coast.df.all.2018-02-12.Rdata")
@@ -483,25 +483,25 @@ library(knitr)
 
 if(any(df.all$Analyte == 'Enterococcus')){
   
-  Ent_all <- df.all[df.all$Analyte == 'Enterococcus',]
-  Ent <- df.all[df.all$Analyte == 'Enterococcus',]
+  ent_all <- df.all[df.all$Analyte == 'Enterococcus',]
+  ent <- df.all[df.all$Analyte == 'Enterococcus',]
   
   if(!(trend == "No Stations Meet Trend Criteria")) {
-    ent_stns<-trend %>%
+    ent_trend <- trend %>%
       dplyr::filter(Analyte == "Enterococcus")
-    ent_stns<-c(unique(ent_stns$Station_ID))
+    ent_trend <- c(unique(ent_trend$Station_ID))
     
-    e_stat<-status %>%
-    dplyr::filter(Analyte == "Enterococcus")
-    e_stat <- c(unique(e_stat$Station_ID))
+    ent_stat <- status %>%
+      dplyr::filter(Analyte == "Enterococcus")
+    ent_stat <- c(unique(ent_stat$Station_ID))
   
-    e_stns <- unique(append(e_stns, e_stat))
+    ent_stns <- unique(append(ent_trend, ent_stat))
     
     ent_list<- list()
     exc_list<- list()
     for(j in 1: length(ent_stns)) {
   
-      new_data <- Ent[Ent$Station_ID == ent_stns[j],]
+      new_data <- ent[ent$Station_ID == ent_stns[j],]
       
       
       tmp_df <- new_data
@@ -517,7 +517,7 @@ if(any(df.all$Analyte == 'Enterococcus')){
       exc_list[[j]] <- ent_eval
     }
     
-    Ent<-rbind.fill(ent_list[])
+    ent<-rbind.fill(ent_list[])
     exc<-rbind.fill(exc_list[])
     exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
     
@@ -525,10 +525,10 @@ if(any(df.all$Analyte == 'Enterococcus')){
     
     ent_plots<-list()
     for (i in 1:length(ent_stns)) {
-      mydata_sub <- Ent_all[Ent_all$Station_ID == ent_stns[i],]
+      mydata_sub <- ent_all[ent_all$Station_ID == ent_stns[i],]
       
-      trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == ent_stn[i],'signif']), FALSE,
-                          ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == ent_stn[i],'signif']), FALSE, TRUE))
+      trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE,
+                          ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE, TRUE))
       
       
       b <- plot.bacteria(new_data=mydata_sub,
@@ -539,10 +539,10 @@ if(any(df.all$Analyte == 'Enterococcus')){
       
       ent_plots[[i]] <- b
       
-      print(ent_plots[[i]])
     }
     
-    kable(exc, padding = 2, digits = 1, caption = tbls(name = "enterExcTable", caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
+    kable(exc, padding = 2, digits = 1, caption = tbls(name = "enterExcTable", 
+                                                       caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
     
   } 
   ent_exc <- exc
