@@ -1,13 +1,13 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Middle John Day AgWQ
+  DEQ Water Quality Status and Trends report for the North Coast AgWQ
   Management Area'
 author: ''
-date: "April 2018"
+date: "March 2018"
 output:
   word_document:
     fig_caption: yes
-    reference_docx: //deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/ReportTemplate.docx
+    reference_docx: //deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/ODEQ_word_template.docx
     toc: yes
   html_document:
     mode: selfcontained
@@ -51,8 +51,8 @@ figs <- captioner(prefix="**Figure")
 input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen', 'Total Nitrogen')
-input$select <- "Molalla-Pudding French Prairie North Santiam" #input
-input$dates <- c("2000-01-01", "2018-04-01") #input
+input$select <- "North Coast" #input
+input$dates <- c("2000-01-01", "2018-03-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 #input$db2 <- c('Water Quality Portal')
 
@@ -83,8 +83,6 @@ if(input$select == 'Middle Willamette') {
   load(file = "RdataFiles/Crooked River.df.all.2018-03-08.Rdata")
 } else if (input$select == "Middle John Day") {
   load(file = "//deqhq1/tmdl/AgWQM/DataAnalysis/Middle John Day/2018/Middle John Day.df.all.2018-03-12.Rdata")
-} else if (input$select == "Molalla-Pudding French Prairie North Santiam") {
-  load(file = "//deqhq1/tmdl/AgWQM/DataAnalysis/Molalla-Pudding French Prairie North Santiam/2018/MolallaPuddingFPNS_2018-04-04.Rdata")
 } else {
   df.all<-query(select =  input$select,
                 parms = input$parms,
@@ -104,8 +102,8 @@ if(input$select == 'Middle Willamette') {
     df.all <- rbind(sub, df.all)
   } 
   
-# save(df.all, file = paste0("RdataFiles/", input$select, ".df.all.", Sys.Date(), ".Rdata"))
-  # save(df.all, file = "//deqhq1/tmdl/AgWQM/DataAnalysis/Molalla-Pudding French Prairie North Santiam/2018/MolallaPuddingFPNS_2018-04-04.Rdata")
+#save(df.all, file = paste0("RdataFiles/", input$select, "_df_all_", Sys.Date(), ".Rdata"))
+  # save(df.all, file = "//deqhq1/tmdl/AgWQM/DataAnalysis/Middle John Day/2018/Middle John Day.df.all.2018-04-04.Rdata")
 
 #load(file = "RdataFiles/Mid Coast.df.all.2018-02-12.Rdata")
 
@@ -141,41 +139,23 @@ if (any('Temperature' %in% df.all$Analyte)) {
   tempStns <- temp_sufficiency_analysis(df.all)
   
   qc.1.pass <- filter(attributes(tempStns)$day_test, result == "pass")
-  qc.2.pass <- filter(attributes(tempStns)$month_test, result == "pass")
-  qc.3.pass <- filter(attributes(tempStns)$year_test, result == "pass")
-  qc.1.stn <- filter(attributes(tempStns)$day_test, result == "pass")$Station_ID
-  qc.2.stn <- filter(attributes(tempStns)$month_test, result == "pass")$Station_ID
-  qc.3.stn <- filter(attributes(tempStns)$year_test, result == "pass")$Station_ID
   
-  sdadm <- df.all %>% mutate(date = date(Sampled)) %>% filter(Analyte == "Temperature") %>% merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE) %>% Calculate.sdadm("Result", "Station_ID", "Sampled", '%Y-%m-%d %H:%M:%S')
+  df.all.sdadm <- df.all %>% mutate(date = date(Sampled)) %>% filter(Analyte == "Temperature") %>% merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE)
   
-  trend_pass <- filter(sdadm, Station_ID %in% qc.1.stn & Station_ID %in% qc.2.stn & Station_ID %in% qc.3.stn)
-  
+  sdadm <- Calculate.sdadm(df.all.sdadm, "Result", "Station_ID", "Sampled",
+                           '%Y-%m-%d %H:%M:%S')
 } else {
   sdadm <- NULL
 }
 
 df.all <- remove_QAfail(df.all)
-df.all$month <- month(df.all$Sampled)
-qc.3.pass$Analyte <- "Temperature"
-qc.3.pass <- dplyr::rename(qc.3.pass, monTest = result)
-
-df.all <- merge(df.all, qc.3.pass[,c("Station_ID", "month", "monTest", "Analyte")], by=c("Station_ID", "Analyte", "month"), all.x = TRUE, all.y = FALSE)
 
 #moved seaken to after remove_qafail
 if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen", 'Total Suspended Solids', 'Total Phosphorus') %in% df.all$Analyte)) {
-  seaken_other <- run_seaKen(filter(df.all, Analyte %in% c('pH', 
-                                                        'E. Coli', 
-                                                        "Enterococcus", 
-                                                        "Dissolved Oxygen", 
-                                                        'Total Suspended Solids', 
-                                                        'Total Phosphorus')))
-} else {seaken_other <- data.frame()}
-  
-if ("Temperature" %in% df.all$Analyte & "pass" %in% df.all$monTest) {
-  seaken_temp <- run_seaKen(filter(df.all, Analyte == "Temperature" & monTest == "pass"))
-  SeaKen <- rbind(seaken_other, seaken_temp)
-} else {SeaKen <- data.frame()}
+  SeaKen <- run_seaKen(df.all)
+} else {
+  SeaKen <- data.frame()
+}
 
 
 wq_lim_whole <- extract_303d(df.all, wq_limited, input$select)
@@ -189,11 +169,7 @@ wq_lim_whole <- plyr::rename(wq_lim_whole,
                                      'ASSESSME_1' = 'Year Assessed',
                                      'LISTING_ST' = 'Listing Status'))
 
-statusNonTemp <- Stations_Status(filter(df.all, Analyte != "Temperature"))
-if(!is.null(sdadm)){
-  statusTemp <- Stations_Status(mutate(filter(rename(sdadm, Sampled = date), !is.na(sdadm)), Analyte = "Temperature"))
-} else {statusTemp <- NULL}
-status <- rbind(statusNonTemp, statusTemp)
+status <- Stations_Status(df.all)
 trend <- Stations_Trend(df.all)
 stns_by_year <- Stations_by_Year(df.all)
 stns<- All_stns_fit_Criteria(trend = trend, 
@@ -356,7 +332,6 @@ map
 Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) developed by EPA was used to summarize the cumulative upstream catchment of each station for primary landuse characteristics, based on the National Hydrography Dataset Plus Version 2 geospatial framework. The land use and land cover raster (NLCD 2011) can be viewed as an option in the station locations map above. 
 
 Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. Source: 2011 NAIP
-
 ```{r landuse table, echo = FALSE, results='asis'}
 stn_to_use<-c(unique(stns$Station_ID))
 
@@ -374,7 +349,6 @@ kable(landuse, digits = 0,
 
 ##Water Quality Limited Stream Segments
 Summary of Oregon's 2012 Integrated Report Assessment database and 303(d) list for parameters included in this report. Table based on the 2012 Integrated Report Listings by the EPA. Note that pH exceedances are values higher or lower than the given range.
-
 ```{r wq_limited, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 
 wq_limited_df <- wq_lim_whole[, c('Waterbody', 'MILES', 'POLLUTANT', 'SEASON', 'Year Assessed', 'CRITERIA', 'Listing Status')]
@@ -397,7 +371,6 @@ For all monitoring stations with sufficient data (8 years or more), trending was
 
 
 <!-- Output for the Seasonal kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.   -->
-
 ```{r Seasonal Kendall, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE}
 SK <- SeaKen %>% filter(Station_ID %in% unique(stns$Station_ID)) %>% filter(signif !=  "Need at least 8 years") %>% 
   filter(analyte != 'Dissolved oxygen saturation')
@@ -412,9 +385,7 @@ SK$pvalue <- as.numeric(SK$pvalue)
 kable(SK, padding = 2, format.args = list(scientific = TRUE), caption = tbls(name = "seakenTable", caption = "Output for the Seasonal kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.**"))
 }
 ```
-
 ##E.coli
-
 ```{r Ecoli, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = '_E. Coli_ water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
@@ -504,7 +475,6 @@ if(!is.null(exc)) {
 
 ##Enterococcus 
 No monitoring stations contain enterococcus data. 
-
 ```{r Entero, eval=FALSE, error=TRUE, fig.cap='Entero water quality status and trends', fig.height=6, fig.width=6, message=FALSE, warning=FALSE, include=FALSE}
 source("functions/funPlots.R")
 library(dplyr)
@@ -513,29 +483,25 @@ library(knitr)
 
 if(any(df.all$Analyte == 'Enterococcus')){
   
-  Ent_all <- df.all[df.all$Analyte == 'Enterococcus',]
-  Ent <- df.all[df.all$Analyte == 'Enterococcus',]
+  ent_all <- df.all[df.all$Analyte == 'Enterococcus',]
+  ent <- df.all[df.all$Analyte == 'Enterococcus',]
   
-  if(any(status$Analyte == 'Enterococcus')){
-    ent_stat<-status %>%
+  if(!(trend == "No Stations Meet Trend Criteria")) {
+    ent_trend <- trend %>%
       dplyr::filter(Analyte == "Enterococcus")
-    ent_stat <- c(unique(e_stat$Station_ID))
-  } else {ent_stat <- NULL}
-  
-  if(any(trend$Analyte == 'Enterococcus')) {
-    ent_stns<-trend %>%
+    ent_trend <- c(unique(ent_trend$Station_ID))
+    
+    ent_stat <- status %>%
       dplyr::filter(Analyte == "Enterococcus")
-    ent_stns<-c(unique(ent_stns$Station_ID))
-  } else {ent_stns <- NULL}
+    ent_stat <- c(unique(ent_stat$Station_ID))
   
-  ent_stns <- unique(append(ent_stns, ent_stat))
-  ent_list<- list()
-  exc_list<- list()
-  
-  if(length(ent_stns > 0)){
+    ent_stns <- unique(append(ent_trend, ent_stat))
+    
+    ent_list<- list()
+    exc_list<- list()
     for(j in 1: length(ent_stns)) {
-      
-      new_data <- Ent[Ent$Station_ID == ent_stns[j],]
+  
+      new_data <- ent[ent$Station_ID == ent_stns[j],]
       
       
       tmp_df <- new_data
@@ -551,7 +517,7 @@ if(any(df.all$Analyte == 'Enterococcus')){
       exc_list[[j]] <- ent_eval
     }
     
-    Ent<-rbind.fill(ent_list[])
+    ent<-rbind.fill(ent_list[])
     exc<-rbind.fill(exc_list[])
     exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
     
@@ -559,10 +525,10 @@ if(any(df.all$Analyte == 'Enterococcus')){
     
     ent_plots<-list()
     for (i in 1:length(ent_stns)) {
-      mydata_sub <- Ent_all[Ent_all$Station_ID == ent_stns[i],]
+      mydata_sub <- ent_all[ent_all$Station_ID == ent_stns[i],]
       
-      trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == ent_stn[i],'signif']), FALSE,
-                          ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == ent_stn[i],'signif']), FALSE, TRUE))
+      trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE,
+                          ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE, TRUE))
       
       
       b <- plot.bacteria(new_data=mydata_sub,
@@ -573,22 +539,19 @@ if(any(df.all$Analyte == 'Enterococcus')){
       
       ent_plots[[i]] <- b
       
-      print(ent_plots[[i]])
     }
     
-    kable(exc, padding = 2, digits = 1, caption = tbls(name = "enterExcTable", caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
+    kable(exc, padding = 2, digits = 1, caption = tbls(name = "enterExcTable", 
+                                                       caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
     
-    ent_exc <- exc
-  } else {
-    paste( "No monitoring stations have data to assess status and/or trend of Enterococcus" )
-    }
+  } 
+  ent_exc <- exc
 } else {
   paste( "No monitoring stations have data to assess status and/or trend of Enterococcus" ) 
 }
 ```
 
 ##Total Phosphorus
-
 ```{r Total Phosphorus, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Total phosphorus water quality status and trends'}
 source("functions/funPlots.R")
 source('functions/TualatinR_Allocations.R')
@@ -710,7 +673,6 @@ kable(exc,padding = 2, digits = 1, caption = tbls(name = "tpExcTable", caption =
 tp_exc <- exc
 #}
 ```
-
 <!-- Total Phosphorus TMDL Loading Capacity Evaluation -->
 <!-- The 2001/2012 Tualatin River Subbasin TMDL loading capacity values were applied to total phosphorus results within the Tualatin River Subbasin. The loading capacity (or TMDL target) defines the total amount of pollutant that a waterbody can receive and still meet water quality standards. This definition includes both natural and human sources. The loading capacity is defined as a summer (June - September) median. Boxplots are presented to show the summer distribution of total phosphorus as well as the median and how it compares to the loading capacity target ([Tualatin Total Maximum Daily Load (TMDL) and Water Quality Management Plan (WQMP)](http://www.oregon.gov/deq/FilterDocs/tmdlwqmp.pdf]) . -->
 
@@ -731,7 +693,6 @@ tp_exc <- exc
 <!-- ``` -->
 
 ##Total Suspended Solids
-
 ```{r TSS, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Total Suspended Solids water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
@@ -831,7 +792,6 @@ tss_exc <- exc
 ```
 
 ##pH
-
 ```{r pH, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'pH water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
@@ -873,7 +833,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
     pH_list<- list()
     pH_exclist<- list()
     for(j in 1: length(pH_stn)) {
-      print(paste(j, ":", pH_stn[j]))
+      
       
       new_data <- pH[pH$Station_ID == pH_stn[j],]
       
@@ -976,7 +936,6 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
 ```
 
 ##Temperature
-
 ```{r Temperature, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Temperature water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
@@ -984,20 +943,21 @@ library(ggplot2)
 library(knitr)
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
-  # temp_stn<-trend %>%
-  #   dplyr::filter(Analyte == "Temperature")
+  temp_stn<-trend %>%
+    dplyr::filter(Analyte == "Temperature")
   # temp_stn_table<-c(unique(temp_stn$Station_ID))
-  # temp_stn <- c(unique(temp_stn$Station_ID))
-  temp_stn <- unique(filter(SeaKen, analyte == "Temperature")$Station_ID)
+  temp_stn <- c(unique(temp_stn$Station_ID))
   
-  t_stat <- unique(filter(status, Analyte == "Temperature")$Station_ID)
+  t_stat<-status %>%
+    dplyr::filter(Analyte == "Temperature")
+  t_stat <- c(unique(t_stat$Station_ID))
   
   temp_stn <- unique(append(temp_stn, t_stat))
-  temp_stn_table <- temp_stn #all stations that meet the criteria for status or trend
+  temp_stn_table <- temp_stn #all stations that meet the criteria for status and trend
   
   if(length(temp_stn) > 0) {
     
-    temp <- df.all[df.all$Analyte == 'Temperature' & df.all$Station_ID %in% temp_stn_table,]
+    temp <- df.all[df.all$Analyte == 'Temperature',]
     
     #(Ben_use_LU[Ben_use_LU$Station_ID %in% pH_stn_table, 'pH_benuse'])
     in_bentable<-as.character(Ben_use_LU[Ben_use_LU$Station_ID %in% temp_stn_table, 'Temp_Benuse'])
@@ -1051,7 +1011,6 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
       if(length(temp_stn) > 0 & length(sdadm) > 1) {
         temp_plots<-list()
         for (i in 1:length(temp_stn)) {
-          print(i)
           
           #look up what to do if there is not enough temp data
           
@@ -1060,10 +1019,6 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
           
           if(nrow(new_data) > 1) {
             
-            if(temp_stn[i] %in% SeaKen[SeaKen$analyte == "Temperature", "Station_ID"]){
-              trend_logic <- TRUE
-            } else {trend_logic <- FALSE}
-            
             Temp_Benuse <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[i], 'Temp_Benuse'])
             spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[i], 'spwn_time'])
             
@@ -1071,7 +1026,6 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
                                              selectUse = Temp_Benuse[1],
                                              selectSpawning = spwn_time[1],
                                              station_column_name = 'Station_ID')
-            
             
             b <- plot.Temperature(new_data = temp_evaluate,
                                   all_data = df.all,
@@ -1082,7 +1036,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
                                   station_desc_column = 'Station_Description',
                                   datetime_column = 'date',
                                   datetime_format = '%Y-%m-%d',
-                                  plot_trend = trend_logic)
+                                  plot_trend = TRUE)
             
             
             temp_plots[[i]]<-b
@@ -1124,7 +1078,6 @@ temp_exc <- exc
 ```
 
 ##Dissolved Oxygen
-
 ```{r Dissolved Oxygen, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 6, fig.height = 6, fig.cap = 'Dissolved Oxygen water quality status and trends'}
 source("functions/funPlots.R")
 library(dplyr)
@@ -1301,7 +1254,7 @@ stnsformap <-  parm_summary(stns = stns[,c(1:4)],
 stnsformap <- stnsformap %>%
   filter(!grepl('CTGR', Station_ID))
 
-write.csv(stnsformap, paste0("//deqhq1/tmdl/AgWQM/DataAnalysis/", input$select, "/2018/parm_summary_stns_", Sys.Date(), ".csv"))
+write.csv(stnsformap, "//deqhq1/tmdl/AgWQM/DataAnalysis/Middle John Day/2018/parm_summary_stns_03-16-2018.csv")
 
 colnames(stnsformap) <- c("Station ID", "Station Description", 'Latitude', 'Longitude', "Bacteria Status",
                           "Bacteria Trend","Temperature Status", "Temperature Trend", "pH Status", "pH Trend", 
@@ -1353,7 +1306,6 @@ kable(stnsformap, padding = 2, digits = 3, caption = tbls(name = "parmSumTable",
 
 
 #- Appendix
-
 ```{r appendix, echo=FALSE}
 org_summary <- summarizeByOrg(df.all)
 
