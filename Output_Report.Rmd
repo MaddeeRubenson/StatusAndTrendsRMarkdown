@@ -58,7 +58,7 @@ figs <- captioner(prefix="  \n**Figure")
 input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen', 'Total Nitrogen')
-input$select <- "Molalla-Pudding French Prairie North Santiam" #input
+input$select <- "North Coast" #input
 input$dates <- c("2000-01-01", "2018-04-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 #input$db2 <- c('Water Quality Portal')
@@ -155,7 +155,11 @@ if (any('Temperature' %in% df.all$Analyte)) {
   qc.3.stn <- filter(attributes(tempStns)$year_test, result == "pass")$Station_ID
   
 
-  sdadm <- df.all %>% mutate(date = date(Sampled)) %>% filter(Analyte == "Temperature") %>% merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE) %>% Calculate.sdadm("Result", "Station_ID", "Sampled", '%Y-%m-%d %H:%M:%S')
+  sdadm <- df.all %>% 
+    mutate(date = date(Sampled)) %>% 
+    filter(Analyte == "Temperature") %>% 
+    merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE) %>% 
+    Calculate.sdadm("Result", "Station_ID", "Sampled", '%Y-%m-%d %H:%M:%S')
   
   trend_pass <- filter(sdadm, Station_ID %in% qc.1.stn & Station_ID %in% qc.2.stn & Station_ID %in% qc.3.stn)
   
