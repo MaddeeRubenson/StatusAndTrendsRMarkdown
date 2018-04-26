@@ -1947,8 +1947,7 @@ parm_summary <- function(stns,
   temp_status_stns  <- unique(temp$Station_ID)
   
   if(any(trend != 'No Stations Meet Trend Criteria'))  {
-    temp_trend_stns <- trend %>% filter(Analyte == 'Temperature')
-    temp_trend_stns  <- unique(temp_trend_stns$Station_ID)
+    temp_trend_stns <- unique(filter(SeaKen, analyte == "Temperature")$Station_ID)
   } else {
     temp_trend_stns <- NULL
   }
