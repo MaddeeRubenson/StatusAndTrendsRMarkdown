@@ -1,6 +1,6 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Middle John Day AgWQ
+  DEQ Water Quality Status and Trends report for the Molalla-Pudding French Prairie North Santiam AgWQ
   Management Area'
 author: ''
 date: "April 2018"
@@ -90,6 +90,8 @@ if(input$select == 'Middle Willamette') {
   load(file = "RdataFiles/Crooked River.df.all.2018-03-08.Rdata")
 } else if (input$select == "North Coast") {
   load(file = "North Coast_df_all_2018-04-26.Rdata")
+} else if (input$select == "Molalla-Pudding French Prairie North Santiam") {
+  load(file = "//deqhq1/tmdl/AgWQM/DataAnalysis/Molalla-Pudding French Prairie North Santiam/2018/MolallaPuddingFPNS_2018-04-04.Rdata")
 } else {
   df.all<-query(select =  input$select,
                 parms = input$parms,
@@ -548,13 +550,12 @@ library(knitr)
 exc <- NULL
 ent_stns <- NULL
 
-if(any(df.all$Analyte == 'Enterococcus'))
-  {
+if(any(df.all$Analyte == 'Enterococcus')){
+  
   ent_all <- df.all[df.all$Analyte == 'Enterococcus',]
   ent <- df.all[df.all$Analyte == 'Enterococcus',]
   
-  if(any(!(trend == "No Stations Meet Trend Criteria")))
-    {
+  if(!(trend == "No Stations Meet Trend Criteria")) {
     ent_trend <- trend %>%
       dplyr::filter(Analyte == "Enterococcus")
     ent_trend <- c(unique(ent_trend$Station_ID))
@@ -562,66 +563,64 @@ if(any(df.all$Analyte == 'Enterococcus'))
     ent_stat <- status %>%
       dplyr::filter(Analyte == "Enterococcus")
     ent_stat <- c(unique(ent_stat$Station_ID))
-  
+    
     ent_stns <- unique(append(ent_trend, ent_stat))
     
     ent_list<- list()
     exc_list<- list()
-    
-    for(j in 1: length(ent_stns))
-      {
-      new_data <- ent[ent$Station_ID == ent_stns[j],]
-      
-      tmp_df <- new_data
-      tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-      tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-      sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-      tmp_df_MRL <- tmp_df[sub,]
-      tmp_df <- remove.dups(tmp_df_MRL, max)
-      
-      ent_evaluate <- EvaluateEnteroWQS(tmp_df)
-      ent_eval <- attr(ent_evaluate, 'ex_df')
-      ent_list[[j]] <- ent_evaluate
-      exc_list[[j]] <- ent_eval
+    if(length(ent_stns) > 0){
+      for(j in 1: length(ent_stns)) {
+        new_data <- ent[ent$Station_ID == ent_stns[j],]
+        
+        
+        tmp_df <- new_data
+        tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+        tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+        sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+        tmp_df_MRL <- tmp_df[sub,]
+        tmp_df <- remove.dups(tmp_df_MRL, max)
+        
+        ent_evaluate <- EvaluateEnteroWQS(tmp_df)
+        ent_eval <- attr(ent_evaluate, 'ex_df')
+        ent_list[[j]] <- ent_evaluate
+        exc_list[[j]] <- ent_eval
       }
-    
-    ent<-rbind.fill(ent_list[])
-    exc<-rbind.fill(exc_list[])
-    exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
-    
-    results_seaken<-SeaKen %>% filter(analyte == 'Enterococcus')
-    
-    ent_plots<-list()
-    for (i in 1:length(ent_stns)) 
-      {
-      mydata_sub <- ent_all[ent_all$Station_ID == ent_stns[i],]
       
-      trend_logic<-ifelse(grepl("Not Significant", 
-                                results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']),FALSE,
-                          ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE, TRUE))
+      ent<-rbind.fill(ent_list[])
+      exc<-rbind.fill(exc_list[])
+      exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
       
+      results_seaken<-SeaKen %>% filter(analyte == 'Enterococcus')
       
-      b <- plot.bacteria(new_data=mydata_sub,
-                         sea_ken_table=results_seaken ,
-                         plot_trend = trend_logic,
-                         plot_log = FALSE,
-                         parm = unique(mydata_sub$Analyte))
+      ent_plots<-list()
+      for (i in 1:length(ent_stns)) {
+        mydata_sub <- ent_all[ent_all$Station_ID == ent_stns[i],]
+        
+        trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE,
+                            ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE, TRUE))
+        
+        
+        b <- plot.bacteria(new_data=mydata_sub,
+                           sea_ken_table=results_seaken ,
+                           plot_trend = trend_logic,
+                           plot_log = FALSE,
+                           parm = unique(mydata_sub$Analyte))
+        
+        ent_plots[[i]] <- b
+        cat(figs(name = paste0('Entero_', ent_stns[i]), caption = paste0('Station: ', ent_stns[i], ' _Enterococcus_ water quality status and trends**')))
+      }
       
-      ent_plots[[i]] <- b
-      
-      cat(figs(name = paste0('Entero_', ent_stns[i]), caption = paste0('Station: ', ent_stns[i], ' _Enterococcus_ water quality status and trends**')))
-    }
-    
-    knitr::kable(exc, padding = 2, digits = 1, 
-                 caption = tbls(name = "enterExcTable",
-                                caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
-    
+      knitr::kable(exc, padding = 2, digits = 1,
+                   caption = tbls(name = "enterExcTable", 
+                                  caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
+    }  else {
+      print("No monitoring stations have data to assess status and/or trend of Enterococcus") 
+    } 
   } 
   ent_exc <- exc
-} else 
-  {
-  print("No monitoring stations have data to assess status and/or trend of Enterococcus")
-  }
+} else {
+  print("No monitoring stations have data to assess status and/or trend of Enterococcus") 
+}
 
 ```
 
