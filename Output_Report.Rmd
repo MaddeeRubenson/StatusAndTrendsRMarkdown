@@ -571,6 +571,10 @@ if(!is.null(ent_trend)) {
     }
   
 if(length(ent_stns) > 0) {
+  
+  ent_all <- df.all[df.all$Analyte == 'Enterococcus',]
+  ent <- df.all[df.all$Analyte == 'Enterococcus',]
+  
   ent_list<- list()
   exc_list<- list()
   
