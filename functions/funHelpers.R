@@ -31,6 +31,51 @@ clipToPlanArea <- function (df.all, agwqma, selected_planArea) {
   return(df.all)
 }
 
+Stations_in_poly <- function(df.all, poly_shp, outside=FALSE) {
+  # Returns a vector of stations that fall within or outside a polygon boundary
+  # Arguments:
+  # df.all = data frame of data with column names "Station_ID", "DATUM", "DECIMAL_LAT", "DECIMAL_LONG"
+  # poly = polygon shapefile
+  # Outside = TRUE if the stations outside the polygon should be returned instead, default is FALSE
+  
+  require(sp)
+  
+  # make a spatial object
+  df.shp <- df.all[,c("Station_ID", "DATUM", "DECIMAL_LAT", "DECIMAL_LONG")]
+  coordinates(df.shp)=~DECIMAL_LONG+DECIMAL_LAT
+  
+  # Datums to search for
+  # NAD83 : EPSG:4269 <- This is assumed if it is not one of the other two
+  # NAD27 : EPSG:4267
+  # WGS84 : EPSG:4326
+  
+  df.nad83 <- df.shp[!grepl("NAD27|4267|WGS84|4326",toupper(df.shp$DATUM)), ]
+  df.nad27 <- df.shp[grepl("NAD27|4267",toupper(df.shp$DATUM)), ]
+  df.wgs84 <- df.shp[grepl("WGS84|4326",toupper(df.shp$DATUM)), ]
+  
+  proj4string(df.nad27) <- CRS("+init=epsg:4267")
+  proj4string(df.nad83) <- CRS("+init=epsg:4269")
+  proj4string(df.wgs84) <- CRS("+init=epsg:4326")
+  
+  # convert to NAD 83
+  df.nad.27.nad83 <- spTransform(df.nad27, CRS("+init=epsg:4269"))
+  df.wgs84.nad83 <- spTransform(df.wgs84, CRS("+init=epsg:4269"))
+  poly.nad83 <- spTransform(poly_shp, CRS("+init=epsg:4269"))
+  
+  # combine back into single df
+  df.nad83 <- rbind(df.nad83, df.nad.27.nad83, df.wgs84.nad83)
+  
+  if(outside) {
+    # stations outside polygon
+    df.out <- df.nad83[!complete.cases(over(df.nad83, poly.nad83)),]@data
+    stations.out <- unique(df.out$Station_ID)
+    return(stations.out)
+    } else {
+    stations.in <- unique(df.nad83[poly.nad83,]@data$Station_ID)
+    return(stations.in)
+  }
+}
+
 tabulateResults <- function (df.all) {
   #Summarizes results returned to give number of stations with data
   #and total number of results returned grouped by analyte
@@ -255,9 +300,6 @@ Stations_Status<-function(df.all) {
   dta<-dta %>%
     filter(!Analyte == "Dissolved oxygen saturation")
   
-  #remove data from Tribal land
-  #dta<-dta[!grep("TRIBES", dta$Station_ID),]
-  
   dta$Sampled <- as.POSIXct(strptime(dta$Sampled, format = '%Y-%m-%d')) 
   dta$Sampled<-as.Date(dta$Sampled)
   dta$year<-as.numeric(format(dta$Sampled, format="%Y"))
@@ -315,10 +357,7 @@ Stations_Trend<-function(df.all){
   require(tidyr)
   require(dplyr)
   dta<-df.all
-  
-  #remove data from Tribal land
-  #dta<-dta[- grep("TRIBES", dta$Station_ID),]
-  
+
   dta$Sampled <- as.POSIXct(strptime(dta$Sampled, format = '%Y-%m-%d')) 
   dta$Sampled<-as.Date(dta$Sampled)
   dta$year<-as.numeric(format(dta$Sampled, format="%Y"))
@@ -362,10 +401,6 @@ Stations_Trend<-function(df.all){
 Stations_by_Year <- function(df.all) {
   require(tidyr)
   require(dplyr)
-  
-  
-  #remove data from Tribal land
-  #dta<-dta[- grep("TRIBES", dta$Station_ID),]
   
   df.all$Sampled <- as.POSIXct(strptime(df.all$Sampled, format = '%Y-%m-%d')) 
   df.all$Sampled<-as.Date(df.all$Sampled)
