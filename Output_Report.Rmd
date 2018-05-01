@@ -64,6 +64,7 @@ input$db <- c('DEQ', 'Water Quality Portal')
 #input$db2 <- c('Water Quality Portal')
 
 agwqma <- readOGR(dsn = 'app/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
+tribal_lands <- readOGR(dsn = 'E:/GitHub/StatusAndTrendsRMarkdown/GIS', layer = 'tl_2017_or_aiannh', verbose = FALSE)
 hucs <- readOGR(dsn = 'app/GIS', layer = 'WBD_HU8', verbose = FALSE)
 HUClist <- read.csv('app/PlanHUC_LU.csv')
 stations_huc <- read.csv('app/station_wbd_12132016.csv')
@@ -79,6 +80,7 @@ Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
 
 source('functions/Rmarkdown_query.R')
 source('functions/01_DataQuery.R')
+source("functions/funHelpers.R")
 
 if(input$select == 'Middle Willamette') {
   load("RdataFiles/Middle Willamette.df.all.2018-01-22.Rdata")
@@ -99,10 +101,8 @@ if(input$select == 'Middle Willamette') {
                 db = input$db)
 }
   
-  ##take out data from tribal land
-  df.all <- df.all %>%
-    filter(!grepl('[Tt]ribe', Client)) %>%
-    filter(!grepl('CTG', Station_ID))
+  # remove data collected on tribal nation land or tribal trust land
+  df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands, outside=TRUE),]
   
   if(any(grepl('OREGONDEQ', df.all$Station_ID))) {
     sub <- df.all[grepl('OREGONDEQ', df.all$Station_ID),]
