@@ -1829,12 +1829,14 @@ parm_summary <- function(stns,
   e_seaken <- SeaKen %>% filter(analyte == 'E. Coli')
   e_seaken <- e_seaken[e_seaken$Station_ID == e_trend_stns[j],]
   
-  if(e_seaken$pvalue < 0.2 & e_seaken$slope > 0) {
-    stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <-'Degrading'
-  } else if(e_seaken$pvalue < 0.2 & e_seaken$slope < 0){
-    stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <- 'Improving'
-  } else if(e_seaken$pvalue < 0.2 & e_seaken$slope == 0) {
-    stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <-'Steady'
+  if(e_seaken$signif != "Not Significant") {
+    if(e_seaken$pvalue < 0.2 & e_seaken$slope > 0) {
+      stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <-'Degrading'
+    } else if(e_seaken$pvalue < 0.2 & e_seaken$slope < 0){
+      stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <- 'Improving'
+    } else if(e_seaken$pvalue < 0.2 & e_seaken$slope == 0) {
+      stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <-'Steady'
+    } 
   } else {
     stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <- 'No Sig Trend'
   }
@@ -1879,12 +1881,14 @@ parm_summary <- function(stns,
     pH_seaken <- SeaKen %>% filter(analyte == 'pH')
     pH_seaken <- pH_seaken[pH_seaken$Station_ID == pH_trend_stns[j],]
     
-    if(pH_seaken$pvalue < 0.2 & pH_seaken$slope > 0) {
-      stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <-'Degrading'
-    } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope < 0){
-      stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <- 'Improving'
-    } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope == 0) {
-      stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <-'Steady'
+    if(pH_seaken$signif != "Not Significant") {
+      if(pH_seaken$pvalue < 0.2 & pH_seaken$slope > 0) {
+        stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <-'Degrading'
+      } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope < 0){
+        stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <- 'Improving'
+      } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope == 0) {
+        stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <-'Steady'
+      } 
     } else {
       stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <- 'No Sig Trend'
     }
@@ -1926,12 +1930,14 @@ parm_summary <- function(stns,
       DO_seaken <- SeaKen %>% filter(analyte == 'Dissolved Oxygen')
       DO_seaken <- DO_seaken[DO_seaken$Station_ID == DO_trend_stns[j],]
       
-      if(DO_seaken$pvalue < 0.2 & DO_seaken$slope > 0) {
-        stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <-'Improving'
-      } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope < 0){
-        stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <- 'Degrading'
-      } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope == 0) {
-        stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <-'Steady'
+      if(DO_seaken$signif != "Not Significant") {
+        if(DO_seaken$pvalue < 0.2 & DO_seaken$slope > 0) {
+          stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <-'Improving'
+        } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope < 0){
+          stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <- 'Degrading'
+        } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope == 0) {
+          stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <-'Steady'
+        } 
       } else {
         stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <- 'No Sig Trend'
       }
@@ -1944,7 +1950,7 @@ parm_summary <- function(stns,
   temp$year<-as.numeric(format(temp$date, format="%Y"))
   
   #filter out stations that meet status and stations that meet trend
-  temp_status_stns  <- unique(temp$Station_ID)
+  temp_status_stns  <- unique(filter(status, Analyte == "Temperature")$Station_ID)
   
   if(any(trend != 'No Stations Meet Trend Criteria'))  {
     temp_trend_stns <- unique(filter(SeaKen, analyte == "Temperature")$Station_ID)
@@ -1957,12 +1963,12 @@ parm_summary <- function(stns,
     for(i in 1:length(temp_status_stns)) {
       #status  
       temp_data <- temp[temp$Station_ID == temp_status_stns[i],]
+      # 
+      # 
+      # maxyear <- max(temp_data$year)
+      # statyear<-seq(maxyear-3, maxyear, by = 1)
       
-      
-      maxyear <- max(temp_data$year)
-      statyear<-seq(maxyear-3, maxyear, by = 1)
-      
-      temp_status <- temp_data %>% filter(Station_ID %in% temp_status_stns) %>% filter(year %in% statyear)
+      temp_status <- temp_data %>% filter(Station_ID %in% temp_status_stns[i]) %>% filter(year %in% statyear)
       
       if(any(!is.na(temp_status$exceed))) {
         if(any(unique((temp_status$exceed) == 'TRUE'))) {
@@ -1981,13 +1987,14 @@ parm_summary <- function(stns,
       temp_seaken <- SeaKen %>% filter(analyte == 'Temperature')
       temp_seaken <- temp_seaken[temp_seaken$Station_ID == temp_trend_stns[j],]
       
-      
-      if(temp_seaken$pvalue < 0.2 & temp_seaken$slope < 0) {
-        stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <-'Improving'
-      } else if(temp_seaken$pvalue < 0.2 & temp_seaken$slope > 0){
-        stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <- 'Degrading'
-      } else if(temp_seaken$pvalue < 0.2 & temp_seaken$slope == 0) {
-        stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <-'Steady'
+      if(temp_seaken$signif != "Not Significant") {
+        if(temp_seaken$pvalue < 0.2 & temp_seaken$slope < 0) {
+          stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <-'Improving'
+        } else if(temp_seaken$pvalue < 0.2 & temp_seaken$slope > 0){
+          stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <- 'Degrading'
+        } else if(temp_seaken$pvalue < 0.2 & temp_seaken$slope == 0) {
+          stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <-'Steady'
+        } 
       } else {
         stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <- 'No Sig Trend'
       }

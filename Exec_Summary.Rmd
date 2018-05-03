@@ -80,6 +80,6 @@ TSS             | `r nrow(unique(status[status$Analyte == "Total Suspended Solid
 Total Phosphorus| `r nrow(unique(status[status$Analyte == "Total Phosphorus", ]))` | `r nrow(unique(trend[trend$Analyte == "Total Phosphorus", ]))`
 
 ```{r parm summary table, echo = false}
-kable(stnsformap, padding = 2, digits = 3, caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last two years of available data. Note: DO = dissolved oxygen")
+knitr::kable(stnsformap, digits = 3, caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last two years of available data. Note: DO = dissolved oxygen")
 
 ```

@@ -53,14 +53,16 @@ plot.ph <- function(new_data,
   x.delta <- as.numeric((x.max-x.min)/2)####average date
   SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
   SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
-  sub.text <- paste0("p value = " ,
-                     round(p.value, digits=3),
-                     ", ",  
-                     p.value.label, 
-                     ", slope = ", 
-                     round(slope, digits=2), 
-                     ", n = ", 
-                     nrow(new_data))
+  if(plot_trend){
+    sub.text <- paste0("p value = " ,
+                       round(p.value, digits=3),
+                       ", ",  
+                       p.value.label, 
+                       ", slope = ", 
+                       round(slope, digits=2), 
+                       ", n = ", 
+                       nrow(new_data))
+  } else{sub.text <- ""}
   df_trend_line <- data.frame(x = c(x.min, x.max),
                               y = c(SK.min, SK.max),
                               variable = rep('Trend line', 2))
