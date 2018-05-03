@@ -587,15 +587,16 @@ if(any(df.all$Analyte == 'Enterococcus')){
         cat(figs(name = paste0('Entero_', ent_stns[i]), caption = paste0('Station: ', ent_stns[i], ' _Enterococcus_ water quality status and trends**')))
       }
       
-      kable(exc, padding = 2, digits = 1, caption = tbls(name = "enterExcTable", 
-                                                         caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
+      knitr::kable(exc, padding = 2, digits = 1,
+                   caption = tbls(name = "enterExcTable", 
+                                  caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
     }  else {
-      paste( "No monitoring stations have data to assess status and/or trend of Enterococcus" ) 
+      print("No monitoring stations have data to assess status and/or trend of Enterococcus") 
     } 
   } 
   ent_exc <- exc
 } else {
-  paste( "No monitoring stations have data to assess status and/or trend of Enterococcus" ) 
+  print("No monitoring stations have data to assess status and/or trend of Enterococcus") 
 }
 ```
 
