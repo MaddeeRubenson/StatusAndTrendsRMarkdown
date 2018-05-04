@@ -542,14 +542,10 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   
 ent_stat <- status %>%
   dplyr::filter(Analyte == "Enterococcus")
+ent_stat <- c(unique(ent_stat$Station_ID))
 
+ent_stns <- unique(append(ent_trend, ent_stat))
 
-if(!is.null(ent_trend)) {
-  ent_stns <- unique(append(ent_trend, ent_stat))
-  } else {
-    ent_stns <- e_stat
-    }
-  
 if(length(ent_stns) > 0) {
   
   ent_all <- df.all[df.all$Analyte == 'Enterococcus',]
@@ -573,14 +569,15 @@ if(length(ent_stns) > 0) {
     exc_list[[j]] <- ent_eval
     }
       
-    ent<-rbind.fill(ent_list[])
-    exc<-rbind.fill(exc_list[])
-    exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
+  ent <-rbind.fill(ent_list[])
+  exc <-rbind.fill(exc_list[])
+  exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
       
-    results_seaken<-SeaKen %>% filter(analyte == 'Enterococcus')
+  results_seaken <-SeaKen %>% filter(analyte == 'Enterococcus')
       
-    ent_plots<-list()
-    for (i in 1:length(ent_stns)) {
+  ent_plots <-list()
+  
+  for (i in 1:length(ent_stns)) {
       mydata_sub <- ent_all[ent_all$Station_ID == ent_stns[i],]
         
       trend_logic <- ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE,
@@ -598,9 +595,9 @@ if(length(ent_stns) > 0) {
                caption = paste0('Station: ', ent_stns[i], ' _Enterococcus_ water quality status and trends**')))
       }
       
-    knitr::kable(exc, padding = 2, digits = 1,
-                 caption = tbls(name = "enterExcTable", 
-                                caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
+  knitr::kable(exc, padding = 2, digits = 1,
+               caption = tbls(name = "enterExcTable", 
+                              caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
     }  else {
       print("No monitoring stations have data to assess status and/or trend of Enterococcus") 
     } 
