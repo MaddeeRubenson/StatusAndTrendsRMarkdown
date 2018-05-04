@@ -1,5 +1,5 @@
-run_seaKen <- function (df.all) {
-  sea_ken_int <- data.frame(Station_ID=sort(unique(df.all$Station_ID)),
+run_seaKen <- function (inputData) {
+  sea_ken_int <- data.frame(Station_ID=sort(unique(inputData$Station_ID)),
                             analyte="none",
                             slope="none",
                             pvalue="none",
@@ -9,21 +9,21 @@ run_seaKen <- function (df.all) {
                             N="none",
                             signif="none",
                             stringsAsFactors=FALSE)
-  parms <- unique(df.all$Analyte)
+  parms <- unique(inputData$Analyte)
   # parms <- parms[parms != 'Temperature']
   for (p in 1:length(parms)) {
     parm <- parms[p]
-    for(ii in 1:length(sea_ken_int$Station_ID)) { 
+    for(ii in 1:length(sea_ken_int$Station_ID)) {
       # specifiy current Station_ID
       tmp.one.station <- sea_ken_int$Station_ID[ii]
-      tmp.data.raw <- df.all[df.all$Station_ID == tmp.one.station & 
-                               df.all$Analyte == parm,]
+      tmp.data.raw <- inputData[inputData$Station_ID == tmp.one.station & 
+                               inputData$Analyte == parm,]
       sea_ken_int$analyte[ii] <- parm
       sea_ken_int$N[ii] <- length(tmp.data.raw$Result)
       if (!nrow(tmp.data.raw) > 1 | all(is.na(tmp.data.raw$Result))) {
         sea_ken_int$signif[ii] <- "Years<8"
         next
-      } 
+      } else {sea_ken_int$signif[ii] <- "none"}
       # Reshape and manipulate data to convert to wqData-class
       tmp.data <- data.frame(date=tmp.data.raw$Sampled,
                              time="0000",
@@ -63,6 +63,7 @@ run_seaKen <- function (df.all) {
     }
     
     ifelse(p == 1, SeaKen <- sea_ken_int, SeaKen <- rbind(SeaKen, sea_ken_int))
+    SeaKen$pvalue <- as.numeric(SeaKen$pvalue)
   }
   
   SeaKen$signif <- ifelse(SeaKen$signif=="Years<8",
