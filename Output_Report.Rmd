@@ -57,12 +57,13 @@ figs <- captioner(prefix="  \n**Figure")
 input <- list(action_button = c(0))
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen', 'Total Nitrogen')
-input$select <- "Molalla-Pudding French Prairie North Santiam" #input
+input$select <- "North Coast" #input
 input$dates <- c("2000-01-01", "2018-04-01") #input
 input$db <- c('DEQ', 'Water Quality Portal')
 #input$db2 <- c('Water Quality Portal')
 
 agwqma <- readOGR(dsn = 'app/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
+tribal_lands <- readOGR(dsn = 'E:/GitHub/StatusAndTrendsRMarkdown/GIS', layer = 'tl_2017_or_aiannh', verbose = FALSE)
 hucs <- readOGR(dsn = 'app/GIS', layer = 'WBD_HU8', verbose = FALSE)
 HUClist <- read.csv('app/PlanHUC_LU.csv')
 stations_huc <- read.csv('app/station_wbd_12132016.csv')
@@ -78,6 +79,7 @@ Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
 
 source('functions/Rmarkdown_query.R')
 source('functions/01_DataQuery.R')
+source("functions/funHelpers.R")
 
 if(input$select == 'Middle Willamette') {
   load("RdataFiles/Middle Willamette.df.all.2018-01-22.Rdata")
@@ -100,10 +102,8 @@ if(input$select == 'Middle Willamette') {
                 db = input$db)
 }
   
-  ##take out data from tribal land
-  df.all <- df.all %>%
-    filter(!grepl('[Tt]ribe', Client)) %>%
-    filter(!grepl('CTG', Station_ID))
+  # remove data collected on tribal nation land or tribal trust land
+  df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands, outside=TRUE),]
   
   if(any(grepl('OREGONDEQ', df.all$Station_ID))) {
     sub <- df.all[grepl('OREGONDEQ', df.all$Station_ID),]
@@ -155,7 +155,11 @@ if (any('Temperature' %in% df.all$Analyte)) {
   qc.2.stn <- filter(attributes(tempStns)$month_test, result == "pass")$Station_ID
   qc.3.stn <- filter(attributes(tempStns)$year_test, result == "pass")$Station_ID
   
-  sdadm <- df.all %>% mutate(date = date(Sampled)) %>% filter(Analyte == "Temperature") %>% merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE) %>% Calculate.sdadm("Result", "Station_ID", "Sampled", '%Y-%m-%d %H:%M:%S')
+  sdadm <- df.all %>% 
+    mutate(date = date(Sampled)) %>% 
+    filter(Analyte == "Temperature") %>% 
+    merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE) %>% 
+    Calculate.sdadm("Result", "Station_ID", "Sampled", '%Y-%m-%d %H:%M:%S')
   
   trend_pass <- filter(sdadm, Station_ID %in% qc.1.stn & Station_ID %in% qc.2.stn & Station_ID %in% qc.3.stn)
   
@@ -444,9 +448,9 @@ exc <- NULL
 e_stns <- NULL
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
-  e_stns<-trend %>%
+  e_stns <- trend %>%
     dplyr::filter(Analyte == "E. Coli")
-  e_stns<-c(unique(e_stns$Station_ID))
+  e_stns <-c(unique(e_stns$Station_ID))
   }
   
   e_stat<-status %>%
@@ -527,77 +531,80 @@ library(dplyr)
 library(ggplot2)
 library(knitr)
 
-if(any(df.all$Analyte == 'Enterococcus')){
+exc <- NULL
+ent_stns <- NULL
+
+if(any(!(trend == "No Stations Meet Trend Criteria"))) {
+  ent_trend <- trend %>%
+    dplyr::filter(Analyte == "Enterococcus")
+  ent_trend <- c(unique(ent_trend$Station_ID))
+  }
+  
+ent_stat <- status %>%
+  dplyr::filter(Analyte == "Enterococcus")
+
+
+if(!is.null(ent_trend)) {
+  ent_stns <- unique(append(ent_trend, ent_stat))
+  } else {
+    ent_stns <- e_stat
+    }
+  
+if(length(ent_stns) > 0) {
   
   ent_all <- df.all[df.all$Analyte == 'Enterococcus',]
   ent <- df.all[df.all$Analyte == 'Enterococcus',]
   
-  if(!(trend == "No Stations Meet Trend Criteria")) {
-    ent_trend <- trend %>%
-      dplyr::filter(Analyte == "Enterococcus")
-    ent_trend <- c(unique(ent_trend$Station_ID))
+  ent_list<- list()
+  exc_list<- list()
+  
+  for(j in 1: length(ent_stns)) {
+    new_data <- ent[ent$Station_ID == ent_stns[j],]
+    tmp_df <- new_data
+    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+    tmp_df_MRL <- tmp_df[sub,]
+    tmp_df <- remove.dups(tmp_df_MRL, max)
     
-    ent_stat <- status %>%
-      dplyr::filter(Analyte == "Enterococcus")
-    ent_stat <- c(unique(ent_stat$Station_ID))
-    
-    ent_stns <- unique(append(ent_trend, ent_stat))
-    
-    ent_list<- list()
-    exc_list<- list()
-    if(length(ent_stns) > 0){
-      for(j in 1: length(ent_stns)) {
-        new_data <- ent[ent$Station_ID == ent_stns[j],]
-        
-        
-        tmp_df <- new_data
-        tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-        tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-        sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-        tmp_df_MRL <- tmp_df[sub,]
-        tmp_df <- remove.dups(tmp_df_MRL, max)
-        
-        ent_evaluate <- EvaluateEnteroWQS(tmp_df)
-        ent_eval <- attr(ent_evaluate, 'ex_df')
-        ent_list[[j]] <- ent_evaluate
-        exc_list[[j]] <- ent_eval
-      }
+    ent_evaluate <- EvaluateEnteroWQS(tmp_df)
+    ent_eval <- attr(ent_evaluate, 'ex_df')
+    ent_list[[j]] <- ent_evaluate
+    exc_list[[j]] <- ent_eval
+    }
       
-      ent<-rbind.fill(ent_list[])
-      exc<-rbind.fill(exc_list[])
-      exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
+    ent<-rbind.fill(ent_list[])
+    exc<-rbind.fill(exc_list[])
+    exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
       
-      results_seaken<-SeaKen %>% filter(analyte == 'Enterococcus')
+    results_seaken<-SeaKen %>% filter(analyte == 'Enterococcus')
       
-      ent_plots<-list()
-      for (i in 1:length(ent_stns)) {
-        mydata_sub <- ent_all[ent_all$Station_ID == ent_stns[i],]
+    ent_plots<-list()
+    for (i in 1:length(ent_stns)) {
+      mydata_sub <- ent_all[ent_all$Station_ID == ent_stns[i],]
         
-        trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE,
+      trend_logic <- ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE,
                             ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE, TRUE))
         
         
-        b <- plot.bacteria(new_data=mydata_sub,
-                           sea_ken_table=results_seaken ,
-                           plot_trend = trend_logic,
-                           plot_log = FALSE,
-                           parm = unique(mydata_sub$Analyte))
+      b <- plot.bacteria(new_data=mydata_sub,
+                         sea_ken_table=results_seaken ,
+                          plot_trend = trend_logic,
+                          plot_log = FALSE,
+                          parm = unique(mydata_sub$Analyte))
         
-        ent_plots[[i]] <- b
-        cat(figs(name = paste0('Entero_', ent_stns[i]), caption = paste0('Station: ', ent_stns[i], ' _Enterococcus_ water quality status and trends**')))
+      ent_plots[[i]] <- b
+      cat(figs(name = paste0('Entero_', ent_stns[i]),
+               caption = paste0('Station: ', ent_stns[i], ' _Enterococcus_ water quality status and trends**')))
       }
       
-      knitr::kable(exc, padding = 2, digits = 1,
-                   caption = tbls(name = "enterExcTable", 
-                                  caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
+    knitr::kable(exc, padding = 2, digits = 1,
+                 caption = tbls(name = "enterExcTable", 
+                                caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
     }  else {
       print("No monitoring stations have data to assess status and/or trend of Enterococcus") 
     } 
-  } 
-  ent_exc <- exc
-} else {
-  print("No monitoring stations have data to assess status and/or trend of Enterococcus") 
-}
+
 ```
 
 ## Total Phosphorus
