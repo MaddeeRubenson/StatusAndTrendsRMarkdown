@@ -523,7 +523,6 @@ if(!is.null(exc)) {
 ```
 
 ## Enterococcus 
-No monitoring stations contain enterococcus data. 
 
 ```{r Entero, fig.height=6, fig.width=6, results='asis'}
 source("functions/funPlots.R")
