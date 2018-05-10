@@ -38,7 +38,7 @@ Stations_in_poly <- function(df.all, poly_shp, outside=FALSE) {
   # poly = polygon shapefile
   # Outside = TRUE if the stations outside the polygon should be returned instead, default is FALSE
   
-  require(sp)
+  library(sp)
   
   # make a spatial object
   df.shp <- df.all[,c("Station_ID", "DATUM", "DECIMAL_LAT", "DECIMAL_LONG")]
@@ -553,9 +553,9 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
   # station_column_name: in same format and name as provided
   # SDADM: class numeric representing the calculated seven day average
   
-  require(chron)
-  require(reshape)
-  require(zoo)
+  library(chron)
+  library(reshape)
+  library(zoo)
   
   tdata <- df[,c(station_column_name, datetime_column_name, result_column_name)]
   
@@ -675,8 +675,8 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
   # Value: 
   # An object of class data frame with columns:
   # 
-  require(plyr)
-  require(chron)
+  library(plyr)
+  library(chron)
   #test case: 
   #sdadm_df$spwn_dates <- ifelse(sdadm$id %in% c(36837,36838, 36839, 36874),"August 15-May 15",ifelse(sdadm$id %in% c(36849,36850,36854,36857),"January 1-June 15","No spawning"))
   #sdadm_df$ben_use_des <- ifelse(sdadm$id %in% c(36837,36838, 36839, 36874),"Core Cold Water Habitat",ifelse(sdadm$id %in% c(36849,36850,36854,36857),"Salmon and Trout Rearing and Migration","Redband and Lanhontan Cutthroat Trout"))
@@ -874,7 +874,7 @@ EvaluateDOWQS<-function(new_data,
                         datetime_format = '%Y-%m-%d %H:%M:%S'){
   
   #datetime_format = '%Y-%m-%d %H:%M:%S'
-  require(dplyr)
+  library(dplyr)
  
   new_data$Result <- as.numeric(new_data$Result)
   new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column],
@@ -1740,10 +1740,10 @@ Delineation<-function(stns,
   
   #stns <- dataframe with the columns containint ID, Lat, and Long
   #outpath <- directory outpath identifying a folder for watersheds to be stored
-  # require(PythonInR)
-  require(plyr)
-  require(dplyr)
-  require(tidyr)
+  # library(PythonInR)
+  library(plyr)
+  library(dplyr)
+  library(tidyr)
   # autodetectPython("C:/Python27/ArcGISx6410.3/python.exe")
   # pyConnect("C:/Python27/ArcGISx6410.3/python.exe")
   # pyIsConnected()
