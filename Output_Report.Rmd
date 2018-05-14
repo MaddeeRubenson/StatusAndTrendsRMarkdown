@@ -1,8 +1,8 @@
 ---
 title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon
-  DEQ Water Quality Status and Trends report for the Molalla-Pudding French Prairie North Santiam AgWQ
+  DEQ Water Quality Status and Trends report for the Umpqua River AgWQ
   Management Area'
-author: ''
+author: 'Brian Creutzburg'
 date: "April 2018"
 output:
   word_document:
@@ -20,7 +20,7 @@ always_allow_html: yes
 
 ```{r setup-packages-functions, include=FALSE}
 
-knitr::opts_knit$set(root.dir = '//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown')
+#knitr::opts_knit$set(root.dir = '//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown')
 knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE, 
                       warning=FALSE, 
@@ -76,29 +76,29 @@ input <- list(action_button = c(0))
 # Name should match AgWQMA name in gis file here:
 # \\deqhq1\TMDL\AgWQM\DataAnalysis\StatusAndTrendsRMarkdown\app\GIS
 
-input$select <- "North Coast"
+input$select <- "Umpqua River"
 
 input$dates <- c("2000-01-01", "2018-04-01") #input
 input$parms <- c('Total Phosphorus', 'Total Suspended Solids',
                 'Total Suspended Solids', 'Bacteria', 'Temperature', 'pH', 'Dissolved Oxygen', 'Total Nitrogen')
 input$db <- c('DEQ', 'Water Quality Portal')
 
-agwqma <- readOGR(dsn = 'app/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
-tribal_lands <- readOGR(dsn = 'app/GIS', layer = 'tl_2017_or_aiannh', verbose = FALSE)
-hucs <- readOGR(dsn = 'app/GIS', layer = 'WBD_HU8', verbose = FALSE)
-HUClist <- read.csv('app/PlanHUC_LU.csv')
-stations_huc <- read.csv('app/station_wbd_12132016.csv')
-ph_crit <- read.csv('app/PlanOWRDBasinpH_LU.csv')
+agwqma <- readOGR(dsn = '//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/app/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
+tribal_lands <- readOGR(dsn = '//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/app/GIS', layer = 'tl_2017_or_aiannh', verbose = FALSE)
+hucs <- readOGR(dsn = '//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/app/GIS', layer = 'WBD_HU8', verbose = FALSE)
+HUClist <- read.csv('//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/app/PlanHUC_LU.csv')
+stations_huc <- read.csv('//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/app/station_wbd_12132016.csv')
+ph_crit <- read.csv('//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/app/PlanOWRDBasinpH_LU.csv')
 ph_crit <- merge(ph_crit, HUClist, by.x = 'plan_name', by.y = 'PlanName', all.x = TRUE)
-lu_parms <- read.csv('app/WQP_Table3040_Names.csv', stringsAsFactors = FALSE)
-wq_limited <- read.csv('app/wq_limited_df_temp_bact_ph_DO_TP_Sediment_2012.csv')
+lu_parms <- read.csv('//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/app/WQP_Table3040_Names.csv', stringsAsFactors = FALSE)
+wq_limited <- read.csv('//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/app/wq_limited_df_temp_bact_ph_DO_TP_Sediment_2012.csv')
 OAR_LU <- read.csv("Lookups/OAR_LU.csv")
 Ben_use_LU <- read.csv("Lookups/stations.csv", na.strings = c("", "NA"))
 BC_LU <- read.csv("Lookups/BC_LU.csv")
 Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
 
-load('app/NLCD2011_OR.Rdata')
-load('app/OR_cats.Rdata')
+load('//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/app/NLCD2011_OR.Rdata')
+load('//deqhq1/TMDL/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/app/OR_cats.Rdata')
 
 #filepath<-paste0('T:/AgWQM/DataAnalysis/', input$select, '/Figures/WQassessment_V1.png')
 
