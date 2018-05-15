@@ -435,7 +435,7 @@ All_stns_fit_Criteria<-function(status, trend, df.all) {
   
   unique_stns<-unique(c(status_stns, trend_stns))
   
-  stns<-df.all[,c('Station_ID', 'Station_Description', 'DECIMAL_LAT', 'DECIMAL_LONG')]
+  stns<-df.all[,c('Station_ID', 'Station_Description', 'DECIMAL_LAT', 'DECIMAL_LONG', 'DATUM')]
   
   #stns<-df.all[,c('Station_ID', 'Station_Description', 'DECIMAL_LAT', 'DECIMAL_LONG', 'snap_Lat', 'snap_Long')]
   stns<-stns %>%
