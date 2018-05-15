@@ -10,7 +10,7 @@ plot.ph <- function(new_data,
                     ph_crit_min = NULL,
                     ph_crit_max = NULL)
                      {
-  require(ggplot2)
+  library(ggplot2)
   # new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column], 
   #                                         format = datetime_format))  
   new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column], 
@@ -153,7 +153,7 @@ plot.Temperature <- function(new_data,
                              datetime_column = 'date', 
                              datetime_format = '%Y-%m-%d', 
                                plot_trend = FALSE) {
-  require(ggplot2)
+  library(ggplot2)
   
   # new_data <- temp_evaluate
   new_data$Sampled <- as.POSIXct(strptime(new_data[,datetime_column], 
@@ -940,7 +940,7 @@ plot.DOsat<-function(new_data,
                   result_column = 'Result',
                   datetime_format = '%Y-%m-%d %H:%M:%S',
                   parm) {
-  require(ggplot2)
+  library(ggplot2)
   
   
   new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column],
@@ -986,8 +986,8 @@ plot.DO<-function(new_data,
                   result_column = 'Result',
                   datetime_format = '%Y-%m-%d %H:%M:%S',
                   parm = 'Dissolved Oxygen') {
-  require(ggplot2)
-  require(chron)
+  library(ggplot2)
+  library(chron)
   #dataframe that assigns WQS values to Aquatic Life Uses
   #new_data<-DO_evaluate
 
@@ -1435,8 +1435,8 @@ plot.TSS<-function(new_data,
                   result_column = 'Result',
                   datetime_format = '%Y-%m-%d %H:%M:%S',
                   parm = 'Total Suspended Solids (mg/l)') {
-  require(ggplot2)
-  require(chron)
+  library(ggplot2)
+  library(chron)
   #dataframe that assigns WQS values to Aquatic Life Uses
  
   new_data<-EvaluateTSSWQS(new_data = new_data, 
@@ -1599,8 +1599,8 @@ plot.TP<-function(new_data,
                    result_column = 'Result',
                    datetime_format = '%Y-%m-%d %H:%M:%S',
                    parm = 'Total Phosphorus (mg/l)') {
-  require(ggplot2)
-  require(chron)
+  library(ggplot2)
+  library(chron)
   #dataframe that assigns WQS values to Aquatic Life Uses
   
   new_data<-EvaluateTPWQS(new_data = new_data,
