@@ -12,7 +12,8 @@ Figures/*Plot*
 .Rhistory
 .Rapp.history
 
-# Session Data files
+# R Data folder and files
+RData/*
 .RData
 
 # knitr and R markdown default cache directories
