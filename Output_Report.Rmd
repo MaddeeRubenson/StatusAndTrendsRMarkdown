@@ -1,5 +1,5 @@
 ---
-title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon DEQ Water Quality Status and Trends report for the Molalla-Pudding French Prairie North Santiam AgWQ Management Area'
+title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon DEQ Water Quality Status and Trends report for the Umpqua River AgWQ Management Area'
 date: April 2018
 output:
   word_document:
@@ -70,10 +70,10 @@ figs <- captioner(prefix="  \n**Figure")
 ```{r inputs}
 
 # Note 'agwqma' must be named exactly how it is named in the agwqma shapefile ('agwqma_shp').
-agwqma <- "Molalla-Pudding French Prairie North Santiam"
+agwqma <- "Umpqua River"
 query_dates <- c("2000-01-01", "2018-04-01")
 support_files_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files"
-project_dir <- "E:/GitHub/StatusAndTrendsRMarkdown"
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Umpqua River/2018/StatusAndTrendsRMarkdown"
 Rdata_dir <- paste0(project_dir,"/RData")
 GIS_dir <- paste0(project_dir,"/GIS")
 
@@ -144,10 +144,10 @@ load(paste0(support_files_dir,'/OR_cats.Rdata'))
 
 ```{r Query, include=FALSE}
 
-if(file.exists(df_all_file)) {
+if(file.exists(file=paste0(Rdata_dir,"/",df_all_file))) {
   
   print("loading existing df.all")
-  load(df_all_file)
+  load(file=paste0(Rdata_dir,"/",df_all_file))
   
 } else {
   
