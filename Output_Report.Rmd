@@ -1439,20 +1439,59 @@ knitr::kable(stns_param_summary, padding = 2, digits = 3, caption = tbls(name = 
 
 # Conclusions
 
-**What are the overall trends?**
+```{r conclusions-setup}
 
-* *E. coli*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'Ecoli'])`
-* *Temperature*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'Temp'])`
-* *pH*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'pH'])`
-* *Dissolved Oxygen*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'DO'])`
-* *Total Phosphorus*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'TP'])`
-* *Total Suspended Solids*: `r na.omit(Conc_LU[Conc_LU$AgArea == input$select, 'TSS'])`
+conclusions.Ecoli <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'Ecoli'), c("conclusion")]
+conclusions.Entero <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'Entero'), c("conclusion")]
+conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'Temp'), c("conclusion")]
+conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'pH'), c("conclusion")]
+conclusions.DO <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'DO'), c("conclusion")]
+conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'TP'), c("conclusion")]
+conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'TSS'), c("conclusion")]
+conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'Add_conc'), c("conclusion")]
+
+```
+
+**What are the overall status or trends?**
+
+*E. coli*: 
+
+`r paste0("* ",conclusions.Ecoli,"\n", collapse="")`
+
+
+*Enterococcus*: 
+
+`r paste0("* ",conclusions.Entero,"\n", collapse="")`
+
+
+*Temperature*:
+
+`r paste0("* ",conclusions.Temp,"\n", collapse="")`
+
+
+*pH*: `r conclusions.pH`
+
+`r paste0("* ",conclusions.pH,"\n", collapse="")`
+
+
+*Dissolved Oxygen*:
+
+`r paste0("* ",conclusions.DO,"\n", collapse="")`
+
+
+*Total Phosphorus*:
+
+`r paste0("* ",conclusions.TP,"\n", collapse="")`
+
+
+*Total Suspended Solids*:
+
+`r paste0("* ",conclusions.TSS,"\n", collapse="")`
+
 
 **Additional Conclusions:**
-`r a <- Conc_LU[Conc_LU$AgArea == input$select, 'Add_conc']`
-* `r a[1]`
-* `r a[2]`
-<!-- * `r a[3]` -->
+
+`r paste0("* ",conclusions.add,"\n", collapse="")`
 
 
 # Appendix
