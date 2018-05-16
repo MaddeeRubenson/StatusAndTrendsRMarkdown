@@ -36,12 +36,15 @@ library(base)
 
 ```{r inputs, include=FALSE}
 
+# agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
+# how it is named in the agwqma shapefile ('agwqma_shp').
 agwqma <- "Molalla-Pudding French Prairie North Santiam"
 query_dates <- c("2000-01-01", "2018-04-01")
 project_dir <- "E:/GitHub/StatusAndTrendsRMarkdown"
+
+# Everything below here should not change
 Rdata_dir <- paste0(project_dir,"/RData")
 GIS_dir <- paste0(project_dir,"/GIS")
-
 
 # Name of output files from main report
 # These files should exist already

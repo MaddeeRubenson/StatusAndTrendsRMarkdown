@@ -75,7 +75,7 @@ agwqma <- "Umpqua River"
 query_dates <- c("2000-01-01", "2018-04-01")
 project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Umpqua River/2018/StatusAndTrendsRMarkdown"
 
-# These should not change
+# Everything below here should not change
 support_files_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files"
 Rdata_dir <- paste0(project_dir,"/RData")
 GIS_dir <- paste0(project_dir,"/GIS")
