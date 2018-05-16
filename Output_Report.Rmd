@@ -1,5 +1,5 @@
 ---
-title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/> Oregon DEQ Water Quality Status and Trends report for the Umpqua River AgWQ Management Area'
+title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/>Oregon DEQ Water Quality Status and Trends report for the Umpqua River AgWQ Management Area'
 date: April 2018
 output:
   word_document:
@@ -69,11 +69,14 @@ figs <- captioner(prefix="  \n**Figure")
 
 ```{r inputs}
 
-# Note 'agwqma' must be named exactly how it is named in the agwqma shapefile ('agwqma_shp').
+# agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
+# how it is named in the agwqma shapefile ('agwqma_shp').
 agwqma <- "Umpqua River"
 query_dates <- c("2000-01-01", "2018-04-01")
-support_files_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files"
 project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Umpqua River/2018/StatusAndTrendsRMarkdown"
+
+# These should not change
+support_files_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files"
 Rdata_dir <- paste0(project_dir,"/RData")
 GIS_dir <- paste0(project_dir,"/GIS")
 
@@ -436,7 +439,7 @@ landuse<-stn_nlcd_df%>%
   filter(Station_ID %in% stn_to_use) %>%
   arrange(desc(PerAgWs))
 colnames(landuse) <- c("Station ID", "Station Description", "Year", "Watershed Area (km^2^)",
-                       "%Urban", "%Forest", "%Ag", "%Range", "%Other")
+                       "% Urban", "% Forest", "% Ag", "% Range", "% Other")
 landuse <-landuse[, - 3]
 
 save(landuse, file=paste0(Rdata_dir,"/", landuse_file))
