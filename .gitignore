@@ -1,20 +1,30 @@
 # GIS folder and files
 *GIS
 
-# Maps in Figure folder
+# Maps and Plots in Figure folder
 Figures/*Map*
 Figures/*Assessment*
 Figures/*Station*
 Figures/*Result*
 Figures/*Plot*
+Figures/*Dissolved*
+Figures/*Ecoli*
+Figures/*Enterococcus*
+Figures/*pH*
+Figures/*Temperature*
+Figures/*Phosphorus*
+Figures/*TSS*
 
 # History files
 .Rhistory
 .Rapp.history
 
 # R Data folder and files
-RData/*
-.RData
+*RData*
+
+# Outputs
+*docx
+*html
 
 # knitr and R markdown default cache directories
 /*_cache/
