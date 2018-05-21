@@ -152,23 +152,22 @@ plot.Temperature <- function(new_data,
                              station_desc_column = 'Station_Description',
                              datetime_column = 'date', 
                              datetime_format = '%Y-%m-%d', 
-                               plot_trend = FALSE) {
+                             plot_trend = FALSE) {
   library(ggplot2)
   
-  # new_data <- temp_evaluate
   new_data$Sampled <- as.POSIXct(strptime(new_data[,datetime_column], 
                                           format = datetime_format))  
-  new_data[!is.na(new_data$sdadm) & is.na(new_data$exceed), 'exceed'] <- FALSE
+  new_data[!is.na(new_data$Result) & is.na(new_data$exceed), 'exceed'] <- FALSE
   new_data$exceed <- factor(new_data$exceed, levels = c(TRUE, FALSE), labels = c('Exceeds', 'Meets'))
   x.min <- min(new_data$Sampled) 
   x.max <- max(new_data$Sampled) 
   x.lim <- c(x.min, x.max) 
-  y.min <- if(floor(min(new_data$sdadm, na.rm = TRUE))<=10 ){ 
-    floor(min(new_data$sdadm, na.rm = TRUE)) 
-  }else{
+  y.min <- if(floor(min(new_data$Result, na.rm = TRUE))<=10 ){ 
+    floor(min(new_data$Result, na.rm = TRUE)) 
+  } else {
     10
   }
-  y.max <- ceiling(max(new_data$sdadm, na.rm = TRUE)) 
+  y.max <- ceiling(max(new_data$Result, na.rm = TRUE)) 
   if (y.max < 20 & selectUse %in% c('Salmon and Steelhead Migration Corridors',
                                     'Redband and Lanhontan Cutthroat Trout')) {
     y.max <- 21
@@ -180,7 +179,7 @@ plot.Temperature <- function(new_data,
     y.max <- 14
   }
   y.lim <- c(y.min,y.max)
-  y.median <- median(new_data$sdadm)
+  y.median <- median(new_data$Result)
   p.value <- NA
   if(plot_trend){
     slope <- suppressWarnings(
@@ -230,10 +229,8 @@ plot.Temperature <- function(new_data,
   ####plot the timeseries
   elem_text <- element_text(face = "bold")
   
-  if (selectSpawning == 'No spawning' & any(selectUse %in% 
-                                            c('Cool water species', 
-                                              'No Salmonid Use/Out of State'))) {
-    g <- ggplot(data = new_data, aes(x = Sampled, y = sdadm), color = 'black') + 
+  if(selectSpawning == 'No spawning' & any(selectUse %in%  c('Cool water species', 'Oceans and Bays', 'No Salmonid Use/Out of State'))) {
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result), color = 'black') + 
       geom_point() +   theme_gdocs() + theme(axis.title = elem_text) +
       xlab(x.lab) + 
       ylab(y.lab) + 
@@ -245,7 +242,7 @@ plot.Temperature <- function(new_data,
                    legend.title = element_blank(),
                    legend.direction = 'horizontal')
   } else {
-    g <- ggplot(data = new_data, aes(x = Sampled, y = sdadm, color = exceed)) + 
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) + 
       geom_point() +   theme_gdocs() + theme(axis.title = elem_text) +
       xlab(x.lab) + 
       ylab(y.lab) + 
@@ -253,6 +250,7 @@ plot.Temperature <- function(new_data,
       ylim(y.lim) +
       ggtitle(title) + 
       theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))
+    
     if (all(new_data$exceed == 'Meets', na.rm = TRUE)) {
       g <- g + scale_colour_manual("",
                                    values = c('black'), 
@@ -272,7 +270,7 @@ plot.Temperature <- function(new_data,
     
     ####Draw WQS 
     if (selectSpawning != 'No spawning' & any(selectUse %in% 
-                                              c('Cool water species', 
+                                              c('Cool water species', 'Oceans and Bays',
                                                 'No Salmonid Use/Out of State'))) {
       spn_index <- which(new_data$criteria_value == 13)
       spn_diff <- diff(spn_index)
@@ -318,19 +316,19 @@ plot.Temperature <- function(new_data,
                                                   'criteria_value']))
             g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning'),
                                   data = df, inherit.aes = FALSE)
-            }
           }
         }
-
-        #Plot first spawn time period
-        df <- data.frame(x1 = new_data[spn_index[1],'Sampled'],
-                         x2 = new_data[spn_stop[1],'Sampled'],
-                         y1 = unique(new_data[spn_index[1]:spn_stop[1],
-                                              'criteria_value']),
-                         y2 = unique(new_data[spn_index[1]:spn_stop[1],
-                                              'criteria_value']))
-        g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning'),
-                              data = df, inherit.aes = FALSE)
+      }
+      
+      #Plot first spawn time period
+      df <- data.frame(x1 = new_data[spn_index[1],'Sampled'],
+                       x2 = new_data[spn_stop[1],'Sampled'],
+                       y1 = unique(new_data[spn_index[1]:spn_stop[1],
+                                            'criteria_value']),
+                       y2 = unique(new_data[spn_index[1]:spn_stop[1],
+                                            'criteria_value']))
+      g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning'),
+                            data = df, inherit.aes = FALSE)
     } else {
       spn_index <- which(new_data$criteria_value == 13)
       spn_diff <- diff(spn_index)
