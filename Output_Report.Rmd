@@ -1,5 +1,5 @@
 ---
-title: '<img src="LogoColorRegular.jpg" style="float: right;width: 80px; "/>Oregon DEQ Water Quality Status and Trends report for the Umpqua River AgWQ Management Area'
+title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Oregon DEQ Water Quality Status and Trends report for the Umpqua River AgWQ Management Area'
 date: April 2018
 output:
   word_document:
@@ -167,63 +167,113 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_file))) {
 
 ```{r Clean-df.all, include=FALSE}
 
-# remove data collected on tribal nation land or tribal trust land
-df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands_shp, outside=TRUE),]
-
-# remove stations outside the agwqma
-df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, agwqma_shp[agwqma_shp$PlanName==input$select,]),]
-
-if(any(grepl('OREGONDEQ', df.all$Station_ID))) {
-  sub <- df.all[grepl('OREGONDEQ', df.all$Station_ID),]
-  sub$Station_ID <- gsub("[A-Z]", "", sub$Station_ID)
-  sub$Station_ID <- gsub("-", "", sub$Station_ID)
-  df.all <- rbind(sub, df.all)
-} 
-
-#if there are duplicate lat and longs per station, use this function. 
-df.all <- remove_stn_dups(df.all)
-
-## Add snapped stations
-#df.all <- Snapped_Stations(df.all)
-
-df.all$Result <- clean(df.all$Result)
-df.all$Result <- suppressWarnings(as.numeric(df.all$Result))
-df.all <- MRLhandling(df.all)
-
-if ("Fecal Coliform" %in% df.all$Analyte) {
-  df.all <- update_fc2ec(df.all)
-}
-
-if (any('Temperature' %in% df.all$Analyte)) {
+if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
-  tempStns <- temp_sufficiency_analysis(df.all)
-  
-  qc.1.pass <- filter(attributes(tempStns)$day_test, result == "pass")
-  qc.2.pass <- filter(attributes(tempStns)$month_test, result == "pass")
-  qc.3.pass <- filter(attributes(tempStns)$year_test, result == "pass")
-  qc.1.stn <- filter(attributes(tempStns)$day_test, result == "pass")$Station_ID
-  qc.2.stn <- filter(attributes(tempStns)$month_test, result == "pass")$Station_ID
-  qc.3.stn <- filter(attributes(tempStns)$year_test, result == "pass")$Station_ID
-  
-  sdadm <- df.all %>% 
-    mutate(date = date(Sampled)) %>% 
-    filter(Analyte == "Temperature") %>% 
-    merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE) %>% 
-    Calculate.sdadm("Result", "Station_ID", "Sampled", '%Y-%m-%d %H:%M:%S')
-  
-  trend_pass <- filter(sdadm, Station_ID %in% qc.1.stn & Station_ID %in% qc.2.stn & Station_ID %in% qc.3.stn)
+  print("loading existing cleaned df.all")
+  load(file=paste0(Rdata_dir,"/",df_all_clean_file))
   
 } else {
-  sdadm <- NULL
+  
+  print("cleaning df.all")
+  
+  # remove data collected on tribal nation land or tribal trust land
+  df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands_shp, outside=TRUE),]
+  
+  # remove stations outside the agwqma
+  df.all <- clipToPlanArea(df.all, agwqma_shp, input$select)
+  
+  # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
+  # The Station ID will be named the same as LASAR
+  if(any(grepl('OREGONDEQ', df.all$Station_ID))) {
+    df.all$Station_ID <- gsub("[A-Z]", "", sub$Station_ID)
+    df.all$Station_ID <- gsub("-", "", sub$Station_ID)
+  } 
+  
+  # Reconcile Stations with the same ID but have different Lat/Longs 
+  df.all <- remove_stn_dups(df.all)
+  
+  # Remove obervations that are the same from two databases
+  # Same is defined as having the same station ID, Sample Date/time, and Analyte
+  # Note the WQP field 'StatisticalBaseCode' is a code that identifies if the result 
+  # is a calculate value like Daily Max or 7DADM. This needs to be incorporate somehow.
+  df.all$IDSA <- paste(df.all$Station_ID,df.all$Sampled,df.all$Analyte, sep=" ")
+  df.all <- df.all[!duplicated(df.all[c("IDSA")] ), ]
+  
+  
+  ## Add snapped stations
+  #df.all <- Snapped_Stations(df.all)
+  
+  df.all$Result <- clean(df.all$Result)
+  df.all$Result <- suppressWarnings(as.numeric(df.all$Result))
+  df.all <- MRLhandling(df.all)
+  
+  if ("Fecal Coliform" %in% df.all$Analyte) {
+    df.all <- update_fc2ec(df.all)
+  }
+  
+  if (any('Temperature' %in% df.all$Analyte)) {
+    
+    tempStns <- temp_sufficiency_analysis(df.all)
+    
+    qc.1.pass <- filter(attributes(tempStns)$day_test, result == "pass")
+    qc.2.pass <- filter(attributes(tempStns)$month_test, result == "pass")
+    qc.3.pass <- filter(attributes(tempStns)$year_test, result == "pass")
+    qc.1.stn <- filter(attributes(tempStns)$day_test, result == "pass")$Station_ID
+    qc.2.stn <- filter(attributes(tempStns)$month_test, result == "pass")$Station_ID
+    qc.3.stn <- filter(attributes(tempStns)$year_test, result == "pass")$Station_ID
+    
+    df.all.temp <- df.all %>% 
+      mutate(date = date(Sampled)) %>% 
+      filter(Analyte == "Temperature")  %>%
+      merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE) %>%
+      mutate(IDD = paste0(Station_ID," ",date))
+    
+    df.all.temp$Result <- convert_temp_F_C(df.all.temp, result_column_name="Result", unit_column_name="Unit")
+    df.all.temp$Unit <- "Celsius"
+    
+    df.sdadm <- Calculate.sdadm(df.all.temp, "Result", "Station_ID", "Sampled", '%Y-%m-%d %H:%M:%S')
+    
+    df.sdadm$IDD <- paste0(df.sdadm$Station_ID," ",df.sdadm$date)
+    
+    # Remove NAs
+    df.sdadm <- df.sdadm[!(is.na(df.sdadm$sdadm)),]
+    
+    # Attempt at pulling the other df fields for each daily sample so it can be added back to sdadm
+    df.all.temp.fields <- df.all.temp[!duplicated(df.all.temp[c("IDD")] ), ]
+    
+    # add it back
+    df.sdadm <- merge(x=df.sdadm[,c("IDD", "sdadm")],y=df.all.temp.fields, by="IDD", all.x=TRUE)
+    
+    df.sdadm$Result <- df.sdadm$sdadm
+    
+    # only keep columns in df.all
+    df.sdadm <- df.sdadm[,colnames(df.sdadm) %in% colnames(df.all)]
+    
+    df.sdadm$Analyte <- "Temperature"
+    
+    #trend_pass <- dplyr:filter(df.sdadm, 
+    #                           Station_ID %in% qc.1.stn & Station_ID %in% qc.2.stn & Station_ID %in% qc.3.stn)
+    
+    # now remove temperature from df.all and replace with 7DADM values
+    df.all <- df.all %>%
+      filter(!Analyte == "Temperature") %>%
+      rbind(df.sdadm)
+    
+    if(NROW(qc.3.pass) > 0) {
+      qc.3.pass$Analyte <- "Temperature"
+      df.all$month <- month(df.all$Sampled)
+      #qc.3.pass <- dplyr::rename(qc.3.pass, monTest = result)
+      df.all <- merge(df.all, qc.3.pass[,c("Station_ID", "month", "monTest", "Analyte")], 
+                      by=c("Station_ID", "Analyte", "month"), all.x = TRUE, all.y = FALSE)
+    }
+    
+  }
+  
+  df.all <- remove_QAfail(df.all)
+  
+  save(df.all, file=paste0(Rdata_dir,"/",df_all_clean_file))
+  
 }
-
-df.all <- remove_QAfail(df.all)
-df.all$month <- month(df.all$Sampled)
-qc.3.pass$Analyte <- "Temperature"
-qc.3.pass <- dplyr::rename(qc.3.pass, monTest = result)
-
-df.all <- merge(df.all, qc.3.pass[,c("Station_ID", "month", "monTest", "Analyte")], by=c("Station_ID", "Analyte", "month"), all.x = TRUE, all.y = FALSE)
-
 
 ```
 
@@ -238,30 +288,13 @@ if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen", 'Total Suspended 
                                                            'Total Phosphorus')))
 } else {seaken_other <- data.frame()}
 
-if ("Temperature" %in% df.all$Analyte & "pass" %in% df.all$monTest) {
-  seaken_temp <- run_seaKen(filter(df.all, Analyte == "Temperature" & monTest == "pass"))
+if(NROW(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass")) > 0) {
+  seaken_temp <- run_seaKen(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass"))
 } else {seaken_temp <- data.frame()}
 
 SeaKen <- rbind(seaken_other, seaken_temp)
 
-wq_lim_whole <- extract_303d(df.all, wq_limited, input$select)
-wq_lim_whole <- wq_lim_whole[,c('STREAM_LAK', 'LLID_STREA', 
-                                'MILES', 'POLLUTANT', 'SEASON', 
-                                'ASSESSME_1', 'CRITERIA', 
-                                'LISTING_ST', 'TMDL_INFO')]
-wq_lim_whole <- plyr::rename(wq_lim_whole, 
-                             c('STREAM_LAK' = 'Waterbody',
-                               'LLID_STREA' = 'LLID',
-                               'ASSESSME_1' = 'Year Assessed',
-                               'LISTING_ST' = 'Listing Status'))
-
-statusNonTemp <- Stations_Status(filter(df.all, Analyte != "Temperature"))
-
-if(!is.null(sdadm)){
-  statusTemp <- Stations_Status(mutate(filter(rename(sdadm, Sampled = date), !is.na(sdadm)), Analyte = "Temperature"))
-} else {statusTemp <- NULL}
-
-status <- rbind(statusNonTemp, statusTemp)
+status <- Stations_Status(df.all)
 trend <- Stations_Trend(df.all)
 stns_by_year <- Stations_by_Year(df.all)
 stns <- All_stns_fit_Criteria(trend = trend, 
@@ -459,16 +492,28 @@ Summary of Oregon's 2012 Integrated Report Assessment database and 303(d) list f
 
 ```{r wq-limited}
 
+wq_lim_whole <- extract_303d(df.all, wq_limited, input$select)
+wq_lim_whole <- wq_lim_whole[,c('STREAM_LAK', 'LLID_STREA', 
+                                'MILES', 'POLLUTANT', 'SEASON', 
+                                'ASSESSME_1', 'CRITERIA', 
+                                'LISTING_ST', 'TMDL_INFO')]
+wq_lim_whole <- plyr::rename(wq_lim_whole, 
+                             c('STREAM_LAK' = 'Waterbody',
+                               'LLID_STREA' = 'LLID',
+                               'ASSESSME_1' = 'Year Assessed',
+                               'LISTING_ST' = 'Listing Status'))
+
 wq_limited_df <- wq_lim_whole[, c('Waterbody', 'MILES', 'POLLUTANT', 'SEASON', 'Year Assessed', 'CRITERIA', 'Listing Status')]
 
 names(wq_limited_df) <- c('Waterbody', 'Miles', 'Pollutant', 'Season', 'Year Assessed', 'Criteria', 'Listing Status')
 
 wq_limited_df <- wq_limited_df %>% arrange(desc(Waterbody))
 
-wq_limited_df$`Listing Status` <- revalue(wq_limited_df$`Listing Status`, c("Cat 4A: Water quality limited, TMDL approved" = "Cat 4A",
-                                                                            "Cat 5: Water quality limited, 303(d) list, TMDL needed" = "Cat 5",
-                                                                            "TMDL approved" = "Cat 4A",
-                                                                            "303(d)" = "Cat 5"))
+wq_limited_df$`Listing Status` <- revalue(wq_limited_df$`Listing Status`, 
+                                          c("Cat 4A: Water quality limited, TMDL approved" = "Cat 4A",
+                                            "Cat 5: Water quality limited, 303(d) list, TMDL needed" = "Cat 5",
+                                            "TMDL approved" = "Cat 4A",
+                                            "303(d)" = "Cat 5"))
 
 knitr::kable(wq_limited_df, padding = 2, caption = tbls(name = "wqLimited", caption = "Summary of Integrated Report listings for parameters included in this report. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA**"))
 
@@ -490,9 +535,12 @@ SK <- SeaKen %>% filter(Station_ID %in% unique(stns$Station_ID)) %>%
 if(nrow(SK) > 0) {
   
   SK <- SK[,c(1, 2, 3, 4, 5, 8, 9)]
+  SK <- SK[with(SK, order(analyte, Station_ID)),]
   
   SK$slope <- as.numeric(SK$slope)
   SK$pvalue <- as.numeric(SK$pvalue)
+
+  colnames(SK) <- c("Station ID", "Analyte", "Slope", "p value", "Median", "N", "Significance Result")
   
   knitr::kable(SK, padding = 2, format.args = list(scientific = TRUE), caption = tbls(name = "seakenTable", caption = "Output for the Seasonal Kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.**"))
 }
@@ -649,6 +697,9 @@ if(length(ent_stns) > 0) {
                        parm = unique(mydata_sub$Analyte))
     
     ent_plots[[i]] <- b
+
+    print(ent_plots[[i]])
+    
     cat(figs(name = paste0('Entero_', ent_stns[i]),
              caption = paste0('Station: ', ent_stns[i], ' _Enterococcus_ water quality status and trends**')))
   }
@@ -666,6 +717,7 @@ if(length(ent_stns) > 0) {
 
 ```{r Total-Phosphorus, results = 'asis', fig.width = 6, fig.height = 6}
 
+exc <- NULL
 tp_stn <- NULL
 
 if(!(trend == "No Stations Meet Trend Criteria")) {
@@ -804,7 +856,9 @@ tp_exc <- exc
 
 ```{r TSS, results = 'asis', fig.width = 6, fig.height = 6}
 
+exc <- NULL
 tss_stn <- NULL
+
 
 if(!(trend == "No Stations Meet Trend Criteria")) {
   tss_stn<-trend %>%
@@ -901,6 +955,7 @@ tss_exc <- exc
 
 ```{r pH, results = 'asis', fig.width = 6, fig.height = 6}
 
+exc <- NULL
 pH_stn_table <- NULL
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
@@ -1042,10 +1097,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
 ```{r Temperature, results = 'asis', fig.width = 6, fig.height = 6}
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
-  # temp_stn<-trend %>%
-  #   dplyr::filter(Analyte == "Temperature")
-  # temp_stn_table<-c(unique(temp_stn$Station_ID))
-  # temp_stn <- c(unique(temp_stn$Station_ID))
+
   temp_stn <- unique(filter(SeaKen, analyte == "Temperature")$Station_ID)
   
   t_stat <- unique(filter(status, Analyte == "Temperature")$Station_ID)
@@ -1055,21 +1107,20 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   
   if(length(temp_stn) > 0) {
     
-    temp <- df.all[df.all$Analyte == 'Temperature' & df.all$Station_ID %in% temp_stn_table,]
+    sdadm <- df.all[df.all$Analyte == 'Temperature' & df.all$Station_ID %in% temp_stn_table,]
     
     #(Ben_use_LU[Ben_use_LU$Station_ID %in% pH_stn_table, 'pH_benuse'])
     in_bentable<-as.character(Ben_use_LU[Ben_use_LU$Station_ID %in% temp_stn_table, 'Temp_Benuse'])
     
-    dta <- merge(temp, Ben_use_LU, by.x = "Station_ID", by.y = "Station_ID")
+    dta <- merge(sdadm, Ben_use_LU, by.x = "Station_ID", by.y = "Station_ID")
     temp_stn <- dta %>% filter(!is.na(Temp_Benuse))
     temp_stn <- unique(temp_stn$Station_ID) #All stations with beneficial uses attached
     
-    #temp<-NULL
-    #exc<-NULL
+    temp <-NULL
+    exc <-NULL
+    
     temp_list<- list()
     temp_exclist<- list()
-    
-    sdadm <- sdadm %>% filter(Station_ID %in% temp_stn)
     
     ##if in_bentable is character empty (the stations do not exist in LU table)
     if(length(in_bentable) > 0) {
@@ -1078,11 +1129,14 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
         #temp <- df.all[df.all$Analyte == 'Temperature',]
         for(j in 1: length(temp_stn)) {
           
-          new_data <- sdadm[sdadm$Station_ID == temp_stn[j],]
-          new_data <- na.omit(new_data)
-  
-          if(nrow(new_data) > 1) {
+          new_data <- sdadm[sdadm$Station_ID == temp_stn[j], c("Station_ID", 
+                                                               "Station_Description", 
+                                                               "Sampled", "Result")]
+          new_data$date <- as.Date(new_data$Sampled)
+          #new_data <- na.omit(new_data)
           
+          if(nrow(new_data) > 1) {
+            
             Temp_Benuse <- as.character((Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[j], 'Temp_Benuse']))
             spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[j], 'spwn_time'])
             
@@ -1112,8 +1166,10 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
           
           #look up what to do if there is not enough temp data
           
-          new_data <- sdadm[sdadm$Station_ID == temp_stn[i],]
-          new_data <- na.omit(new_data)
+          new_data <- sdadm[sdadm$Station_ID == temp_stn[i], c("Station_ID", 
+                                                               "Station_Description", 
+                                                               "Sampled", "Result")]
+          new_data$date <- as.Date(new_data$Sampled)
           
           if(nrow(new_data) > 1) {
             
@@ -1148,7 +1204,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
             cat(figs(name = paste0('temp_', temp_stn[i]), caption = paste0('Station: ', temp_stn[i], ' _Temperature_ water quality status and trends**')))
             
           } else {
-          print(paste("insufficient data to calculate sdadm at station:", temp_stn[i]))
+            print(paste("insufficient data to calculate sdadm at station:", temp_stn[i]))
           }
         }
       } else {
@@ -1159,32 +1215,34 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
       #want to filter temp stations that do not have ben uses attached
       if(length(temp_stn) > 0){
         ttable <- temp_table %>% dplyr::filter(!(temp_stn_table %in% temp_stn))
-        }
+      }
       
       colnames(ttable) <- c("Station ID")
       if (nrow(ttable) > 0) {
         print("In order to assess against water quality standard, need to add temperature beneficial uses and spawning time periods to stations.csv for stations:")
         print(ttable)
-      
+        
       }
       
       if(!is.null(exc)){ #prints exceedance table, if temperature stns exist 
-       #fix column names
-         knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "tempExcTable", caption = "Temperature status and trends**"))
+        #fix column names
+        knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "tempExcTable", caption = "Temperature status and trends**"))
       }
       
-       }
+    }
   }
 } else {
   temp <- NULL
 }
 temp_exc <- exc
+
 ```
 
 ## Dissolved Oxygen
 
 ```{r Dissolved-Oxygen, results = 'asis', fig.width = 6, fig.height = 6}
 
+exc <- NULL
 DO_stn <- NULL
 DO_stn_table <- NULL
 
@@ -1454,39 +1512,13 @@ conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 
 
 **What are the overall status or trends?**
 
-*E. coli*: 
-
-`r paste0("* ",conclusions.Ecoli,"\n", collapse="")`
-
-
-*Enterococcus*: 
-
-`r paste0("* ",conclusions.Entero,"\n", collapse="")`
-
-
-*Temperature*:
-
-`r paste0("* ",conclusions.Temp,"\n", collapse="")`
-
-
-*pH*: `r conclusions.pH`
-
-`r paste0("* ",conclusions.pH,"\n", collapse="")`
-
-
-*Dissolved Oxygen*:
-
-`r paste0("* ",conclusions.DO,"\n", collapse="")`
-
-
-*Total Phosphorus*:
-
-`r paste0("* ",conclusions.TP,"\n", collapse="")`
-
-
-*Total Suspended Solids*:
-
-`r paste0("* ",conclusions.TSS,"\n", collapse="")`
+* *E. coli*: `r conclusions.Ecoli`
+* *Enterococcus*: `r conclusions.Entero`
+* *Temperature*: `r conclusions.Temp`
+* *pH*: `r conclusions.pH`
+* *Dissolved Oxygen*: `r conclusions.DO`
+* *Total Phosphorus*: `r conclusions.TP`
+* *Total Suspended Solids*: `r conclusions.TSS`
 
 
 **Additional Conclusions:**
