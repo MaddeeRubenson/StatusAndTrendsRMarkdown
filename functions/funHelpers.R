@@ -526,6 +526,18 @@ generate_new_data <- function(df.all, sdadm, selectStation, selectParameter,
   return(df.sub)
 }
 
+convert_temp_F_C <- function(df, result_column_name="Result", unit_column_name="Unit") {
+  # Converts degress Fahrenheit to Celsius. The text in the unit column is not always correct so I used numeric logic instead.
+  # Result values above 36 are treated as if they are Farenheit and are modified using the conversion equation from 
+  # Farenheit to Celsius.
+  # This is not a perfect solution but not sure what is better.
+  
+  df[,result_column_name] <- as.numeric(df[,result_column_name])
+  df$result_celsius <- ifelse(df[,result_column_name] > 36, round(((df[,result_column_name]-32)*5/9),1), df[,result_column_name])
+  
+  return(df$result_celsius)
+}
+
 Calculate.sdadm <- function(df, result_column_name, station_column_name, datetime_column_name, datetime_format) {
   # Description:
   # Calculates seven day average daily maximum
@@ -542,8 +554,7 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
   # 
   # Result column is coerced to class numeric.
   # 
-  # Result values above 36 are treated as if they are Farenheit and are modified using the conversion equation from 
-  # Farenheit to Celsius.
+  # Result values are assumed to be in the same units (preferably Celsius).
   # 
   # NA values are removed when taking daily maximums unless a day has no observed data in which case NA will be returned.
   # 
@@ -564,10 +575,7 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
   colnames(tdata)[2] <- "datetime"
   colnames(tdata)[3] <- "t"
   
-  ## F -> C  Not a perfect solution but not sure how to deal with it otherwise.
-  #Ft <- "Temperature  (?F)" # Using the unit text doesn't seem to work on a pc (works on mac). I think the degree symbol is the problem.
   tdata$t <- as.numeric(tdata$t)
-  tdata$t_c <- ifelse(tdata$t > 36, round(((tdata$t-32)*5/9),1),tdata$t)
   
   ## Create a vector of daily dates for grouping
   tdata$datetime <- as.POSIXct(strptime(tdata$datetime, format = datetime_format))
@@ -651,9 +659,9 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
   #  Requires plyr and chron
   #
   #  sdadm_df must have columns with name and format as specified:
-  #   id          = Class character representing the Station identifier
+  #   station_column_name = Class character representing the station ID
   #   date        = Class Date representing date of seven day average daily maximum
-  #   sdadm       = Class numeric representing the values of the seven day average daily maximum
+  #   Result      = Class numeric representing the values of the seven day average daily maximum
   #   spwn_dates  = Class character with the start and end dates of the 
   #                           applicable spawning time period. Requires the format 
   #                           "StartMonth Day-EndMonth Day" e.g. ("January 1-May 15") OR
@@ -740,11 +748,11 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
   
   ## Calculate total 7DADM obersvations and # of 7DADM observations that exceed the summer spawning critera in those time periods; and 
   ## number of 7DADM observations that exceed 16 and 18 over the whole time period (not just in the stated periods)
-  sdadm_df$exceedsummer <- ifelse(sdadm_df$sdadm >= sdadm_df$bioc & 
+  sdadm_df$exceedsummer <- ifelse(sdadm_df$Result >= sdadm_df$bioc & 
                                     sdadm_df$summer == TRUE, 1, 0)
-  sdadm_df$exceedspawn <- ifelse(sdadm_df$sdadm >= sdadm_df$bioc & 
+  sdadm_df$exceedspawn <- ifelse(sdadm_df$Result >= sdadm_df$bioc & 
                                    sdadm_df$spawn == TRUE, 1, 0)
-  sdadm_df$daystot <-ifelse(!is.na(sdadm_df$sdadm), 1, 0)
+  sdadm_df$daystot <-ifelse(!is.na(sdadm_df$Result), 1, 0)
   
   ## TABULUAR RESULTS
   # daystot <- tapply(sdadm_df$daystot,list(sdadm_df[, station_column_name],
@@ -755,12 +763,12 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
   # exceedspawn <- tapply(sdadm_df$exceedspawn,
   #                       list(sdadm_df[, station_column_name],
   #                            sdadm_df$exceedspawn), length)
-  #sdadm_df <- sdadm_df[!is.na(sdadm_df$sdadm),]
+  #sdadm_df <- sdadm_df[!is.na(sdadm_df$Result),]
   
   sdadm_df$Time_Period <- ifelse(sdadm_df$summer, "Summer", "Spawning")
   sdadm_df$Time_Period <- factor(sdadm_df$Time_Period, levels = c('Summer', 'Spawning', 'Total'))
   sdadm_df$exceed <- sdadm_df$exceedspawn | sdadm_df$exceedsummer
-  sdadm_df_noNA <- sdadm_df[!is.na(sdadm_df$sdadm),]
+  sdadm_df_noNA <- sdadm_df[!is.na(sdadm_df$Result),]
   sdadm_df_noNA[is.na(sdadm_df_noNA$Time_Period), 'exceed'] <- FALSE
   sdadm_df_noNA[is.na(sdadm_df_noNA$Time_Period), 'Time_Period'] <- 'Summer'
   result_summary <- ddply(sdadm_df_noNA, .(sdadm_df_noNA[, station_column_name], Time_Period), 
@@ -1429,18 +1437,19 @@ temp_sufficiency_analysis <- function(df.all) {
     tmp$hour <- hour(tmp$datetime)
     
     # QC Test #1 -------------------------------------------------------------
-    # Must be at least one observation in a minimum of 22 hours during the day
-    # or have the daily max provided via the published data
+    # Must be at least one observation per hour from Noon to Midnight
+    # or have the daily max provided via the published data. 
+    # This is to make sure there is suffcient continous data to capture the daily maximum
     
-    # First determine number of hours collected within each day
+    # First filter to observations collected from Noon to midnight and sum hours
     qc.hr <- as.tbl(tmp) %>% filter((hour >=12 & hour <= 24) | isMax == TRUE) %>% 
       group_by(HUC, Station_ID, isMax, date, month, year, day) %>%
       summarise(n = length(unique(hour)))
     qc.hr <- as.data.frame(qc.hr)
     
     if (nrow(qc.hr) > 0) {
-    # Isolate to days with 22 or more hours represented
-    qc.hr$n_threshold <- '>= 22 hours'
+    # Isolate to days with 12 or more hours represented
+    qc.hr$n_threshold <- '>= 12 hours or Daily Max'
     qc.hr$result <- ifelse(qc.hr$n >= 12 | qc.hr$isMax == TRUE,'pass','fail')
     
     qc.results.1 <- rbind(qc.results.1,qc.hr)
@@ -2083,19 +2092,24 @@ Snapped_Stations <- function(df.all) {
 }
 
 remove_stn_dups <- function(df.all) {
-  #When there are duplicate station lat and longs, this function assigns the first lat and long to each station_ID
+  # When there are different station lat and longs for the same station, 
+  # this function assigns the first lat and long to each station_ID
   
-  list <- list()
-  stn <- unique(df.all$Station_ID)
-  for(i in 1:length(stn)) {
-    tmp <- df.all[df.all$Station_ID == stn[i], ]
-    tmp <- unique(tmp[,c('Station_ID', 'DECIMAL_LAT', 'DECIMAL_LONG')])
-    tmp <- tmp[c(1),]
+  df <- df.all %>%
+    dplyr::select(Station_ID, DECIMAL_LAT, DECIMAL_LONG) %>%
+    dplyr::distinct(Station_ID, DECIMAL_LAT, DECIMAL_LONG)
+  
+  #stn_list <- list()
+  #stn <- unique(df.all$Station_ID)
+  #for(i in 1:length(stn)) {
+    #tmp <- df.all[df.all$Station_ID == stn[i], ]
+    #tmp <- unique(tmp[,c('Station_ID', 'DECIMAL_LAT', 'DECIMAL_LONG')])
+    #tmp <- tmp[c(1),]
     
-    list[[i]] <- tmp
-  }
+    #stn_list[[i]] <- tmp
+  #}
   
-  df <- ldply(list, data.frame)
+  #df <- ldply(stn_list, data.frame)
   
   df <- merge(df, df.all, by.x = 'Station_ID', by.y = "Station_ID") #want .x
   df <- subset(df, select= -c(DECIMAL_LAT.y, DECIMAL_LONG.y))
