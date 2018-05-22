@@ -368,7 +368,7 @@ Stations_Trend<-function(df.all){
     trend<-sub_data%>%
       group_by(Station_ID)%>%
       dplyr::summarise(n_years=length(unique(year))) %>%
-      filter(n_years>8)
+      filter(n_years>=8)
     stns<-c(as.character(unique(trend$Station_ID)))
     dta_stns<-sub_data%>%
       dplyr::filter(Station_ID %in% stns)

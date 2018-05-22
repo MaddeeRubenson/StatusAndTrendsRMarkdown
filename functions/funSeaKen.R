@@ -21,7 +21,7 @@ run_seaKen <- function (inputData) {
       sea_ken_int$analyte[ii] <- parm
       sea_ken_int$N[ii] <- length(tmp.data.raw$Result)
       if (!nrow(tmp.data.raw) > 1 | all(is.na(tmp.data.raw$Result))) {
-        sea_ken_int$signif[ii] <- "Years<8"
+        sea_ken_int$signif[ii] <- "Years<=8"
         next
       } else {sea_ken_int$signif[ii] <- "none"}
       # Reshape and manipulate data to convert to wqData-class
@@ -42,8 +42,8 @@ run_seaKen <- function (inputData) {
                        time.format = "%Y-%m-%d %H:%M:%S")
       # Create time series from water quality data
       tmp.ts <- suppressWarnings(tsMake(tmp.wq, focus = parm, qprob = 0.05, layer = c(0, 5))) #changed to median value per Helsel and Hirsch 2002; 11-14-2017
-      if (length(unique(year(tmp.data$date))) < 8) {
-        sea_ken_int$signif[ii] <- "Years<8"
+      if (length(unique(year(tmp.data$date))) <= 8) {
+        sea_ken_int$signif[ii] <- "Years<=8"
       }
       if (!length(tmp.ts) > 2 |
           start(tmp.ts)[1] == end(tmp.ts)[1] | 
@@ -66,7 +66,7 @@ run_seaKen <- function (inputData) {
     SeaKen$pvalue <- as.numeric(SeaKen$pvalue)
   }
   
-  SeaKen$signif <- ifelse(SeaKen$signif=="Years<8",
+  SeaKen$signif <- ifelse(SeaKen$signif=="Years<=8",
                           "Need at least 8 years",
                           ifelse(SeaKen$pvalue<=0.01, 
                                  "99% Significance Level",
