@@ -195,7 +195,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # Remove obervations that are the same from two databases
   # Same is defined as having the same station ID, Sample Date/time, and Analyte
   # Note the WQP field 'StatisticalBaseCode' is a code that identifies if the result 
-  # is a calculate value like Daily Max or 7DADM. This needs to be incorporate somehow.
+  # is a calculated value like Daily Max or 7DADM. This needs to be incorporated somehow.
   df.all$IDSA <- paste(df.all$Station_ID,df.all$Sampled,df.all$Analyte, sep=" ")
   df.all <- df.all[!duplicated(df.all[c("IDSA")] ), ]
   
@@ -211,6 +211,8 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
     df.all <- update_fc2ec(df.all)
   }
   
+  df.all <- remove_QAfail(df.all)
+  
   if (any('Temperature' %in% df.all$Analyte)) {
     
     tempStns <- temp_sufficiency_analysis(df.all)
@@ -222,27 +224,33 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
     qc.2.stn <- filter(attributes(tempStns)$month_test, result == "pass")$Station_ID
     qc.3.stn <- filter(attributes(tempStns)$year_test, result == "pass")$Station_ID
     
+    qc.1.pass$IDD <- paste0(qc.1.pass$Station_ID," ",qc.1.pass$date)
+    
     df.all.temp <- df.all %>% 
-      mutate(date = date(Sampled)) %>% 
       filter(Analyte == "Temperature")  %>%
-      merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE) %>%
-      mutate(IDD = paste0(Station_ID," ",date))
+      mutate(date = date(Sampled)) %>%
+      mutate(IDD = paste0(Station_ID," ",date)) %>%
+      merge(qc.1.pass[,c("result", "IDD")], by=c("IDD"), all=FALSE)
+
     
     df.all.temp$Result <- convert_temp_F_C(df.all.temp, result_column_name="Result", unit_column_name="Unit")
     df.all.temp$Unit <- "Celsius"
     
     df.sdadm <- Calculate.sdadm(df.all.temp, "Result", "Station_ID", "Sampled", '%Y-%m-%d %H:%M:%S')
     
-    df.sdadm$IDD <- paste0(df.sdadm$Station_ID," ",df.sdadm$date)
-    
     # Remove NAs
     df.sdadm <- df.sdadm[!(is.na(df.sdadm$sdadm)),]
+    
+    df.sdadm$IDD <- paste0(df.sdadm$Station_ID," ",df.sdadm$date)
     
     # Attempt at pulling the other df fields for each daily sample so it can be added back to sdadm
     df.all.temp.fields <- df.all.temp[!duplicated(df.all.temp[c("IDD")] ), ]
     
     # add it back
     df.sdadm <- merge(x=df.sdadm[,c("IDD", "sdadm")],y=df.all.temp.fields, by="IDD", all.x=TRUE)
+    
+    # Remove NAs from merge
+    df.sdadm <- df.sdadm[!(is.na(df.sdadm$Station_ID)),]
     
     df.sdadm$Result <- df.sdadm$sdadm
     
@@ -268,9 +276,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
     }
     
   }
-  
-  df.all <- remove_QAfail(df.all)
-  
+
   save(df.all, file=paste0(Rdata_dir,"/",df_all_clean_file))
   
 }
