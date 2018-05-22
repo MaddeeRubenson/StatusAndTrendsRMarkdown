@@ -81,7 +81,8 @@ Rdata_dir <- paste0(project_dir,"/RData")
 GIS_dir <- paste0(project_dir,"/GIS")
 
 # Name of output files
-df_all_file <- paste0(gsub(" ", "_", agwqma), "_df_all_",paste(query_dates, collapse = "."), ".Rdata")
+df_all_raw_file <- paste0(gsub(" ", "_", agwqma), "_df_all_raw_",paste(query_dates, collapse = "."), ".Rdata")
+df_all_clean_file <- paste0(gsub(" ", "_", agwqma), "_df_all_clean_",paste(query_dates, collapse = "."), ".Rdata")
 landuse_file <- paste0(gsub(" ", "_", agwqma), "_landuse.Rdata")
 stns_file <- paste0(gsub(" ", "_", agwqma), "_stns.Rdata")
 status_file <- paste0(gsub(" ", "_", agwqma), "_status.Rdata")
@@ -147,10 +148,10 @@ load(paste0(support_files_dir,'/OR_cats.Rdata'))
 
 ```{r Query, include=FALSE}
 
-if(file.exists(file=paste0(Rdata_dir,"/",df_all_file))) {
+if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
   print("loading existing df.all")
-  load(file=paste0(Rdata_dir,"/",df_all_file))
+  load(file=paste0(Rdata_dir,"/",df_all_raw_file))
   
 } else {
   
@@ -159,7 +160,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_file))) {
                   dates = input$dates,
                   db = input$db)
   
-  save(df.all, file=paste0(Rdata_dir,"/",df_all_file))
+  save(df.all, file=paste0(Rdata_dir,"/",df_all_raw_file))
 }
 
 
