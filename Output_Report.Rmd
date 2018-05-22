@@ -263,7 +263,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
     if(NROW(qc.3.pass) > 0) {
       qc.3.pass$Analyte <- "Temperature"
       df.all$month <- month(df.all$Sampled)
-      #qc.3.pass <- dplyr::rename(qc.3.pass, monTest = result)
+      qc.3.pass <- dplyr::rename(qc.3.pass, monTest = result)
       df.all <- merge(df.all, qc.3.pass[,c("Station_ID", "month", "monTest", "Analyte")], 
                       by=c("Station_ID", "Analyte", "month"), all.x = TRUE, all.y = FALSE)
     }
