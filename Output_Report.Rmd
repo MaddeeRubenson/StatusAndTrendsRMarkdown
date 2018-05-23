@@ -204,13 +204,26 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # Reconcile Stations with the same ID but have different Lat/Longs 
   df.all <- remove_stn_dups(df.all)
   
+  # Reconcile Stations with the same ID but have different Station Names.
+  # This works but should but the issue should be investigatged further to determine if
+  # the problem is coming from combining DEQ and WQP data.
+  df <- df.all %>%
+    dplyr::select(Station_ID, Station_Description) %>%
+    dplyr::distinct(Station_ID, Station_Description)
+  
+  df <- df[!duplicated(df[c("Station_ID")] ), ]
+  
+  df.all <- merge(df, df.all, by= 'Station_ID') # keep .x
+  
+  colnames(df.all)[2] <- 'Station_Description'
+  df.all$Station_Description.y <- NULL
+  
   # Remove obervations that are the same from two databases
   # Same is defined as having the same station ID, Sample Date/time, and Analyte
   # Note the WQP field 'StatisticalBaseCode' is a code that identifies if the result 
   # is a calculated value like Daily Max or 7DADM. This needs to be incorporated somehow.
   df.all$IDSA <- paste(df.all$Station_ID,df.all$Sampled,df.all$Analyte, sep=" ")
   df.all <- df.all[!duplicated(df.all[c("IDSA")] ), ]
-  
   
   ## Add snapped stations
   #df.all <- Snapped_Stations(df.all)
