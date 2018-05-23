@@ -1,6 +1,6 @@
 ---
-title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Oregon DEQ Water Quality Status and Trends report for the Umpqua River AgWQ Management Area'
-date: April 2018
+title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Oregon DEQ Water Quality Status and Trends report for the Molalla-Pudding French Prairie North Santiam AgWQ Management Area'
+date: March 2018
 output:
   word_document:
     fig_caption: yes
@@ -76,7 +76,7 @@ query_dates <- c("2000-01-01", "2018-03-01")
 project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Molalla-Pudding French Prairie North Santiam/2018/StatusAndTrendsRMarkdown"
 
 # Set to TRUE if knitting a word document
-word_output <- FALSE
+word_output <- TRUE
 
 # Everything below here should not change
 support_files_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files"
