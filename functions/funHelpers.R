@@ -368,7 +368,7 @@ Stations_Trend<-function(df.all){
     trend<-sub_data%>%
       group_by(Station_ID)%>%
       dplyr::summarise(n_years=length(unique(year))) %>%
-      filter(n_years>8)
+      filter(n_years>=8)
     stns<-c(as.character(unique(trend$Station_ID)))
     dta_stns<-sub_data%>%
       dplyr::filter(Station_ID %in% stns)
@@ -563,7 +563,7 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
   # date: class Date in format %Y-%m-%d
   # station_column_name: in same format and name as provided
   # SDADM: class numeric representing the calculated seven day average
-  
+
   library(chron)
   library(reshape)
   library(zoo)
@@ -573,24 +573,21 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
   ## RENAME
   colnames(tdata)[1] <- "id"
   colnames(tdata)[2] <- "datetime"
-  colnames(tdata)[3] <- "t"
+  colnames(tdata)[3] <- "t_c"
   
-  tdata$t <- as.numeric(tdata$t)
+  tdata$t_c <- as.numeric(tdata$t_c)
   
   ## Create a vector of daily dates for grouping
   tdata$datetime <- as.POSIXct(strptime(tdata$datetime, format = datetime_format))
   tdata$date <- as.Date(tdata$datetime, format="%m/%d/%Y")
   
-  #############################
   # tdata COLUMN NAMES
   # tdata[1] <- "id"
   # tdata[2] <- "datetime"
-  # tdata[3] <- "t"
-  # tdata[4] <- "t_c"
-  # tdata[5] <- "date"
-  #############################
+  # tdata[3] <- "t_c"
+  # tdata[4] <- "date"
   
-  ####################################################################################################
+  ## Create dummy dataframe
   # This section inserts a dummy station "-99" into tdata with a sequence of -99s and NAs for the associated variables.
   # The -99 timeseries starts from the oldest date in the entire dataset and ends at the most recent date.
   # The purpose for the dummy data is to create a continous daily timeseries so 7DADM are not calculated
@@ -599,24 +596,21 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
   datetime99<-as.character(seq(min(tdata$date),max(tdata$date),by=1))
   date99<- as.Date(seq(min(tdata$date),max(tdata$date),by=1))
   id99<-rep(unique(tdata$id),by=0,length.out=length(datetime99))
-  t99<- rep(NA,by=0,length.out=length(datetime99))
   t_c99<-rep(NA,by=0,length.out=length(datetime99))
   
-  dummy <-data.frame(cbind(id99, t99, t_c99))
+  dummy <-data.frame(cbind(id99, t_c99))
   dummy<- cbind(dummy, datetime99, date99)
   
   colnames(dummy)[1] <- "id"
   colnames(dummy)[2] <- "datetime"
-  colnames(dummy)[3] <- "t"
-  colnames(dummy)[4] <- "t_c"
-  colnames(dummy)[5] <- "date"
+  colnames(dummy)[3] <- "t_c"
+  colnames(dummy)[4] <- "date"
   
   dummy$t_c <- as.numeric(dummy$t_c)
-  dummy$t <- as.numeric(dummy$t)
-  
+
   tdata <-rbind(tdata,dummy)
   rm(dummy)
-  #############################################################################################
+  # End
   
   ## Calculate daily maximums by station
   tmax<- tapply(tdata$t_c,list(tdata$date,tdata$id),function(x) {ifelse(all(is.na(x)),NA,max(x, na.rm = TRUE))})

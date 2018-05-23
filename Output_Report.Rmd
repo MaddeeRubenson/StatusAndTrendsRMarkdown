@@ -81,7 +81,8 @@ Rdata_dir <- paste0(project_dir,"/RData")
 GIS_dir <- paste0(project_dir,"/GIS")
 
 # Name of output files
-df_all_file <- paste0(gsub(" ", "_", agwqma), "_df_all_",paste(query_dates, collapse = "."), ".Rdata")
+df_all_raw_file <- paste0(gsub(" ", "_", agwqma), "_df_all_raw_",paste(query_dates, collapse = "."), ".Rdata")
+df_all_clean_file <- paste0(gsub(" ", "_", agwqma), "_df_all_clean_",paste(query_dates, collapse = "."), ".Rdata")
 landuse_file <- paste0(gsub(" ", "_", agwqma), "_landuse.Rdata")
 stns_file <- paste0(gsub(" ", "_", agwqma), "_stns.Rdata")
 status_file <- paste0(gsub(" ", "_", agwqma), "_status.Rdata")
@@ -147,10 +148,10 @@ load(paste0(support_files_dir,'/OR_cats.Rdata'))
 
 ```{r Query, include=FALSE}
 
-if(file.exists(file=paste0(Rdata_dir,"/",df_all_file))) {
+if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
   print("loading existing df.all")
-  load(file=paste0(Rdata_dir,"/",df_all_file))
+  load(file=paste0(Rdata_dir,"/",df_all_raw_file))
   
 } else {
   
@@ -159,7 +160,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_file))) {
                   dates = input$dates,
                   db = input$db)
   
-  save(df.all, file=paste0(Rdata_dir,"/",df_all_file))
+  save(df.all, file=paste0(Rdata_dir,"/",df_all_raw_file))
 }
 
 
@@ -184,10 +185,9 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
   # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
   # The Station ID will be named the same as LASAR
-  if(any(grepl('OREGONDEQ', df.all$Station_ID))) {
-    df.all$Station_ID <- gsub("[A-Z]", "", sub$Station_ID)
-    df.all$Station_ID <- gsub("-", "", sub$Station_ID)
-  } 
+  df.all$Station_ID <- gsub("OREGONDEQ-", "", df.all$Station_ID)
+  df.all$Station_ID <- gsub("-ORDEQ", "", df.all$Station_ID)
+  df.all$Station_ID <- gsub("21ORBCH-", "", df.all$Station_ID)
   
   # Reconcile Stations with the same ID but have different Lat/Longs 
   df.all <- remove_stn_dups(df.all)
@@ -195,7 +195,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # Remove obervations that are the same from two databases
   # Same is defined as having the same station ID, Sample Date/time, and Analyte
   # Note the WQP field 'StatisticalBaseCode' is a code that identifies if the result 
-  # is a calculate value like Daily Max or 7DADM. This needs to be incorporate somehow.
+  # is a calculated value like Daily Max or 7DADM. This needs to be incorporated somehow.
   df.all$IDSA <- paste(df.all$Station_ID,df.all$Sampled,df.all$Analyte, sep=" ")
   df.all <- df.all[!duplicated(df.all[c("IDSA")] ), ]
   
@@ -211,6 +211,8 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
     df.all <- update_fc2ec(df.all)
   }
   
+  df.all <- remove_QAfail(df.all)
+  
   if (any('Temperature' %in% df.all$Analyte)) {
     
     tempStns <- temp_sufficiency_analysis(df.all)
@@ -222,27 +224,33 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
     qc.2.stn <- filter(attributes(tempStns)$month_test, result == "pass")$Station_ID
     qc.3.stn <- filter(attributes(tempStns)$year_test, result == "pass")$Station_ID
     
+    qc.1.pass$IDD <- paste0(qc.1.pass$Station_ID," ",qc.1.pass$date)
+    
     df.all.temp <- df.all %>% 
-      mutate(date = date(Sampled)) %>% 
       filter(Analyte == "Temperature")  %>%
-      merge(qc.1.pass[,c("Station_ID", "date", "result")], by=c("Station_ID", "date"), all=FALSE) %>%
-      mutate(IDD = paste0(Station_ID," ",date))
+      mutate(date = date(Sampled)) %>%
+      mutate(IDD = paste0(Station_ID," ",date)) %>%
+      merge(qc.1.pass[,c("result", "IDD")], by=c("IDD"), all=FALSE)
+
     
     df.all.temp$Result <- convert_temp_F_C(df.all.temp, result_column_name="Result", unit_column_name="Unit")
     df.all.temp$Unit <- "Celsius"
     
     df.sdadm <- Calculate.sdadm(df.all.temp, "Result", "Station_ID", "Sampled", '%Y-%m-%d %H:%M:%S')
     
-    df.sdadm$IDD <- paste0(df.sdadm$Station_ID," ",df.sdadm$date)
-    
     # Remove NAs
     df.sdadm <- df.sdadm[!(is.na(df.sdadm$sdadm)),]
+    
+    df.sdadm$IDD <- paste0(df.sdadm$Station_ID," ",df.sdadm$date)
     
     # Attempt at pulling the other df fields for each daily sample so it can be added back to sdadm
     df.all.temp.fields <- df.all.temp[!duplicated(df.all.temp[c("IDD")] ), ]
     
     # add it back
     df.sdadm <- merge(x=df.sdadm[,c("IDD", "sdadm")],y=df.all.temp.fields, by="IDD", all.x=TRUE)
+    
+    # Remove NAs from merge
+    df.sdadm <- df.sdadm[!(is.na(df.sdadm$Station_ID)),]
     
     df.sdadm$Result <- df.sdadm$sdadm
     
@@ -262,15 +270,13 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
     if(NROW(qc.3.pass) > 0) {
       qc.3.pass$Analyte <- "Temperature"
       df.all$month <- month(df.all$Sampled)
-      #qc.3.pass <- dplyr::rename(qc.3.pass, monTest = result)
+      qc.3.pass <- dplyr::rename(qc.3.pass, monTest = result)
       df.all <- merge(df.all, qc.3.pass[,c("Station_ID", "month", "monTest", "Analyte")], 
                       by=c("Station_ID", "Analyte", "month"), all.x = TRUE, all.y = FALSE)
     }
     
   }
-  
-  df.all <- remove_QAfail(df.all)
-  
+
   save(df.all, file=paste0(Rdata_dir,"/",df_all_clean_file))
   
 }
@@ -549,37 +555,35 @@ if(nrow(SK) > 0) {
 
 ## E.coli
 
-```{r Ecoli, results = 'asis', fig.width = 6, fig.height = 6}
-
-Ecoli_all <- df.all[df.all$Analyte == 'E. Coli',]
-Ecoli <- df.all[df.all$Analyte == 'E. Coli',]
+```{r Ecoli, fig.height=6, fig.width=6, results='asis'}
 
 exc <- NULL
-e_stns <- NULL
+ecoli_stns <- NULL
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
-  e_stns <- trend %>%
+  ecoli_trend <- trend %>%
     dplyr::filter(Analyte == "E. Coli")
-  e_stns <-c(unique(e_stns$Station_ID))
+  ecoli_trend <- c(unique(ecoli_trend$Station_ID))
 }
 
-e_stat<-status %>%
+ecoli_stat <- status %>%
   dplyr::filter(Analyte == "E. Coli")
-e_stat <- c(unique(e_stat$Station_ID))
+ecoli_stat <- c(unique(ecoli_stat$Station_ID))
 
-if(!is.null(e_stns)){
-  e_stns <- unique(append(e_stns, e_stat))
-} else {
-  e_stns <- e_stat
-}
+ecoli_stns <- unique(append(ecoli_trend, ecoli_stat))
 
-if(length(e_stns) > 0) {
+if(length(ecoli_stns) > 0) {
   
-  e_list<- list()
+  ecoli_all <- df.all[df.all$Analyte == 'E. Coli',]
+  ecoli <- df.all[df.all$Analyte == 'E. Coli',]
+  
+  ecoli_list<- list()
   exc_list<- list()
-  for(j in 1: length(e_stns)) {
-    new_data <- Ecoli[Ecoli$Station_ID == e_stns[j],]
-    
+  
+  results_seaken <-SeaKen %>% filter(analyte == 'E. Coli')
+  
+  for(j in 1: length(ecoli_stns)) {
+    new_data <- ecoli[ecoli$Station_ID == ecoli_stns[j],]
     tmp_df <- new_data
     tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
     tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
@@ -589,48 +593,39 @@ if(length(e_stns) > 0) {
     
     ecoli_evaluate <- EvaluateEColiWQS(tmp_df)
     ecoli_eval <- attr(ecoli_evaluate, 'ex_df')
-    e_list[[j]] <- ecoli_evaluate
+    ecoli_list[[j]] <- ecoli_evaluate
     exc_list[[j]] <- ecoli_eval
-  }
-  
-  ecoli<-rbind.fill(e_list[])
-  exc<-rbind.fill(exc_list[])
-  exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
-  
-  results_seaken<-SeaKen %>% filter(analyte == 'E. Coli')
-  
-  ecoli_plots<-list()
-  for (i in 1:length(e_stns)) {
-    mydata_sub <- Ecoli_all[Ecoli_all$Station_ID == e_stns[i],]
     
-    trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == e_stns[i],'signif']), FALSE,
-                        ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == e_stns[i],'signif']), FALSE, TRUE))
+    trend_logic <- ifelse(grepl("Not Significant", 
+                                results_seaken[results_seaken$Station_ID == ecoli_stns[j],'signif']),
+                          FALSE,
+                          ifelse(grepl("Need at least 8 years", 
+                                       results_seaken[results_seaken$Station_ID == ecoli_stns[j],'signif']),
+                                 FALSE, 
+                                 TRUE))
     
-    b <- plot.bacteria(new_data=mydata_sub,
-                       sea_ken_table=results_seaken,
+    b <- plot.bacteria(new_data=new_data,
+                       sea_ken_table=results_seaken ,
                        plot_trend = trend_logic,
                        plot_log = FALSE,
-                       parm = unique(mydata_sub$Analyte))
+                       parm = unique(new_data$Analyte))
     
-    ecoli_plots[[i]] <- b
+    print(b)
+    cat(figs(name = paste0('E_', ecoli_stns[j]), caption = paste0('Station: ', ecoli_stns[j], ' _E. Coli_ water quality status and/or trends**')))
     
-    print(ecoli_plots[[i]])
-    cat(figs(name = paste0('E_', e_stns[i]), caption = paste0('Station: ', e_stns[i], ' _E. Coli_ water quality status and trends**')))
   }
   
-} else {
-  print("No monitoring stations have sufficent data to assess status and/or trend of _E. Coli_" )
-}
-e_exc <- exc 
-# } else {
-#   print("No monitoring stations have sufficent data to assess status and/or trend of _E. Coli_" )
-# }
+  ecoli <- rbind.fill(ecoli_list[])
+  exc <- rbind.fill(exc_list[])
+  exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
 
-if(!is.null(exc)) {
-  colnames(exc) <- c("Station ID", "Station Description", "Sample", "Obs", "Exceedances", "% Exceedance")
-  knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "bacExcTable", caption = "E.coli status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
-}
-  
+  knitr::kable(exc, padding = 2, digits = 1,
+               caption = tbls(name = "ecoliExcTable", 
+                              caption = "E. Coli status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
+}  else {
+  print("No monitoring stations have data to assess status and/or trend of E. Coli") 
+} 
+
 ```
 
 ## Enterococcus 
