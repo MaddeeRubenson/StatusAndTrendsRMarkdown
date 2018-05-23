@@ -386,9 +386,9 @@ The data returned were evaluated for data quality. DEQ data included  `r unique(
 
 Status and long-term water quality trends were compared to to water quality criteria or TMDL allocations. The decision criterion shown below was created for selecting stations that had greater than eight years of data and/or data to address water quality status. Monitoring data collected in tribal lands were not included in this analysis. Dominant upstream land use characteristics were calculated for stations, but were not used to decide what stations to include in this report.
 
-```{r flowchart, fig.cap=figs(name="DecisionFlow", caption="Monitoring station decision criteria to ensure the stations contain sufficient data to represent status and trends for the waterbody**"}
+```{r flowchart, fig.cap=figs(name="DecisionFlow", caption="Monitoring station decision criteria to ensure the stations contain sufficient data to represent status and trends for the waterbody**")}
 
-knitr::include_graphics(path = "Figures\Agreview_flowchart_V5.png")
+knitr::include_graphics(path = "Figures/Agreview_flowchart_V5.png")
 
 ```
 
@@ -410,7 +410,7 @@ Trends are more detectable with the average monthly daily degree hours that exce
 ## Station Locations
 Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` out of `r length(unique(df.all$Station_ID))` monitoring stations fit the criteria to assess water quality status and trends. The following maps show monitoring stations that fit the criteria within the watershed, all stations that were queried, land ownership, and landscape attributes. 
 
-```{r stations-map-word, fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the North Coast AgWQ Management Area**"}
+```{r stations-map-word, fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the North Coast AgWQ Management Area**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_map_file))
 
@@ -420,7 +420,7 @@ knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_map_file))
 
 A land use analysis for catchments above all monitoring stations that fit the criteria to assess water quality status and/or trends was generated. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA (based on the National Hydrography Dataset Plus Version 2 geospatial framework) was used to summarize the cumulative upstream catchment of each station for primary land use characteristics. An informative representation of land use and land cover (NLCD 2011) is shown in the station locations map below. 
 
-```{r landuse-map-word, eval = word_output, fig.cap=figs(name="landusemap", caption="Land use and land cover within the North Coast AgWQ Management Area**"}
+```{r landuse-map-word, eval = word_output, fig.cap=figs(name="landusemap", caption="Land use and land cover within the North Coast AgWQ Management Area**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",landuse_map_file))
 
