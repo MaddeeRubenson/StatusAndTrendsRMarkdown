@@ -555,37 +555,35 @@ if(nrow(SK) > 0) {
 
 ## E.coli
 
-```{r Ecoli, results = 'asis', fig.width = 6, fig.height = 6}
-
-Ecoli_all <- df.all[df.all$Analyte == 'E. Coli',]
-Ecoli <- df.all[df.all$Analyte == 'E. Coli',]
+```{r Ecoli, fig.height=6, fig.width=6, results='asis'}
 
 exc <- NULL
-e_stns <- NULL
+ecoli_stns <- NULL
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
-  e_stns <- trend %>%
+  ecoli_trend <- trend %>%
     dplyr::filter(Analyte == "E. Coli")
-  e_stns <-c(unique(e_stns$Station_ID))
+  ecoli_trend <- c(unique(ecoli_trend$Station_ID))
 }
 
-e_stat<-status %>%
+ecoli_stat <- status %>%
   dplyr::filter(Analyte == "E. Coli")
-e_stat <- c(unique(e_stat$Station_ID))
+ecoli_stat <- c(unique(ecoli_stat$Station_ID))
 
-if(!is.null(e_stns)){
-  e_stns <- unique(append(e_stns, e_stat))
-} else {
-  e_stns <- e_stat
-}
+ecoli_stns <- unique(append(ecoli_trend, ecoli_stat))
 
-if(length(e_stns) > 0) {
+if(length(ecoli_stns) > 0) {
   
-  e_list<- list()
+  ecoli_all <- df.all[df.all$Analyte == 'E. Coli',]
+  ecoli <- df.all[df.all$Analyte == 'E. Coli',]
+  
+  ecoli_list<- list()
   exc_list<- list()
-  for(j in 1: length(e_stns)) {
-    new_data <- Ecoli[Ecoli$Station_ID == e_stns[j],]
-    
+  
+  results_seaken <-SeaKen %>% filter(analyte == 'E. Coli')
+  
+  for(j in 1: length(ecoli_stns)) {
+    new_data <- ecoli[ecoli$Station_ID == ecoli_stns[j],]
     tmp_df <- new_data
     tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
     tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
@@ -595,48 +593,39 @@ if(length(e_stns) > 0) {
     
     ecoli_evaluate <- EvaluateEColiWQS(tmp_df)
     ecoli_eval <- attr(ecoli_evaluate, 'ex_df')
-    e_list[[j]] <- ecoli_evaluate
+    ecoli_list[[j]] <- ecoli_evaluate
     exc_list[[j]] <- ecoli_eval
-  }
-  
-  ecoli<-rbind.fill(e_list[])
-  exc<-rbind.fill(exc_list[])
-  exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
-  
-  results_seaken<-SeaKen %>% filter(analyte == 'E. Coli')
-  
-  ecoli_plots<-list()
-  for (i in 1:length(e_stns)) {
-    mydata_sub <- Ecoli_all[Ecoli_all$Station_ID == e_stns[i],]
     
-    trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == e_stns[i],'signif']), FALSE,
-                        ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == e_stns[i],'signif']), FALSE, TRUE))
+    trend_logic <- ifelse(grepl("Not Significant", 
+                                results_seaken[results_seaken$Station_ID == ecoli_stns[j],'signif']),
+                          FALSE,
+                          ifelse(grepl("Need at least 8 years", 
+                                       results_seaken[results_seaken$Station_ID == ecoli_stns[j],'signif']),
+                                 FALSE, 
+                                 TRUE))
     
-    b <- plot.bacteria(new_data=mydata_sub,
-                       sea_ken_table=results_seaken,
+    b <- plot.bacteria(new_data=new_data,
+                       sea_ken_table=results_seaken ,
                        plot_trend = trend_logic,
                        plot_log = FALSE,
-                       parm = unique(mydata_sub$Analyte))
+                       parm = unique(new_data$Analyte))
     
-    ecoli_plots[[i]] <- b
+    print(b)
+    cat(figs(name = paste0('E_', ecoli_stns[j]), caption = paste0('Station: ', ecoli_stns[j], ' _E. Coli_ water quality status and/or trends**')))
     
-    print(ecoli_plots[[i]])
-    cat(figs(name = paste0('E_', e_stns[i]), caption = paste0('Station: ', e_stns[i], ' _E. Coli_ water quality status and trends**')))
   }
   
-} else {
-  print("No monitoring stations have sufficent data to assess status and/or trend of _E. Coli_" )
-}
-e_exc <- exc 
-# } else {
-#   print("No monitoring stations have sufficent data to assess status and/or trend of _E. Coli_" )
-# }
+  ecoli <- rbind.fill(ecoli_list[])
+  exc <- rbind.fill(exc_list[])
+  exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
 
-if(!is.null(exc)) {
-  colnames(exc) <- c("Station ID", "Station Description", "Sample", "Obs", "Exceedances", "% Exceedance")
-  knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "bacExcTable", caption = "E.coli status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
-}
-  
+  knitr::kable(exc, padding = 2, digits = 1,
+               caption = tbls(name = "ecoliExcTable", 
+                              caption = "E. Coli status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
+}  else {
+  print("No monitoring stations have data to assess status and/or trend of E. Coli") 
+} 
+
 ```
 
 ## Enterococcus 
