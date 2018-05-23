@@ -358,9 +358,7 @@ deq<- paste(BC_LU[BC_LU$AgArea %in% input$select, 'DEQ_bc_name'], BC_LU[BC_LU$Ag
 
 oda<- paste(BC_LU[BC_LU$AgArea %in% input$select, 'ODA_agwqcoord_name'], BC_LU[BC_LU$AgArea %in% input$select, 'ODA_agwqcoord_number'], sep = '; ')
 
-agarea <- input$select
-
-BC_table<-data.frame(agarea, deq, oda)
+BC_table<-data.frame(input$select, deq, oda)
 colnames(BC_table) <- c('AgWQ Management Area', 'DEQ Basin Coordinator', 'ODA AgWQ Specialist')
 
 knitr::kable(BC_table, 
@@ -420,18 +418,20 @@ knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_map_file))
 
 A land use analysis for catchments above all monitoring stations that fit the criteria to assess water quality status and/or trends was generated. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA (based on the National Hydrography Dataset Plus Version 2 geospatial framework) was used to summarize the cumulative upstream catchment of each station for primary land use characteristics. An informative representation of land use and land cover (NLCD 2011) is shown in the station locations map below. 
 
+
 ```{r landuse-map-word, eval = word_output, fig.cap=figs(name="landusemap", caption="Land use and land cover within the North Coast AgWQ Management Area**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",landuse_map_file))
 
 ```
 
-```{r landuse-map-html, eval = !(word_output)}
 
-agarea <- agwqma_shp[agwqma_shp$PlanName == input$select,]
-agarea<-spTransform(agarea, CRS("+proj=longlat +datum=NAD83"))
+```{r landuse-map-html, results= 'asis', eval = !(word_output)}
 
-map <- leaflet(agarea) %>%
+agarea_shp <- agwqma_shp[agwqma_shp$PlanName == input$select,]
+agarea_shp <-spTransform(agarea_shp, CRS("+proj=longlat +datum=NAD83"))
+
+map <- leaflet(agarea_shp) %>%
   addPolygons() %>%
   addTiles() %>%
   addMarkers(data = all.sp, 
@@ -459,13 +459,12 @@ map <- leaflet(agarea) %>%
                                   })),
              group = 'All Stations Queried') %>%
   hideGroup('All Stations Queried') %>%
-  addWMSTiles('https://raster.nationalmap.gov/arcgis/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer/WMSServer?',
+  addWMSTiles('https://www.mrlc.gov/arcgis/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer/WMSServer?',
               group = "Land Use (NLCD 2011)",
               layers = '33',
               options = WMSTileOptions(format = 'image/png',
                                        version = '1.3.0',
                                        transparent = TRUE)) %>% 
-  hideGroup('Land Use (NLCD 2011)') %>%
   addWMSTiles(GetURL("USGSTopo"), 
               attribution = paste0("<a href='https://www.usgs.gov/'>",
                                    "U.S. Geological Survey</a> | ",
@@ -480,13 +479,15 @@ map <- leaflet(agarea) %>%
   hideGroup("Hydrography") %>%
   addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
   addLayersControl(baseGroups = c('Land Use (NLCD 2011)', 'USGS Topo', 'ESRI NatGEO World Map'),
-                   overlayGroups = c('Stns That Fit Criteria', 'All Stations Queried', 'Hydrography'),
+                   overlayGroups = c('Stations That Fit Criteria', 'All Stations Queried', 'Hydrography'),
                    options = layersControlOptions(collapsed = FALSE))
 map
 
 ```
 
+
 Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. Source: 2011 NAIP
+
 
 ```{r landuse-table, results='asis'}
 
@@ -1483,16 +1484,33 @@ knitr::kable(stns_param_summary, format = "markdown",  padding = 2, digits = 3,
 
 ```
 
-```{r map2-html, eval = !(word_output)}
+```{r parm-summary-map-html, results = 'asis', eval = !(word_output)}
 
-map2 <- leaflet(agarea) %>%
+agarea_shp <- agwqma_shp[agwqma_shp$PlanName == input$select,]
+agarea_shp <-spTransform(agarea_shp, CRS("+proj=longlat +datum=NAD83"))
+
+
+map2 <- leaflet(agarea_shp) %>%
   addPolygons() %>%
   addTiles() %>%
-  addMarkers(lng = stns_param_summary$DECIMAL_LONG,
-             lat = stns_param_summary$DECIMAL_LAT,
-             popup = paste(stns_param_summary$Station_ID, "-", 
-                           stns_param_summary$Status_bacteria, 
-                           stns_param_summary$Trend_bacteria, sep = ",")) %>%
+  addMarkers(lng = stns_param_summary$Longitude,
+             lat = stns_param_summary$Latitude,
+             popup = paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
+                           lapply(rownames(stns_param_summary), 
+                                  function(row) {
+                                    htmlTable::htmlTable(stns_param_summary[row,c("Station ID", "Station Description", 
+                                                                                  "Ecoli Status", "Ecoli Trend",
+                                                                                  "Temperature Status", "Temperature Trend", 
+                                                                                  "pH Status", "pH Trend", 
+                                                                                  "DO Status", "DO Trend")],
+                                                         header = c("Station ID", "Station Description", 
+                                                                                  "Ecoli Status", "Ecoli Trend",
+                                                                                  "Temperature Status", "Temperature Trend", 
+                                                                                  "pH Status", "pH Trend", 
+                                                                                  "DO Status", "DO Trend"),
+                                                         rnames = FALSE)
+                                  })),
+             group = 'Station Result Summary') %>%
             addWMSTiles(GetURL("USGSTopo"),
                         attribution = paste0("<a href='https://www.usgs.gov/'>",
                                              "U.S. Geological Survey</a> | ",
@@ -1506,6 +1524,7 @@ map2 <- leaflet(agarea) %>%
                          layers = "0") %>%
             hideGroup("Hydropgraphy")
 map2
+
 
 ```
 
