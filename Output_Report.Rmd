@@ -71,9 +71,9 @@ figs <- captioner(prefix="  \n**Figure")
 
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_shp').
-agwqma <- "Umpqua River"
-query_dates <- c("2000-01-01", "2018-04-01")
-project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Umpqua River/2018/StatusAndTrendsRMarkdown"
+agwqma <- "Molalla-Pudding French Prairie North Santiam"
+query_dates <- c("2000-01-01", "2018-03-01")
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Molalla-Pudding French Prairie North Santiam/2018/StatusAndTrendsRMarkdown"
 
 # Everything below here should not change
 support_files_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files"
@@ -180,8 +180,14 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # remove data collected on tribal nation land or tribal trust land
   df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands_shp, outside=TRUE),]
   
+  # grab station 10344 before it gets clipped
+  station10344 <- filter(df.all, Station_ID == 10344)
+  
   # remove stations outside the agwqma
   df.all <- clipToPlanArea(df.all, agwqma_shp, input$select)
+  
+  # add station 10344 back in
+  df.all <- rbind(df.all, station10344)
   
   # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
   # The Station ID will be named the same as LASAR
@@ -400,6 +406,18 @@ For temperature trend analysis, analysts used data only from stations with eight
 Trends are more detectable with the average monthly daily degree hours that exceed the applicable temperature standard because the metric incorporates both magnitude and duration of temperatures; the 7-day average daily maximum only incorporates the magnitude of exceedance. Fish use and spawning maps  were used to determine the applicable temperature standards for the spawning and non-spawning time periods. The results of this report includes graphs for stations with data that exceeded a water quality criterion more than once and/or showed a positive or negative trend. When insufficient data were available, that was noted in the graphs. 
 
 # Results
+
+`r length(unique(stn_to_use))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r agwqma` AgWQ Management Area 
+
+
+Analyte         | Number of stations w/ sufficent data for status analysis | Number of stations w/ sufficent data for trend analysis
+----------------|----------------------------------------------------- | ----------------------------------------------------
+Bacteria        | `r nrow(unique(status[status$Analyte == "E. Coli", ]))` | `r nrow(unique(trend[trend$Analyte == "E. Coli", ]))`
+Temperature     | `r nrow(unique(status[status$Analyte == "Temperature", ]))` | `r nrow(unique(trend[trend$Analyte == "Temperature", ]))`
+Dissolved Oxygen| `r nrow(unique(status[status$Analyte == "Dissolved Oxygen", ]))` | `r nrow(unique(trend[trend$Analyte == "Dissolved Oxygen", ]))`
+pH              | `r nrow(unique(status[status$Analyte == "pH", ]))` | `r nrow(unique(trend[trend$Analyte == "pH",]))`
+TSS             | `r nrow(unique(status[status$Analyte == "Total Suspended Solids", ]))` | `r nrow(unique(trend[trend$Analyte == "Total Suspended Solids", ]))`
+Total Phosphorus| `r nrow(unique(status[status$Analyte == "Total Phosphorus", ]))` | `r nrow(unique(trend[trend$Analyte == "Total Phosphorus", ]))`
 
 ## Station Locations
 Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` out of `r length(unique(df.all$Station_ID))` monitoring stations fit the criteria to assess water quality status and trends. The following maps show monitoring stations that fit the criteria within the watershed, all stations that were queried, land ownership, and landscape attributes. 
