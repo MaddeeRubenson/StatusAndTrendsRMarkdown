@@ -3,9 +3,8 @@
 
 # Maps and Plots in Figure folder
 Figures/*Map*
-Figures/*Assessment*
 Figures/*Station*
-Figures/*Result*
+Figures/*Landuse*
 Figures/*Plot*
 Figures/*Dissolved*
 Figures/*Ecoli*
