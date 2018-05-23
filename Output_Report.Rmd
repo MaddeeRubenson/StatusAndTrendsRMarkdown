@@ -1461,33 +1461,8 @@ stns_param_summary_shp <- stns_param_summary %>%
 
 coordinates(stns_param_summary_shp)=~Longitude+Latitude
 
-# Reconcile different Datums before making a shapefile
-# Datums to search for
-# NAD83 : EPSG:4269 <- This is assumed if it is not one of the other two
-# NAD27 : EPSG:4267
-# WGS84 : EPSG:4326
-
-df.nad83 <- stns_param_summary_shp[!grepl("NAD27|4267|WGS84|4326",toupper(stns_param_summary_shp$DATUM)), ]
-df.nad27 <- stns_param_summary_shp[grepl("NAD27|4267",toupper(stns_param_summary_shp$DATUM)), ]
-df.wgs84 <- stns_param_summary_shp[grepl("WGS84|4326",toupper(stns_param_summary_shp$DATUM)), ]
-
-proj4string(df.nad83) <- CRS("+init=epsg:4269")
-proj4string(df.nad27) <- CRS("+init=epsg:4267")
-proj4string(df.wgs84) <- CRS("+init=epsg:4326")
-
-# convert to NAD 83
-if(NROW(df.nad27) > 0) {
-   df.nad83 <- rbind(df.nad83, spTransform(df.nad27, CRS("+init=epsg:4269")))
-}
-
-if(NROW(df.wgs84) > 0 ) {
-  df.nad83 <- rbind(df.nad83, spTransform(df.wgs84, CRS("+init=epsg:4269")))
-  }
-
-# combine back into single df
-stns_param_summary_shp <- df.nad83
-
-rm(df.nad83, df.nad27, df.wgs84)
+# NAD83 : EPSG:4269 <- This is assumed for DATUM
+proj4string(stns_param_summary_shp) <- CRS("+init=epsg:4269")
 
 # sort by station ID
 stns_param_summary_shp <- stns_param_summary_shp[order(stns_param_summary_shp$Station_ID),]
