@@ -644,7 +644,7 @@ if(length(ecoli_stns) > 0) {
 
 ## Enterococcus 
 
-```{r Entero, fig.height=6, fig.width=6, results='asis'}
+```{r Enterococcus, fig.height=6, fig.width=6, results='asis'}
 
 exc <- NULL
 ent_stns <- NULL
@@ -1405,25 +1405,25 @@ DO_exc <- exc
 # Summary 
 
 
-```{r Ecoli-summary-map, eval = word_image, fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for E. coli.**")}
+```{r Ecoli-summary-map, eval = word_output, fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for E. coli.**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_ecoli_file))
 
 ```
 
-```{r Temp-summary-map, eval = word_image, fig.cap=figs(name="Temperature_map", caption="Summary of stations that fit the criteria for status and trend analysis for temperature. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
+```{r Temp-summary-map, eval = word_output, fig.cap=figs(name="Temperature_map", caption="Summary of stations that fit the criteria for status and trend analysis for temperature. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_temp_file))
 
 ```
 
-```{r ph-summary-map, eval = word_image, fig.cap=figs(name="pH_map", caption="Summary of stations that fit the criteria for status and trend analysis for pH. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for pH.**")}
+```{r ph-summary-map, eval = word_output, fig.cap=figs(name="pH_map", caption="Summary of stations that fit the criteria for status and trend analysis for pH. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for pH.**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_pH_file))
 
 ```
 
-```{r DO-summary-map, eval = word_image, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for dissolved oxygen.**")}
+```{r DO-summary-map, eval = word_output, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for dissolved oxygen.**")}
 
 knitr::include_graphics(paste0(project_dir,"/Figures/",station_summary_map_DO_file))
 
