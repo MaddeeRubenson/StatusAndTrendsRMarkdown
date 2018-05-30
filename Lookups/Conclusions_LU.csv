@@ -109,3 +109,9 @@ Yamhill,pH,"Three monitoring stations (10363, 10929, and 10948) have sufficient 
 Yamhill,Temp,"Four monitoring stations (USGS 14197900, USGS 14192015, 10363, and 10948) have sufficient data to calculate the temperature seven day average daily maximum (7DADM) and compare results to the water quality criteria within the Yamhill AgWQ Management Area. All monitoring stations have exceedances of the water quality criteria within the last two years of available data. None of the monitoring stations have significant trends. The USGS monitoring stations have continuous data."
 Yamhill,TP,"Three monitoring stations (10363, 10929, and 10948) have sufficient data to assess status and trends of total phosphorus within the Yamhill AgWQ Management Area. No monitoring stations had results that represented significant trends. All monitoring stations had consistent exceedances of the TMDL load allocation of 0.07 mg/l through the entire timeframe."
 Yamhill,TSS,"Three monitoring stations (10363, 10929, and 10948) have sufficient data to assess trends of total suspended solids within the Yamhill AgWQ Management Area. Stations 10498 and 10929 had significant trends; station 10948 displays significant steady trends, while 10929 displays significant increasing (degrading) trends. Data was not compared to a TMDL load allocation since one has not been developed for the Middle Willamette or Yamill Subbasins."
+Curry County,DO,
+Curry County,Ecoli,There are seven monitoring stations within the Curry County AgWQ Management Area that have sufficient data to assess status and/or trends of E. coli data. None of the stastions exceeded the 
+Curry County,pH,
+Curry County,Temp,
+Curry County,TP,
+Curry County,TSS,
