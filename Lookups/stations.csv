@@ -1,5 +1,4 @@
 AgArea,Station_ID,Station_Description,DECIMAL_LAT,DECIMAL_LONG,pH_benuse,pH_low,pH_high,DO_use,DO_criteria,ZDADM,Temp_Benuse,spwn_time,Comments
-Rogue River,10414,Rogue River at Lobster Creek Bridge,42.50367,-124.2922,Estuarine and Freshwater,6.5,8.5,,,,,,
 Rogue River,10418,Rogue River at Robertson Bridge (Merlin),42.49683,-123.4873,Estuarine and Freshwater,6.5,8.5,Cold-Water Aquatic Life,8,18,Salmon and Trout Rearing and Migration,October 15-May 15,
 Rogue River,10421,Rogue River at Hwy 234 (north of Gold Hill),42.43269,-123.0894,Estuarine and Freshwater,6.5,8.5,Cold-Water Aquatic Life,8,18,Salmon and Trout Rearing and Migration,October 15-May 15,
 Rogue River,10423,Rogue River at Hwy 234 (Dodge Park),42.52533,-122.8416,Estuarine and Freshwater,6.5,8.5,Cold-Water Aquatic Life,8,16,Core Cold Water Habitat,September 15-June 15,
@@ -110,7 +109,6 @@ Middle Willamette,36875,Luckiamute River at Buena Vista Road,44.73039,-123.1626,
 Middle Willamette,37103,Willamette River at Goracke Road,44.33543,-123.2453,All other basin waters,6,8.5,Cold-Water Aquatic Life,8,18,Salmon and Trout Rearing and Migration,October 15-May 15,
 Curry County,10537,Winchuck River 1.3 miles upstream of Hwy 101,42.00714,-124.1861,South Coast-Estuarine and fresh waters,6.5,8.5,Cold-Water Aquatic Life,8,18,Salmon and Trout Rearing and Migration,October 15-May 15,
 Curry County,11483,Chetco River at USGS Gage (10 miles upstream of Brookings),42.12372,-124.1859,South Coast-Estuarine and fresh waters,6.5,8.5,Cold-Water Aquatic Life,8,18,Salmon and Trout Rearing and Migration,October 15-May 15,
-Curry County,11493,Pistol River at Pistol River Loop Road,42.27222,-124.3956,South Coast-Estuarine and fresh waters,6.5,8.5,Cold-Water Aquatic Life,8,18,Salmon and Trout Rearing and Migration,No spawning,
 Burnt River,11494,Burnt River at Snake River Road (Huntington),44.35672,-117.2529,All other basin waters,6.8,9,Cool-Water Aquatic Life,6.5,20,Redband and Lanhontan Cutthroat Trout,No spawning,
 Tualatin River Subbasin,USGS-14206443,"DAWSON CREEK AT BROOKWOOD ROAD, NEAR HILLSBORO, OR",45.52401,-122.9348,All other basin waters,6,8.5,Cold-Water Aquatic Life,8,18,Salmon and Trout Rearing and Migration,No spawning,
 Tualatin River Subbasin,USGS-452547122465900,"DERRY DELL CREEK AT SW WALNUT ST, TIGARD, OR",45.42956,-122.7843,All other basin waters,6,8.5,Cold-Water Aquatic Life,8,18,Salmon and Trout Rearing and Migration,No spawning,
