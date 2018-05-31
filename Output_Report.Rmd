@@ -1,5 +1,6 @@
 ---
 title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Oregon DEQ Water Quality Status and Trends report for the Umpqua River AgWQ Management Area'
+subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
 date: April 2018
 output:
   word_document:
@@ -23,7 +24,6 @@ knitr::opts_chunk$set(echo = FALSE,
                       warning=FALSE, 
                       error = FALSE,
                       cache = FALSE,
-                      results = 'hide',
                       include = TRUE,
                       fig.keep='all',
                       fig.path='Figures/'
@@ -90,7 +90,9 @@ station_summary_map_DO_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_
 station_summary_map_pH_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_pH.png")
 station_summary_map_temp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_temp.png")
 station_summary_map_ecoli_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_ecoli.png")
-
+station_summary_map_entero_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_entero.png")
+station_summary_map_tss_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_tss.png")
+station_summary_map_tp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_tp.png")
 
 # Name of output files
 df_all_raw_file <- paste0(gsub(" ", "_", agwqma), "_df_all_raw_",paste(query_dates, collapse = "."), ".Rdata")
@@ -162,7 +164,7 @@ load(paste0(support_files_dir,'/OR_cats.Rdata'))
 
 if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
-  print("loading existing df.all")
+  print("loading existing raw df.all")
   load(file=paste0(Rdata_dir,"/",df_all_raw_file))
   
 } else {
@@ -328,6 +330,11 @@ SeaKen <- rbind(seaken_other, seaken_temp)
 status <- Stations_Status(df.all)
 trend <- Stations_Trend(df.all)
 stns_by_year <- Stations_by_Year(df.all)
+
+# sort by analyte and station ID
+status <- status %>% arrange(Analyte, Station_ID)
+trend <- trend %>% arrange(Analyte, Station_ID)
+
 stns <- All_stns_fit_Criteria(trend = trend, 
                              status = status,
                              df.all = df.all)
@@ -374,8 +381,7 @@ oda<- paste(BC_LU[BC_LU$AgArea %in% input$select, 'ODA_agwqcoord_name'], BC_LU[B
 BC_table<-data.frame(input$select, deq, oda)
 colnames(BC_table) <- c('AgWQ Management Area', 'DEQ Basin Coordinator', 'ODA AgWQ Specialist')
 
-knitr::kable(BC_table, 
-             format = "markdown", 
+knitr::kable(BC_table,
              padding = 2, digits = 1, caption = 
                tbls(name = "basinContact", caption =
                       "Oregon DEQ and ODA basin contacts**")
@@ -421,7 +427,7 @@ Trends are more detectable with the average monthly daily degree hours that exce
 ## Station Locations
 Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` out of `r length(unique(df.all$Station_ID))` monitoring stations fit the criteria to assess water quality status and trends. The following maps show monitoring stations that fit the criteria within the watershed, all stations that were queried, land ownership, and landscape attributes. 
 
-```{r stations-map-word, fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the North Coast AgWQ Management Area**")}
+```{r stations-map-word, eval = word_output, fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the North Coast AgWQ Management Area**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_map_file))
 
@@ -499,10 +505,10 @@ map
 ```
 
 
-Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status. Source: 2011 NAIP
+Summary table of watershed land use by station. The stations included had at least 8 years of yearly data (between r` year(query_dates[1])` and `r year(query_dates[2])`) and/or were used to evaluate last known status. Source: 2011 NAIP
 
 
-```{r landuse-table, results='asis'}
+```{r landuse-table}
 
 stn_to_use<-c(unique(stns$Station_ID))
 
@@ -516,8 +522,7 @@ landuse <-landuse[, - 3]
 save(landuse, file=paste0(Rdata_dir,"/", landuse_file))
 
 knitr::kable(landuse, digits = 0, 
-             format = "markdown", 
-             padding = 2, caption = tbls(name = "landUse", caption = "Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status.**"))
+             padding = 2, caption = tbls(name = "landUse", caption = "Summary table of watershed land use for stations with a status or trend result.**"))
 
 ```
 
@@ -568,7 +573,7 @@ SK <- SeaKen %>% filter(Station_ID %in% unique(stns$Station_ID)) %>%
 
 if(nrow(SK) > 0) {
   
-  SK <- SK[,c(1, 2, 3, 4, 5, 8, 9)]
+  SK <- SK[, c(1, 2, 3, 4, 5, 8, 9)]
   SK <- SK[with(SK, order(analyte, Station_ID)),]
   
   SK$slope <- as.numeric(SK$slope)
@@ -576,7 +581,7 @@ if(nrow(SK) > 0) {
 
   colnames(SK) <- c("Station ID", "Analyte", "Slope", "p value", "Median", "N", "Significance Result")
   
-  knitr::kable(SK, padding = 2, format.args = list(scientific = TRUE), caption = tbls(name = "seakenTable", caption = "Output for the Seasonal Kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.**"))
+  knitr::kable(SK, padding = 2, format.args = list(scientific = TRUE), caption = tbls(name = "seakenTable", caption = "Output for the Seasonal Kendall analysis, which was performed on data that had at least 8 years of data between year(query_dates[1]) and year(query_dates[2]). Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.**"))
 }
 
 ```
@@ -646,10 +651,10 @@ if(length(ecoli_stns) > 0) {
   ecoli <- rbind.fill(ecoli_list[])
   exc <- rbind.fill(exc_list[])
   exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
-
+  
   knitr::kable(exc, padding = 2, digits = 1,
                caption = tbls(name = "ecoliExcTable", 
-                              caption = "E. Coli status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
+                              caption = "E. Coli status. If sufficient data exists to calculate the geometric mean, it is included in the table.**"))
 }  else {
   print("No monitoring stations have data to assess status and/or trend of E. Coli") 
 } 
@@ -661,30 +666,30 @@ if(length(ecoli_stns) > 0) {
 ```{r Enterococcus, fig.height=6, fig.width=6, results='asis'}
 
 exc <- NULL
-ent_stns <- NULL
+entero_stns <- NULL
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
-  ent_trend <- trend %>%
+  entero_trend <- trend %>%
     dplyr::filter(Analyte == "Enterococcus")
-  ent_trend <- c(unique(ent_trend$Station_ID))
+  entero_trend <- c(unique(entero_trend$Station_ID))
 }
 
-ent_stat <- status %>%
+entero_stat <- status %>%
   dplyr::filter(Analyte == "Enterococcus")
-ent_stat <- c(unique(ent_stat$Station_ID))
+entero_stat <- c(unique(entero_stat$Station_ID))
 
-ent_stns <- unique(append(ent_trend, ent_stat))
+entero_stns <- unique(append(entero_trend, entero_stat))
 
-if(length(ent_stns) > 0) {
+if(length(entero_stns) > 0) {
   
-  ent_all <- df.all[df.all$Analyte == 'Enterococcus',]
-  ent <- df.all[df.all$Analyte == 'Enterococcus',]
+  entero_all <- df.all[df.all$Analyte == 'Enterococcus',]
+  entero <- df.all[df.all$Analyte == 'Enterococcus',]
   
-  ent_list<- list()
+  entero_list<- list()
   exc_list<- list()
   
-  for(j in 1: length(ent_stns)) {
-    new_data <- ent[ent$Station_ID == ent_stns[j],]
+  for(j in 1: length(entero_stns)) {
+    new_data <- entero[entero$Station_ID == entero_stns[j],]
     tmp_df <- new_data
     tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
     tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
@@ -692,25 +697,29 @@ if(length(ent_stns) > 0) {
     tmp_df_MRL <- tmp_df[sub,]
     tmp_df <- remove.dups(tmp_df_MRL, max)
     
-    ent_evaluate <- EvaluateEnteroWQS(tmp_df)
-    ent_eval <- attr(ent_evaluate, 'ex_df')
-    ent_list[[j]] <- ent_evaluate
-    exc_list[[j]] <- ent_eval
+    entero_evaluate <- EvaluateEnteroWQS(tmp_df)
+    entero_eval <- attr(entero_evaluate, 'ex_df')
+    entero_list[[j]] <- entero_evaluate
+    exc_list[[j]] <- entero_eval
   }
   
-  ent <-rbind.fill(ent_list[])
+  entero <-rbind.fill(entero_list[])
   exc <-rbind.fill(exc_list[])
   exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
   
   results_seaken <-SeaKen %>% filter(analyte == 'Enterococcus')
   
-  ent_plots <-list()
+  entero_plots <-list()
   
-  for (i in 1:length(ent_stns)) {
-    mydata_sub <- ent_all[ent_all$Station_ID == ent_stns[i],]
+  for (i in 1:length(entero_stns)) {
+    mydata_sub <- entero_all[entero_all$Station_ID == entero_stns[i],]
     
-    trend_logic <- ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE,
-                          ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == ent_stns[i],'signif']), FALSE, TRUE))
+    trend_logic <- ifelse(grepl("Not Significant", 
+                                results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
+                          FALSE,
+                          ifelse(grepl("Need at least 8 years", 
+                                       results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
+                                 FALSE, TRUE))
     
     
     b <- plot.bacteria(new_data=mydata_sub,
@@ -719,17 +728,17 @@ if(length(ent_stns) > 0) {
                        plot_log = FALSE,
                        parm = unique(mydata_sub$Analyte))
     
-    ent_plots[[i]] <- b
-
-    print(ent_plots[[i]])
+    entero_plots[[i]] <- b
     
-    cat(figs(name = paste0('Entero_', ent_stns[i]),
-             caption = paste0('Station: ', ent_stns[i], ' _Enterococcus_ water quality status and trends**')))
+    print(entero_plots[[i]])
+    
+    cat(figs(name = paste0('Entero_', entero_stns[i]),
+             caption = paste0('Station: ', entero_stns[i], ' _Enterococcus_ water quality status and trends**')))
   }
   
   knitr::kable(exc, padding = 2, digits = 1,
                caption = tbls(name = "enterExcTable", 
-                              caption = "Enterococcus status and trends, if sufficient data exists to calculate the geometric mean, it is included in the table.**"))
+                              caption = "Enterococcus status. If sufficient data exists to calculate the geometric mean, it is included in the table.**"))
 }  else {
   print("No monitoring stations have data to assess status and/or trend of Enterococcus") 
 } 
@@ -844,7 +853,7 @@ for (i in 1:length(tp_stn)) {
 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
 exc <- exc[,c(1:5)]
-knitr::kable(exc,padding = 2, digits = 1, caption = tbls(name = "tpExcTable", caption = "Total Phosphorus status and trends**"))
+knitr::kable(exc,padding = 2, digits = 1, caption = tbls(name = "tpExcTable", caption = "Total Phosphorus observations**"))
 
 # }else {
 #   print("No monitoring stations have sufficent data to assess status and/or trend of total phosphorus")
@@ -964,7 +973,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
   } 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
 exc <- exc[,c(1:5)]
-  knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "tssExcTable", caption = "Total Suspended Solids status and trends**"))
+  knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "tssExcTable", caption = "Total Suspended Solids observations**"))
 
 # }else {
 #   "No monitoring stations have sufficent data to assess status and/or trend of total suspended solids"
@@ -1106,7 +1115,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   }
   
   if(!is.null(ph_exc)) {
-    knitr::kable(ph_exc, padding = 2, digits = 1, caption = tbls(name = "phExcTable", caption = "pH status and trends**"))
+    knitr::kable(ph_exc, padding = 2, digits = 1, caption = tbls(name = "phExcTable", caption = "pH status**"))
   }
   # } else {
   #   print("No monitoring stations have sufficient data to assess pH")
@@ -1249,7 +1258,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
       
       if(!is.null(exc)){ #prints exceedance table, if temperature stns exist 
         #fix column names
-        knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "tempExcTable", caption = "Temperature status and trends**"))
+        knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "tempExcTable", caption = "Temperature status**"))
       }
       
     }
@@ -1405,7 +1414,7 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
     
     colnames(exc) <- c("Station ID", "Station Description", "Obs", "Exceedances", "Meets b/c %Sat", "Min Date", "Max Date")
     if(!is.null(exc)){
-      knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "doExcTable", caption = "Dissolved Oxygen status and trends**"))
+      knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "doExcTable", caption = "Dissolved Oxygen status**"))
     }
     
   # } else {
@@ -1419,9 +1428,22 @@ DO_exc <- exc
 # Summary 
 
 
+```{r DO-summary-map, eval = word_output, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
+
+knitr::include_graphics(paste0(project_dir,"/Figures/",station_summary_map_DO_file))
+
+```
+
+
 ```{r Ecoli-summary-map, eval = word_output, fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for E. coli.**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_ecoli_file))
+
+```
+
+```{r Entero-summary-map, eval = word_output, fig.cap=figs(name="Entero_map", caption="Summary of stations that fit the criteria for status and trend analysis for Enterococcus. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
+
+knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_entero_file))
 
 ```
 
@@ -1431,15 +1453,22 @@ knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_ma
 
 ```
 
-```{r ph-summary-map, eval = word_output, fig.cap=figs(name="pH_map", caption="Summary of stations that fit the criteria for status and trend analysis for pH. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for pH.**")}
+```{r ph-summary-map, eval = word_output, fig.cap=figs(name="pH_map", caption="Summary of stations that fit the criteria for status and trend analysis for pH. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_pH_file))
 
 ```
 
-```{r DO-summary-map, eval = word_output, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for dissolved oxygen.**")}
 
-knitr::include_graphics(paste0(project_dir,"/Figures/",station_summary_map_DO_file))
+```{r TP-summary-map, eval = word_output, fig.cap=figs(name="TP_map", caption="Summary of stations that fit the criteria for trend analysis for Total Phosphorus.  Trend was determined by significant trends associated with long-term datasets.**")}
+
+knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_tp_file))
+
+```
+
+```{r TSS-summary-map, eval = word_output, fig.cap=figs(name="TSS_map", caption="Summary of stations that fit the criteria for status and trend analysis for Total Suspended Solids. Trend was determined by significant trends associated with long-term datasets.**")}
+
+knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_tss_file))
 
 ```
 
@@ -1449,9 +1478,12 @@ Summary of stations that fit the criteria for status and trend analysis. One or 
 
 stns_param_summary <-  parm_summary(stns = stns[,c(1:4)],
                             ecoli = ecoli,
+                            entero = entero,
                             pH = pH,
                             DO_eval = DO_eval,
                             temp = temp,
+                            tp = TP,
+                            tss = TSS,
                             SeaKen = SeaKen,
                             status = status,
                             trend = trend)
@@ -1461,17 +1493,10 @@ stns_param_summary <-  parm_summary(stns = stns[,c(1:4)],
 
 # create a shapefile
 stns_param_summary_shp <- stns_param_summary %>%
+                  dplyr::select(-c(TP_S, TSS_S)) %>%
                   dplyr::rename(Name=Station_Description, 
                                 Latitude=DECIMAL_LAT, 
-                                Longitude=DECIMAL_LONG,
-                                Ecoli_S=Status_bacteria,
-                                Ecoli_T=Trend_bacteria,
-                                Temp_S=Status_temp,
-                                Temp_T=Trend_temp,
-                                pH_S=Status_pH,
-                                pH_T=Trend_pH,
-                                DO_S=Status_DO,
-                                DO_T=Trend_DO)
+                                Longitude=DECIMAL_LONG)
 
 coordinates(stns_param_summary_shp)=~Longitude+Latitude
 
@@ -1484,16 +1509,24 @@ stns_param_summary_shp <- stns_param_summary_shp[order(stns_param_summary_shp$St
 # write the shapefile
 writeOGR(obj=stns_param_summary_shp, dsn=GIS_dir, layer="station_param_summary", driver="ESRI Shapefile", overwrite_layer=TRUE)
 
-colnames(stns_param_summary) <- c("Station ID", "Station Description", 'Latitude', 'Longitude', "Ecoli Status",
-                          "Ecoli Trend","Temperature Status", "Temperature Trend", "pH Status", "pH Trend", 
-                          "DO Status", "DO Trend")
+# format for table
+stns_param_summary_tbl <- dplyr::select(stns_param_summary, -c(DECIMAL_LAT,DECIMAL_LONG, TP_S, TSS_S))
+
+colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
+                                  "E.coli Status", "E.coli Trend", 
+                                  "Enterococcus Status", "Enterococcus Trend",
+                                  "DO Status", "DO Trend",
+                                  "pH Status", "pH Trend", 
+                                  "Temperature Status", "Temperature Trend",
+                                  "TP Trend", 
+                                  "TSS Trend")
 
 
 save(stns_param_summary, file=paste0(Rdata_dir,"/", stns_param_summary_file))
 
 knitr::kable(stns_param_summary, format = "markdown",  padding = 2, digits = 3, 
              caption = tbls(name = "parmSumTable", 
-                            caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last two years of available data. Note: DO = dissolved oxygen**"))
+                            caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen**"))
 
 ```
 
@@ -1502,25 +1535,39 @@ knitr::kable(stns_param_summary, format = "markdown",  padding = 2, digits = 3,
 agarea_shp <- agwqma_shp[agwqma_shp$PlanName == input$select,]
 agarea_shp <-spTransform(agarea_shp, CRS("+proj=longlat +datum=NAD83"))
 
+# format for map by removing status col for TP and TSS
+stns_param_summary_map <- dplyr::select(stns_param_summary, -c(TP_S, TSS_S))
+
+colnames(stns_param_summary_map) <- c("Station ID", "Station Description",
+                                  "Latitude", "Longitude",
+                                  "E.coli Status", "E.coli Trend", 
+                                  "Enterococcus Status", "Enterococcus Trend",
+                                  "DO Status", "DO Trend",
+                                  "pH Status", "pH Trend", 
+                                  "Temperature Status", "Temperature Trend",
+                                  "TP Trend", 
+                                  "TSS Trend")
+
+marker_colnames <- c("Station ID", "Station Description", 
+                     "E.coli Status", "E.coli Trend", 
+                     "Enterococcus Status", "Enterococcus Trend",
+                     "DO Status", "DO Trend",
+                     "pH Status", "pH Trend", 
+                     "Temperature Status", "Temperature Trend", 
+                     "TP Trend", 
+                     "TSS Trend")
+
 
 map2 <- leaflet(agarea_shp) %>%
   addPolygons() %>%
   addTiles() %>%
-  addMarkers(lng = stns_param_summary$Longitude,
-             lat = stns_param_summary$Latitude,
+  addMarkers(lng = stns_param_summary_map$Longitude,
+             lat = stns_param_summary_map$Latitude,
              popup = paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
-                           lapply(rownames(stns_param_summary), 
+                           lapply(rownames(stns_param_summary_map), 
                                   function(row) {
-                                    htmlTable::htmlTable(stns_param_summary[row,c("Station ID", "Station Description", 
-                                                                                  "Ecoli Status", "Ecoli Trend",
-                                                                                  "Temperature Status", "Temperature Trend", 
-                                                                                  "pH Status", "pH Trend", 
-                                                                                  "DO Status", "DO Trend")],
-                                                         header = c("Station ID", "Station Description", 
-                                                                                  "Ecoli Status", "Ecoli Trend",
-                                                                                  "Temperature Status", "Temperature Trend", 
-                                                                                  "pH Status", "pH Trend", 
-                                                                                  "DO Status", "DO Trend"),
+                                    htmlTable::htmlTable(stns_param_summary_map[row, marker_colnames],
+                                                         header = marker_colnames,
                                                          rnames = FALSE)
                                   })),
              group = 'Station Result Summary') %>%
@@ -1545,24 +1592,24 @@ map2
 
 ```{r conclusions-setup}
 
-conclusions.Ecoli <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'Ecoli'), c("conclusion")]
-conclusions.Entero <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'Entero'), c("conclusion")]
-conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'Temp'), c("conclusion")]
-conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'pH'), c("conclusion")]
-conclusions.DO <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'DO'), c("conclusion")]
-conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'TP'), c("conclusion")]
-conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'TSS'), c("conclusion")]
-conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 'Add_conc'), c("conclusion")]
+conclusions.DO <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "DO"), c("conclusion")]
+conclusions.Ecoli <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Ecoli"), c("conclusion")]
+conclusions.Entero <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Entero"), c("conclusion")]
+conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "pH"), c("conclusion")]
+conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Temp"), c("conclusion")]
+conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TP"), c("conclusion")]
+conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TSS"), c("conclusion")]
+conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc"), c("conclusion")]
 
 ```
 
 **What are the overall status or trends?**
 
+* *Dissolved Oxygen*: `r conclusions.DO`
 * *E. coli*: `r conclusions.Ecoli`
 * *Enterococcus*: `r conclusions.Entero`
-* *Temperature*: `r conclusions.Temp`
 * *pH*: `r conclusions.pH`
-* *Dissolved Oxygen*: `r conclusions.DO`
+* *Temperature*: `r conclusions.Temp`
 * *Total Phosphorus*: `r conclusions.TP`
 * *Total Suspended Solids*: `r conclusions.TSS`
 
@@ -1578,13 +1625,13 @@ conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 
 
 org_summary <- summarizeByOrg(df.all)
 
-knitr::kable(org_summary, format = "markdown", padding = 2, digits = 1, caption = tbls(name = "orgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report**"))
+knitr::kable(org_summary, padding = 2, digits = 1, caption = tbls(name = "AppendixorgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report**"))
 
-knitr::kable(status, format = "markdown", padding = 2, digits = 1, caption = tbls(name = "statusTable", caption = "Monitoring stations that fit the criteria to assess status; note value represents the number of results for each monitoring station per year**"))
+knitr::kable(status, padding = 2, digits = 1, caption = tbls(name = "AppendixstatusTable", caption = "Monitoring stations that fit the criteria to assess status; note value represents the number of results for each monitoring station per year**"))
 
-knitr::kable(trend, format = "markdown", padding = 1, digits = 1, caption = tbls(name = "trendTable", caption = "Monitoring stations that fit the criteria to assess trends; note value represents the number of results for each monitoring station per year**"))
+knitr::kable(trend, padding = 1, digits = 1, caption = tbls(name = "AppendixtrendTable", caption = "Monitoring stations that fit the criteria to assess trends; note value represents the number of results for each monitoring station per year**"))
 
-knitr::kable(stns_by_year, format = "markdown", padding = 1, digits = 1, caption = tbls(name = "stnByYrTable", caption = "All monitoring stations that were queried and the number of results per year from 2000 to 2017**"))
+knitr::kable(stns_by_year, padding = 1, digits = 1, caption = tbls(name = "AppendixstnByYrTable", caption = "All monitoring stations that were queried and the number of results per year during the query period**"))
 
 ```
 
