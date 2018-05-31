@@ -3,16 +3,16 @@ title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px;
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
 date: March 2018
 output:
+  word_document:
+    fig_caption: yes
+    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
-  word_document:
-    fig_caption: yes
-    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
-    toc: yes
 always_allow_html: yes
 ---
 
@@ -24,7 +24,6 @@ knitr::opts_chunk$set(echo = FALSE,
                       warning=FALSE, 
                       error = FALSE,
                       cache = FALSE,
-                      results = 'hide',
                       include = TRUE,
                       fig.keep='all',
                       fig.path='Figures/'
@@ -64,7 +63,7 @@ source("functions/funSeaKen.R")
 source("functions/funPlots.R")
 source('functions/TualatinR_Allocations.R')
 
-tbls  <- captioner(prefix=" \n**Table")
+tbls  <- captioner(prefix="**Table")
 figs <- captioner(prefix="  \n**Figure")
 ```
 
@@ -321,6 +320,11 @@ status_years <- seq(maxyear-3, maxyear, by = 1)
 status <- Stations_Status(df.all)
 trend <- Stations_Trend(df.all)
 stns_by_year <- Stations_by_Year(df.all)
+
+# sort by analyte and station ID
+status <- status %>% arrange(Analyte, Station_ID)
+trend <- trend %>% arrange(Analyte, Station_ID)
+
 stns <- All_stns_fit_Criteria(trend = trend, 
                              status = status,
                              df.all = df.all)
@@ -370,12 +374,10 @@ oda<- paste(BC_LU[BC_LU$AgArea %in% input$select, 'ODA_agwqcoord_name'], BC_LU[B
 BC_table<-data.frame(input$select, deq, oda)
 colnames(BC_table) <- c('AgWQ Management Area', 'DEQ Basin Coordinator', 'ODA AgWQ Specialist')
 
-knitr::kable(BC_table, 
-             format = "markdown", 
+knitr::kable(BC_table,
              padding = 2, digits = 1, caption = 
                tbls(name = "basinContact", caption =
-                      "Oregon DEQ and ODA basin contacts**")
-)
+                      "Oregon DEQ and ODA basin contacts**"))
 
 ```
 
@@ -410,7 +412,7 @@ The applicable temperature criteria is based on the seven day average daily maxi
 Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` out of `r length(unique(df.all$Station_ID))` monitoring stations fit the criteria to assess water quality status and trends. The following maps show monitoring stations that fit the criteria within the watershed, all stations that were queried, land ownership, and landscape attributes.
 
 
-```{r stations-map-word, fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the North Coast AgWQ Management Area**")}
+```{r stations-map-word, eval = word_output, fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the North Coast AgWQ Management Area**")}
 
 knitr::include_graphics(path = "Figures/Station_Locations_North_Coast.png")
 
@@ -421,7 +423,7 @@ knitr::include_graphics(path = "Figures/Station_Locations_North_Coast.png")
 A land use analysis for catchments above all monitoring stations that fit the criteria to assess water quality status and/or trends was generated. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA (based on the National Hydrography Dataset Plus Version 2 geospatial framework) was used to summarize the cumulative upstream catchment of each station for primary land use characteristics. An informative representation of land use and land cover (NLCD 2011) is shown in the station locations map below.
 
 
-```{r landuse-map-word, eval = word_output, fig.cap=figs(name="landusemap", caption="Land use and land cover within the North Coast AgWQ Management Area**")}
+```{r landuse-map-word, eval = word_output, fig.cap=figs(name="landusemap", caption="Land use and land cover for the upstream catchments of stations used in this analysis; source: 2011 NLCD**")}
 
 knitr::include_graphics(path = "Figures/LandUseMap_North_Coast_Tabloid_Nolabels.png")
 
@@ -504,9 +506,8 @@ landuse <-landuse[, - 3]
 
 save(landuse, file=paste0(Rdata_dir,"/", landuse_file))
 
-knitr::kable(landuse, digits = 0, 
-             format = "markdown", 
-             padding = 2, caption = tbls(name = "landUse", caption = "Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2018) and/or are used to evaluate last known status.**"))
+knitr::kable(landuse, digits = 0,
+             padding = 2, caption = tbls(name = "landUse", caption = "Summary table of watershed land use for stations with a status or trend result.**"))
 
 ```
 
@@ -539,7 +540,7 @@ wq_limited_df$`Listing Status` <- revalue(wq_limited_df$`Listing Status`,
                                             "TMDL approved" = "Cat 4A",
                                             "303(d)" = "Cat 5"))
 
-knitr::kable(wq_limited_df, padding = 2, format = "markdown", caption = tbls(name = "wqLimited", caption = "Summary of Integrated Report listings for parameters included in this report. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA**"))
+knitr::kable(wq_limited_df, padding = 2, caption = tbls(name = "wqLimited", caption = "Summary of Integrated Report listings for parameters included in this report. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA**"))
 
 ```
 
@@ -1478,7 +1479,7 @@ colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
 
 save(stns_param_summary_tbl, file=paste0(Rdata_dir,"/", stns_param_summary_file))
 
-knitr::kable(stns_param_summary_tbl, format = "markdown",  padding = 2, digits = 3, 
+knitr::kable(stns_param_summary_tbl,  padding = 2, digits = 3, 
              caption = tbls(name = "parmSumTable", 
                             caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen**"))
 
@@ -1588,13 +1589,13 @@ conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 
 
 org_summary <- summarizeByOrg(df.all)
 
-knitr::kable(org_summary, format = "markdown", padding = 2, digits = 1, caption = tbls(name = "AppendixorgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report**"))
+knitr::kable(org_summary, padding = 2, digits = 1, caption = tbls(name = "AppendixorgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report**"))
 
-knitr::kable(status, format = "markdown", padding = 2, digits = 1, caption = tbls(name = "AppendixstatusTable", caption = "Monitoring stations that fit the criteria to assess status; note value represents the number of results for each monitoring station per year**"))
+knitr::kable(status, padding = 2, digits = 1, caption = tbls(name = "AppendixstatusTable", caption = "Monitoring stations that fit the criteria to assess status; note value represents the number of results for each monitoring station per year**"))
 
-knitr::kable(trend, format = "markdown", padding = 1, digits = 1, caption = tbls(name = "AppendixtrendTable", caption = "Monitoring stations that fit the criteria to assess trends; note value represents the number of results for each monitoring station per year**"))
+knitr::kable(trend,padding = 1, digits = 1, caption = tbls(name = "AppendixtrendTable", caption = "Monitoring stations that fit the criteria to assess trends; note value represents the number of results for each monitoring station per year**"))
 
-knitr::kable(stns_by_year, format = "markdown", padding = 1, digits = 1, caption = tbls(name = "AppendixstnByYrTable", caption = "All monitoring stations that were queried and the number of results per year from 2000 to 2018**"))
+knitr::kable(stns_by_year,  padding = 1, digits = 1, caption = tbls(name = "AppendixstnByYrTable", caption = "All monitoring stations that were queried and the number of results per year from 2000 to 2018**"))
 
 ```
 
