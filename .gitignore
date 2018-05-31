@@ -25,6 +25,7 @@ Figures/*TSS*
 # Outputs
 *docx
 *html
+*pdf
 
 # knitr and R markdown default cache directories
 /*_cache/
