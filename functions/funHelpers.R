@@ -58,12 +58,18 @@ Stations_in_poly <- function(df.all, poly_shp, outside=FALSE) {
   proj4string(df.wgs84) <- CRS("+init=epsg:4326")
   
   # convert to NAD 83
-  df.nad.27.nad83 <- spTransform(df.nad27, CRS("+init=epsg:4269"))
-  df.wgs84.nad83 <- spTransform(df.wgs84, CRS("+init=epsg:4269"))
+  if (nrow(df.nad27)>0) {
+    df.nad.27.nad83 <- spTransform(df.nad27, CRS("+init=epsg:4269")) 
+    df.nad83 <- rbind(df.nad83, df.nad.27.nad83)
+  }
+  
+  if (nrow(df.wgs84)>0) {
+    df.wgs84.nad83 <- spTransform(df.wgs84, CRS("+init=epsg:4269")) 
+    df.nad83 <- rbind(df.nad83, df.wgs84.nad83)
+  }
+  
   poly.nad83 <- spTransform(poly_shp, CRS("+init=epsg:4269"))
   
-  # combine back into single df
-  df.nad83 <- rbind(df.nad83, df.nad.27.nad83, df.wgs84.nad83)
   
   if(outside) {
     # stations outside polygon
@@ -109,20 +115,21 @@ MRLhandling <- function (df.all) {
   return(df.all)
 }
 
-update_fc2ec <- function (df.all) {
+update_fc2ec <- function (df.all, fc2ec.stations) {
   #COnverts fecal coliform values to e. coli and updates comment field
   #to keep track of the conversion
   #Arguments:
   #df.all = data frame of query results with columns Analyte, Result, Comment
-  df.all[df.all$Analyte == 'Fecal Coliform','Result'] <- 
-    round(fc2ec(df.all[df.all$Analyte == 'Fecal Coliform','Result']))
-  df.all[df.all$Analyte == 'Fecal Coliform','Comment'] <- 
-    ifelse(is.na(df.all[df.all$Analyte == 'Fecal Coliform','Comment']),
+  #fc2ec.stations = vector of stations IDs to convert from fecal coliform to e. coli 
+  df.all[df.all$Analyte == 'Fecal Coliform' & df.all$Station_ID %in% fc2ec.stations,'Result'] <- 
+    round(fc2ec(df.all[df.all$Analyte == 'Fecal Coliform' & df.all$Station_ID %in% fc2ec.stations,'Result']))
+  df.all[df.all$Analyte == 'Fecal Coliform' & df.all$Station_ID %in% fc2ec.stations,'Comment'] <- 
+    ifelse(is.na(df.all[df.all$Analyte == 'Fecal Coliform' & df.all$Station_ID %in% fc2ec.stations,'Comment']),
            "Fecal Coliform value converted to E. Coli",
-           paste(df.all[df.all$Analyte == 'Fecal Coliform','Comment'],
+           paste(df.all[df.all$Analyte == 'Fecal Coliform' & df.all$Station_ID %in% fc2ec.stations,'Comment'],
                  "Fecal Coliform value converted to E. Coli",
                  sep = ", "))
-  df.all[df.all$Analyte == 'Fecal Coliform','Analyte'] <- 'E. Coli'
+  df.all[df.all$Analyte == 'Fecal Coliform' & df.all$Station_ID %in% fc2ec.stations,'Analyte'] <- 'E. Coli'
   return(df.all)
 }
 
