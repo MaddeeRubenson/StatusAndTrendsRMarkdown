@@ -1,6 +1,6 @@
 ---
-title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Oregon DEQ Water Quality Status and Trends report for the Umpqua River AgWQ Management Area'
-date: April 2018
+title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Oregon DEQ Water Quality Status and Trends report for the Curry County AgWQ Management Area'
+date: May 2018
 output:
   word_document:
     fig_caption: yes
@@ -71,9 +71,9 @@ figs <- captioner(prefix="  \n**Figure")
 
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_shp').
-agwqma <- "Umpqua River"
-query_dates <- c("2000-01-01", "2018-04-01")
-project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Umpqua River/2018/StatusAndTrendsRMarkdown"
+agwqma <- "Curry County"
+query_dates <- c("2000-01-01", "2018-05-01")
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Curry County/2018-Curry-County"
 
 # Set to TRUE if knitting a word document
 word_output <- FALSE
@@ -150,6 +150,10 @@ ph_crit <- merge(ph_crit, HUClist, by.x = 'plan_name', by.y = 'PlanName', all.x 
 # import GIS features
 agwqma_shp <- readOGR(dsn = support_files_dir, layer = 'ODA_AgWQMA', integer64="warn.loss", verbose = FALSE)
 tribal_lands_shp <- readOGR(dsn = support_files_dir, layer = 'tl_2017_or_aiannh', integer64="warn.loss", verbose = FALSE)
+
+# BTD Import Bacteria nonfreshwater GIS feature
+bacteria_nonfreshwater_shp <- readOGR(dsn = support_files_dir, layer = 'bacteria_nonfreshwater', integer64="warn.loss", verbose = FALSE)
+
 #hucs_shp <- readOGR(dsn = support_files_dir, layer = 'WBD_HU8', integer64="warn.loss", verbose = FALSE)
 
 # Import other data frames
@@ -192,8 +196,10 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # remove data collected on tribal nation land or tribal trust land
   df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands_shp, outside=TRUE),]
   
+  
   # remove stations outside the agwqma
   df.all <- clipToPlanArea(df.all, agwqma_shp, input$select)
+
   
   # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
   # The Station ID will be named the same as LASAR
@@ -232,9 +238,22 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   df.all$Result <- suppressWarnings(as.numeric(df.all$Result))
   df.all <- MRLhandling(df.all)
   
+  
   if ("Fecal Coliform" %in% df.all$Analyte) {
-    df.all <- update_fc2ec(df.all)
+    fc2ec.stations <-Stations_in_poly(df.all[df.all$Analyte == "Fecal Coliform", ], bacteria_nonfreshwater_shp, outside=TRUE)
+    df.all <- update_fc2ec(df.all, fc2ec.stations)
   }
+  
+ 
+ 
+  # BTD Remove enterococci data outside non-freshwater polygon
+  
+  # Create a subset of data only including "Enterococcus"
+  df.temp.ent <- subset(df.all, Analyte == 'Enterococcus')
+  
+  # Get stations inside bacteria_nonfreshwater polygon  
+  df.all <- df.all[!(df.all$Station_ID %in% Stations_in_poly(df.temp.ent, bacteria_nonfreshwater_shp, outside=TRUE) &            df.all$Analyte == 'Enterococcus'),]
+  
   
   df.all <- remove_QAfail(df.all)
   
