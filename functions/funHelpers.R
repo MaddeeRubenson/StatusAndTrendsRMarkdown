@@ -442,12 +442,12 @@ All_stns_fit_Criteria<-function(status, trend, df.all) {
   
   unique_stns<-unique(c(status_stns, trend_stns))
   
-  stns<-df.all[,c('Station_ID', 'Station_Description', 'DECIMAL_LAT', 'DECIMAL_LONG')]
+  stns <- df.all[,c('Station_ID', 'Station_Description', 'DECIMAL_LAT', 'DECIMAL_LONG')]
   
   #stns<-df.all[,c('Station_ID', 'Station_Description', 'DECIMAL_LAT', 'DECIMAL_LONG', 'snap_Lat', 'snap_Long')]
-  stns<-stns %>%
+  stns <- stns %>%
     filter(Station_ID %in% unique_stns)
-  stns<-unique(stns)
+  stns <- unique(stns)
   
   if(nrow(stns) < 1) {
     stns <- 'No Stations Meet Criteria for Status or Trends'
@@ -570,7 +570,7 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
   # date: class Date in format %Y-%m-%d
   # station_column_name: in same format and name as provided
   # SDADM: class numeric representing the calculated seven day average
-
+  
   library(chron)
   library(reshape)
   library(zoo)
@@ -614,7 +614,7 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
   colnames(dummy)[4] <- "date"
   
   dummy$t_c <- as.numeric(dummy$t_c)
-
+  
   tdata <-rbind(tdata,dummy)
   rm(dummy)
   # End
@@ -1051,13 +1051,13 @@ EvaluateTSSWQS<-function(new_data,
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   if(selectWQSTSS != 0) {
-    new_data$exceed<- ifelse(new_data$Result > selectWQSTSS, 'Exceeds', "Meets")
+    new_data$exceed<- ifelse(new_data$Result > selectWQSTSS, 1, 0)
   } else {
-    new_data$exceed<-'Meets'
+    new_data$exceed<-NA
   }
   
   exc<-new_data%>%
-    filter(exceed == 'Exceeds')
+    filter(exceed == 1)
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1080,13 +1080,13 @@ EvaluateTPWQS<-function(new_data,
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   if(selectWQSTP != 0) {
-    new_data$exceed<- ifelse(new_data$Result > selectWQSTP, 'Exceeds', "Meets")
+    new_data$exceed<- ifelse(new_data$Result > selectWQSTP, 1, 0)
   } else {
-    new_data$exceed<-'Meets'
+    new_data$exceed<-NA
   }
   
   exc<-new_data%>%
-    filter(exceed == 'Exceeds')
+    filter(exceed == 1)
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1817,15 +1817,38 @@ Delineation<-function(stns,
 
 parm_summary <- function(stns,
                          ecoli,
+                         entero = NULL,
                          pH,
                          temp = NULL,
+                         tss = NULL,
+                         tp = NULL,
                          DO_eval,
                          SeaKen, 
                          status, 
                          trend) {
   
-  ############################ecoli#############################################################
-  ##add year column to data to delineate status
+  
+  #Add columns to stns dataframe
+  stns$Ecoli_S <- '--'
+  stns$Ecoli_T <- '--'
+  stns$Entero_S  <- '--'
+  stns$Entero_T  <- '--'
+  stns$DO_S <- '--'
+  stns$DO_T <- '--'
+  stns$pH_S <- '--'
+  stns$pH_T <- '--'
+  stns$Temp_S <- '--'
+  stns$Temp_T <- '--'
+  stns$TP_S <- '--'
+  stns$TP_T <- '--'
+  stns$TSS_S <- '--'
+  stns$TSS_T <- '--'
+  
+  
+  
+  #-- ecoli --------------------------------------------------------------------------
+  
+  # add year column to data to delineate status
   ecoli$Sampled <- as.POSIXct(strptime(ecoli$Sampled, format = '%Y-%m-%d')) 
   ecoli$Sampled<-as.Date(ecoli$Sampled)
   ecoli$year<-as.numeric(format(ecoli$Sampled, format="%Y"))
@@ -1845,49 +1868,98 @@ parm_summary <- function(stns,
     e_trend_stns <- NULL
   }
   
-  #Add columns to stns dataframe
-  stns$Status_bacteria <- '--'
-  stns$Trend_bacteria <- '--'
-  stns$Status_temp <- '--'
-  stns$Trend_temp <- '--'
-  stns$Status_pH <- '--'
-  stns$Trend_pH <- '--'
-  stns$Status_DO <- '--'
-  stns$Trend_DO <- '--'
-  
   #status Ecoli
   for(i in 1:length(e_status_stns)) {
     #status  
     e_data <- e_status[e_status$Station_ID == e_status_stns[i],]
     
     if(any(unique(e_data$exceed) > 0)) {
-      stns[stns$Station_ID == e_status_stns[i], ]$Status_bacteria <- 'Exceeds'
+      stns[stns$Station_ID == e_status_stns[i], ]$Ecoli_S <- 'Exceeds'
     } else {
-      stns[stns$Station_ID == e_status_stns[i], ]$Status_bacteria <- 'Meets'
+      stns[stns$Station_ID == e_status_stns[i], ]$Ecoli_S <- 'Meets'
     }
     
   }
   
   #trend Ecoli
   if(length(e_trend_stns) > 0) {
-  for(j in 1:length(e_trend_stns)) {
-  e_seaken <- SeaKen %>% filter(analyte == 'E. Coli')
-  e_seaken <- e_seaken[e_seaken$Station_ID == e_trend_stns[j],]
+    for(j in 1:length(e_trend_stns)) {
+      e_seaken <- SeaKen %>% filter(analyte == 'E. Coli')
+      e_seaken <- e_seaken[e_seaken$Station_ID == e_trend_stns[j],]
+      
+      if(e_seaken$signif != "Not Significant") {
+        if(e_seaken$pvalue < 0.2 & e_seaken$slope > 0) {
+          stns[stns$Station_ID == e_trend_stns[j], ]$Ecoli_T <-'Degrading'
+        } else if(e_seaken$pvalue < 0.2 & e_seaken$slope < 0){
+          stns[stns$Station_ID == e_trend_stns[j], ]$Ecoli_T <- 'Improving'
+        } else if(e_seaken$pvalue < 0.2 & e_seaken$slope == 0) {
+          stns[stns$Station_ID == e_trend_stns[j], ]$Ecoli_T <-'Steady'
+        } 
+      } else {
+        stns[stns$Station_ID == e_trend_stns[j], ]$Ecoli_T <- 'No Sig Trend'
+      }
+    }
+  }
   
-  if(e_seaken$signif != "Not Significant") {
-    if(e_seaken$pvalue < 0.2 & e_seaken$slope > 0) {
-      stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <-'Degrading'
-    } else if(e_seaken$pvalue < 0.2 & e_seaken$slope < 0){
-      stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <- 'Improving'
-    } else if(e_seaken$pvalue < 0.2 & e_seaken$slope == 0) {
-      stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <-'Steady'
-    } 
-  } else {
-    stns[stns$Station_ID == e_trend_stns[j], ]$Trend_bacteria <- 'No Sig Trend'
+  #-- Entero  --------------------------------------------------------------------------
+  
+  ## add year column to data to delineate status
+  if(!is.null(entero)){
+    
+    entero$Sampled <- as.POSIXct(strptime(entero$Sampled, format = '%Y-%m-%d')) 
+    entero$Sampled<-as.Date(entero$Sampled)
+    entero$year<-as.numeric(format(entero$Sampled, format="%Y"))
+    
+    maxyear <- max(entero$year)
+    statyear<-seq(maxyear-3, maxyear, by = 1)
+    
+    #filter out stations that meet status and stations that meet trend
+    ent_status_stns <- status %>% filter(Analyte == 'Enterococcus')
+    ent_status_stns  <- unique(ent_status_stns$Station_ID)
+    ent_status <- entero %>% filter(Station_ID %in% ent_status_stns) %>% filter(year %in% statyear)
+    
+    if(any(trend != 'No Stations Meet Trend Criteria'))  {
+      ent_trend_stns <- trend %>% filter(Analyte == 'Enterococcus')
+      ent_trend_stns  <- unique(ent_trend_stns$Station_ID)
+    } else {
+      ent_trend_stns <- NULL
+    }
+    
+    # status Enterococcus
+    for(i in 1:length(ent_status_stns)) {
+      #status  
+      ent_data <- ent_status[ent_status$Station_ID == ent_status_stns[i],]
+      
+      if(any(unique(ent_data$exceed) > 0)) {
+        stns[stns$Station_ID == ent_status_stns[i], ]$Entero_S <- 'Exceeds'
+      } else {
+        stns[stns$Station_ID == ent_status_stns[i], ]$Entero_S <- 'Meets'
+      }
+      
+    }
+    
+    # trend Enterococcus
+    if(length(ent_trend_stns) > 0) {
+      for(j in 1:length(ent_trend_stns)) {
+        ent_seaken <- SeaKen %>% filter(analyte == 'Enterococcus')
+        ent_seaken <- ent_seaken[ent_seaken$Station_ID == ent_trend_stns[j],]
+        
+        if(ent_seaken$signif != "Not Significant") {
+          if(ent_seaken$pvalue < 0.2 & ent_seaken$slope > 0) {
+            stns[stns$Station_ID == ent_trend_stns[j], ]$Entero_T <-'Degrading'
+          } else if(ent_seaken$pvalue < 0.2 & ent_seaken$slope < 0){
+            stns[stns$Station_ID == ent_trend_stns[j], ]$Entero_T <- 'Improving'
+          } else if(ent_seaken$pvalue < 0.2 & ent_seaken$slope == 0) {
+            stns[stns$Station_ID == ent_trend_stns[j], ]$Entero_T <-'Steady'
+          } 
+        } else {
+          stns[stns$Station_ID == ent_trend_stns[j], ]$Entero_T <- 'No Sig Trend'
+        }
+      }
+    }
   }
-  }
-  }
-  ##############pH######################################################################
+  
+  #-- pH --------------------------------------------------------------------------
   pH$Sampled <- as.POSIXct(strptime(pH$Sampled, format = '%Y-%m-%d')) 
   pH$Sampled<-as.Date(pH$Sampled)
   pH$year<-as.numeric(format(pH$Sampled, format="%Y"))
@@ -1907,39 +1979,41 @@ parm_summary <- function(stns,
     pH_trend_stns <- NULL
   }
   
-  #status pH
+  # status pH
   for(i in 1:length(pH_status_stns)) {
     #status  
     pH_data <- pH_status[pH_status$Station_ID == pH_status_stns[i],]
     
     if(sum(pH_data$exceed) > 0) {
-      stns[stns$Station_ID == pH_status_stns[i], ]$Status_pH <- 'Exceeds'
+      stns[stns$Station_ID == pH_status_stns[i], ]$pH_S <- 'Exceeds'
     } else {
-      stns[stns$Station_ID == pH_status_stns[i], ]$Status_pH <- 'Meets'
+      stns[stns$Station_ID == pH_status_stns[i], ]$pH_S <- 'Meets'
     }
     
   }
   
-  #trend pH
+  # trend pH
   if(length(pH_trend_stns) > 0 ) {
-  for(j in 1:length(pH_trend_stns)) {
-    pH_seaken <- SeaKen %>% filter(analyte == 'pH')
-    pH_seaken <- pH_seaken[pH_seaken$Station_ID == pH_trend_stns[j],]
-    
-    if(pH_seaken$signif != "Not Significant") {
-      if(pH_seaken$pvalue < 0.2 & pH_seaken$slope > 0) {
-        stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <-'Degrading'
-      } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope < 0){
-        stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <- 'Improving'
-      } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope == 0) {
-        stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <-'Steady'
-      } 
-    } else {
-      stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <- 'No Sig Trend'
+    for(j in 1:length(pH_trend_stns)) {
+      pH_seaken <- SeaKen %>% filter(analyte == 'pH')
+      pH_seaken <- pH_seaken[pH_seaken$Station_ID == pH_trend_stns[j],]
+      
+      if(pH_seaken$signif != "Not Significant") {
+        if(pH_seaken$pvalue < 0.2 & pH_seaken$slope > 0) {
+          stns[stns$Station_ID == pH_trend_stns[j], ]$pH_T <-'Degrading'
+        } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope < 0){
+          stns[stns$Station_ID == pH_trend_stns[j], ]$pH_T <- 'Improving'
+        } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope == 0) {
+          stns[stns$Station_ID == pH_trend_stns[j], ]$pH_T <-'Steady'
+        } 
+      } else {
+        stns[stns$Station_ID == pH_trend_stns[j], ]$pH_T <- 'No Sig Trend'
+      }
     }
   }
-  }
-  ##############Dissolved Oxygen######################################################################
+  
+  #-- Dissolved Oxygen --------------------------------------------------------------------------
+  
   maxyear <- max(DO_eval$year)
   statyear<-seq(maxyear-3, maxyear, by = 1)
   
@@ -1955,20 +2029,20 @@ parm_summary <- function(stns,
     DO_trend_stns <- NULL
   }
   
-  #status DO
+  # status DO
   for(i in 1:length(DO_status_stns)) {
     #status  
     DO_data <- DO_status[DO_status$Station_ID == DO_status_stns[i],]
     
     if(any(as.character(DO_data$exceed) == 'Exceeds')) {
-      stns[stns$Station_ID == DO_status_stns[i], ]$Status_DO <- 'Exceeds'
+      stns[stns$Station_ID == DO_status_stns[i], ]$DO_S <- 'Exceeds'
     } else {
-      stns[stns$Station_ID == DO_status_stns[i], ]$Status_DO <- 'Meets'
+      stns[stns$Station_ID == DO_status_stns[i], ]$DO_S <- 'Meets'
     }
     
   }
   
-  #trend DO
+  # trend DO
   if(length(DO_trend_stns) > 0){
     for(j in 1:length(DO_trend_stns)) {
       # print(j)
@@ -1977,74 +2051,192 @@ parm_summary <- function(stns,
       
       if(DO_seaken$signif != "Not Significant") {
         if(DO_seaken$pvalue < 0.2 & DO_seaken$slope > 0) {
-          stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <-'Improving'
+          stns[stns$Station_ID == DO_trend_stns[j], ]$DO_T <-'Improving'
         } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope < 0){
-          stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <- 'Degrading'
+          stns[stns$Station_ID == DO_trend_stns[j], ]$DO_T <- 'Degrading'
         } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope == 0) {
-          stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <-'Steady'
+          stns[stns$Station_ID == DO_trend_stns[j], ]$DO_T <-'Steady'
         } 
       } else {
-        stns[stns$Station_ID == DO_trend_stns[j], ]$Trend_DO <- 'No Sig Trend'
+        stns[stns$Station_ID == DO_trend_stns[j], ]$DO_T <- 'No Sig Trend'
       }
     }
   }
- 
-  ##############Temperature######################################################################
+  
+  
+  #-- Temperature  --------------------------------------------------------------------------
+  
   if(!is.null(temp)){
-  temp$date<-as.Date(temp$date)
-  temp$year<-as.numeric(format(temp$date, format="%Y"))
-  
-  #filter out stations that meet status and stations that meet trend
-  temp_status_stns  <- unique(filter(status, Analyte == "Temperature")$Station_ID)
-  
-  if(any(trend != 'No Stations Meet Trend Criteria'))  {
-    temp_trend_stns <- unique(filter(SeaKen, analyte == "Temperature")$Station_ID)
-  } else {
-    temp_trend_stns <- NULL
-  }
-  # print(temp_trend_stns)
-  #status temp
-  if(length(temp_status_stns) > 0){
-    for(i in 1:length(temp_status_stns)) {
-      #status  
-      temp_data <- temp[temp$Station_ID == temp_status_stns[i],]
-      # 
-      # 
-      # maxyear <- max(temp_data$year)
-      # statyear<-seq(maxyear-3, maxyear, by = 1)
-      
-      temp_status <- temp_data %>% filter(Station_ID %in% temp_status_stns[i]) %>% filter(year %in% statyear)
-      
-      if(any(!is.na(temp_status$exceed))) {
-        if(any(unique((temp_status$exceed) == 'TRUE'))) {
-          stns[stns$Station_ID == temp_status_stns[i], ]$Status_temp <- 'Exceeds'
+    temp$date<-as.Date(temp$date)
+    temp$year<-as.numeric(format(temp$date, format="%Y"))
+    
+    #filter out stations that meet status and stations that meet trend
+    temp_status_stns  <- unique(filter(status, Analyte == "Temperature")$Station_ID)
+    
+    if(any(trend != 'No Stations Meet Trend Criteria'))  {
+      temp_trend_stns <- unique(filter(SeaKen, analyte == "Temperature")$Station_ID)
+    } else {
+      temp_trend_stns <- NULL
+    }
+    
+    # status temp
+    if(length(temp_status_stns) > 0){
+      for(i in 1:length(temp_status_stns)) {
+        # status  
+        temp_data <- temp[temp$Station_ID == temp_status_stns[i],]
+        # 
+        # 
+        # maxyear <- max(temp_data$year)
+        # statyear<-seq(maxyear-3, maxyear, by = 1)
+        
+        temp_status <- temp_data %>% filter(Station_ID %in% temp_status_stns[i]) %>% filter(year %in% statyear)
+        
+        if(any(!is.na(temp_status$exceed))) {
+          if(any(unique((temp_status$exceed) == 'TRUE'))) {
+            stns[stns$Station_ID == temp_status_stns[i], ]$Temp_S <- 'Exceeds'
+          } else {
+            stns[stns$Station_ID == temp_status_stns[i], ]$Temp_S <- 'Meets'
+          }
+        }
+        
+      }
+    }
+    
+    # trend temp
+    if(length(temp_trend_stns) > 0){
+      for(j in 1:length(temp_trend_stns)) {
+        temp_seaken <- SeaKen %>% filter(analyte == 'Temperature')
+        temp_seaken <- temp_seaken[temp_seaken$Station_ID == temp_trend_stns[j],]
+        
+        if(temp_seaken$signif != "Not Significant") {
+          if(temp_seaken$pvalue < 0.2 & temp_seaken$slope < 0) {
+            stns[stns$Station_ID == temp_trend_stns[j], ]$Temp_T <-'Improving'
+          } else if(temp_seaken$pvalue < 0.2 & temp_seaken$slope > 0){
+            stns[stns$Station_ID == temp_trend_stns[j], ]$Temp_T <- 'Degrading'
+          } else if(temp_seaken$pvalue < 0.2 & temp_seaken$slope == 0) {
+            stns[stns$Station_ID == temp_trend_stns[j], ]$Temp_T <-'Steady'
+          } 
         } else {
-          stns[stns$Station_ID == temp_status_stns[i], ]$Status_temp <- 'Meets'
+          stns[stns$Station_ID == temp_trend_stns[j], ]$Temp_T <- 'No Sig Trend'
         }
       }
-      
     }
   }
-
-  #trend temp
-  if(length(temp_trend_stns) > 0){
-    for(j in 1:length(temp_trend_stns)) {
-      temp_seaken <- SeaKen %>% filter(analyte == 'Temperature')
-      temp_seaken <- temp_seaken[temp_seaken$Station_ID == temp_trend_stns[j],]
+  
+  #-- TP  --------------------------------------------------------------------------
+  
+  if(!is.null(tp)){
+    tp$Sampled <- as.POSIXct(strptime(tp$Sampled, format = '%Y-%m-%d')) 
+    tp$Sampled<-as.Date(tp$Sampled)
+    tp$year<-as.numeric(format(tp$Sampled, format="%Y"))
+    
+    maxyear <- max(tp$year)
+    statyear<-seq(maxyear-3, maxyear, by = 1)
+    
+    #filter out stations that meet status and stations that meet trend
+    tp_status_stns <- status %>% filter(Analyte == 'Total Phosphorus')
+    tp_status_stns  <- unique(tp_status_stns$Station_ID)
+    tp_status <- tp %>% filter(Station_ID %in% tp_status_stns) %>% filter(year %in% statyear)
+    
+    if(any(trend != 'No Stations Meet Trend Criteria'))  {
+      tp_trend_stns <- trend %>% filter(Analyte == 'Total Phosphorus')
+      tp_trend_stns  <- unique(tp_trend_stns$Station_ID)
+    }else{
+      tp_trend_stns <- NULL
+    }
+    
+    #status tp
+    for(i in 1:length(tp_status_stns)) {
+      #status  
+      tp_data <- tp_status[tp_status$Station_ID == tp_status_stns[i],]
       
-      if(temp_seaken$signif != "Not Significant") {
-        if(temp_seaken$pvalue < 0.2 & temp_seaken$slope < 0) {
-          stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <-'Improving'
-        } else if(temp_seaken$pvalue < 0.2 & temp_seaken$slope > 0){
-          stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <- 'Degrading'
-        } else if(temp_seaken$pvalue < 0.2 & temp_seaken$slope == 0) {
-          stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <-'Steady'
-        } 
+      if(is.na(tp_data$exceed)) {
+        stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- '--'
+      } else if(sum(tp_data$exceed, na.rm = TRUE) > 0) {
+        stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- 'Exceeds'
       } else {
-        stns[stns$Station_ID == temp_trend_stns[j], ]$Trend_temp <- 'No Sig Trend'
+        stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- 'Meets'
+      }
+      
+    }
+    
+    #trend tp
+    if(length(tp_trend_stns) > 0 ) {
+      for(j in 1:length(tp_trend_stns)) {
+        tp_seaken <- SeaKen %>% filter(analyte == 'Total Phosphorus')
+        tp_seaken <- tp_seaken[tp_seaken$Station_ID == tp_trend_stns[j],]
+        
+        if(tp_seaken$signif != "Not Significant") {
+          if(tp_seaken$pvalue < 0.2 & tp_seaken$slope > 0) {
+            stns[stns$Station_ID == tp_trend_stns[j], ]$TP_T <-'Degrading'
+          } else if(tp_seaken$pvalue < 0.2 & tp_seaken$slope < 0){
+            stns[stns$Station_ID == tp_trend_stns[j], ]$TP_T <- 'Improving'
+          } else if(tp_seaken$pvalue < 0.2 & tp_seaken$slope == 0) {
+            stns[stns$Station_ID == tp_trend_stns[j], ]$TP_T <-'Steady'
+          } 
+        } else {
+          stns[stns$Station_ID == tp_trend_stns[j], ]$TP_T <- 'No Sig Trend'
+        }
       }
     }
   }
+  
+  #-- TSS  --------------------------------------------------------------------------
+  
+  if(!is.null(tss)){
+    tss$Sampled <- as.POSIXct(strptime(tss$Sampled, format = '%Y-%m-%d')) 
+    tss$Sampled<-as.Date(tss$Sampled)
+    tss$year<-as.numeric(format(tss$Sampled, format="%Y"))
+    
+    maxyear <- max(tss$year)
+    statyear<-seq(maxyear-3, maxyear, by = 1)
+    
+    #filter out stations that meet status and stations that meet trend
+    tss_status_stns <- status %>% filter(Analyte == 'Total Suspended Solids')
+    tss_status_stns  <- unique(tss_status_stns$Station_ID)
+    tss_status <- tss %>% filter(Station_ID %in% tss_status_stns) %>% filter(year %in% statyear)
+    
+    if(any(trend != 'No Stations Meet Trend Criteria'))  {
+      tss_trend_stns <- trend %>% filter(Analyte == 'Total Suspended Solids')
+      tss_trend_stns  <- unique(tss_trend_stns$Station_ID)
+    }else{
+      tss_trend_stns <- NULL
+    }
+    
+    #status tss
+    for(i in 1:length(tss_status_stns)) {
+      #status  
+      tss_data <- tss_status[tss_status$Station_ID == tss_status_stns[i],]
+      
+      if(is.na(tss_data$exceed)) {
+        stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- '--'
+      } else if(sum(tss_data$exceed) > 0) {
+        stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Exceeds'
+      } else {
+        stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Meets'
+      }
+      
+    }
+    
+    #trend tss
+    if(length(tss_trend_stns) > 0 ) {
+      for(j in 1:length(tss_trend_stns)) {
+        tss_seaken <- SeaKen %>% filter(analyte == 'Total Suspended Solids')
+        tss_seaken <- tss_seaken[tss_seaken$Station_ID == tss_trend_stns[j],]
+        
+        if(tss_seaken$signif != "Not Significant") {
+          if(tss_seaken$pvalue < 0.2 & tss_seaken$slope > 0) {
+            stns[stns$Station_ID == tss_trend_stns[j], ]$TSS_T <-'Degrading'
+          } else if(tss_seaken$pvalue < 0.2 & tss_seaken$slope < 0){
+            stns[stns$Station_ID == tss_trend_stns[j], ]$TSS_T <- 'Improving'
+          } else if(tss_seaken$pvalue < 0.2 & tss_seaken$slope == 0) {
+            stns[stns$Station_ID == tss_trend_stns[j], ]$TSS_T <-'Steady'
+          } 
+        } else {
+          stns[stns$Station_ID == tss_trend_stns[j], ]$TSS_T <- 'No Sig Trend'
+        }
+      }
+    }
   }
   
   return(stns)
