@@ -247,13 +247,21 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
  
  
-  # BTD Remove enterococci data outside non-freshwater polygon
+  # Remove Enterococcus data from df.all where the Coastal Contact Recreation criterion doesn't apply
   
   # Create a subset of data only including "Enterococcus"
-  df.temp.ent <- subset(df.all, Analyte == 'Enterococcus')
+  df.temp.ent <- df.all[df.all$Analyte == 'Enterococcus',]
   
-  # Get stations inside bacteria_nonfreshwater polygon  
-  df.all <- df.all[!(df.all$Station_ID %in% Stations_in_poly(df.temp.ent, bacteria_nonfreshwater_shp, outside=TRUE) &            df.all$Analyte == 'Enterococcus'),]
+  # Create a vector of stations where the Enterococcus criterion apply
+  df.temp.ent2 <- (Ben_use_LU[!is.na(Ben_use_LU$bacteria_use),]) 
+  df.temp.ent2 <- unique(df.temp.ent2[(df.temp.ent2$AgArea == agwqma &  grepl("Coastal Contact Recreation", df.temp.ent2$bacteria_use)), c("Station_ID")])    
+  
+  # Create vector of stations inside bacteria_nonfreshwater polygon
+  df.temp.ent3 <- unique(c(Stations_in_poly(df.temp.ent, bacteria_nonfreshwater_shp, outside=FALSE), df.temp.ent2))
+ 
+  
+  # Use logic to remove the stations 
+  df.all <- df.all[!(!(df.all$Station_ID %in% df.temp.ent3) & df.all$Analyte == 'Enterococcus'),]
   
   
   df.all <- remove_QAfail(df.all)
