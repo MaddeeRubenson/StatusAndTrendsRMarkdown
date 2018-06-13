@@ -969,7 +969,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
     tss_plots[[i]]<-b
     
     print(tss_plots[[i]])
-    cat(figs(name = paste0('TSS_', tss_stn[i]), caption = paste0('Station: ', tss_stn[i], ' _Total Suspended Solids_ water quality status and trends**')))
+    cat(figs(name = paste0('TSS_', tss_stn[i]), caption = paste0('Station: ', tss_stn[i], ' _Total Suspended Solids_ water quality trends**')))
   } 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
 exc <- exc[,c(1:5)]
