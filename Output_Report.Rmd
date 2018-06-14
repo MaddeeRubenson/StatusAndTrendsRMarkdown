@@ -73,7 +73,7 @@ figs <- captioner(prefix="  \n**Figure")
 # how it is named in the agwqma shapefile ('agwqma_shp').
 agwqma <- "Umpqua River"
 query_dates <- c("2000-01-01", "2018-04-01")
-project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Umpqua River/2018/StatusAndTrendsRMarkdown"
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Umpqua River/2018-Umpqua-River"
 
 # Set to TRUE if knitting a word document
 word_output <- FALSE
@@ -420,27 +420,28 @@ For temperature trend analysis, analysts used data only from stations with eight
 * Average Monthly 7-day average daily maximum
 * Average Monthly daily degree hours > the applicable temperature standard. 
 
-Trends are more detectable with the average monthly daily degree hours that exceed the applicable temperature standard because the metric incorporates both magnitude and duration of temperatures; the 7-day average daily maximum only incorporates the magnitude of exceedance. Fish use and spawning maps  were used to determine the applicable temperature standards for the spawning and non-spawning time periods. The results of this report includes graphs for stations with data that exceeded a water quality criterion more than once and/or showed a positive or negative trend. When insufficient data were available, that was noted in the graphs. 
+Trends are more detectable with the average monthly daily degree hours that exceed the applicable temperature standard because the metric incorporates both magnitude and duration of temperatures; the 7-day average daily maximum only incorporates the magnitude of exceedance. Fish use and spawning maps were used to determine the applicable temperature standards for the spawning and non-spawning time periods. The results of this report includes graphs for stations with data that exceeded a water quality criterion more than once and/or showed a positive or negative trend. When data were insufficient, that was noted in the graphs. 
 
 # Results
 
 ## Station Locations
 Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` out of `r length(unique(df.all$Station_ID))` monitoring stations fit the criteria to assess water quality status and trends. The following maps show monitoring stations that fit the criteria within the watershed, all stations that were queried, land ownership, and landscape attributes. 
 
-```{r stations-map-word, eval = word_output, fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the North Coast AgWQ Management Area**")}
+```{r stations-map-word, fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the Umpqua River AgWQ Management Area**")}
 
-knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_map_file))
+knitr::include_graphics(path = "Figures/Umpqua_River_station_map.png")
 
 ```
 
+
 ## Land Use
 
-A land use analysis for catchments above all monitoring stations that fit the criteria to assess water quality status and/or trends was generated. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA (based on the National Hydrography Dataset Plus Version 2 geospatial framework) was used to summarize the cumulative upstream catchment of each station for primary land use characteristics. An informative representation of land use and land cover (NLCD 2011) is shown in the station locations map below. 
+A land use analysis for catchments above all monitoring stations that fit the criteria to assess water quality status and/or trends was generated. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA (based on the National Hydrography Dataset Plus Version 2 geospatial framework) was used to categorize land uses in the catchment upstream of each station. An informative representation of land use and land cover (NLCD 2011) is shown in the station locations map below. 
 
 
-```{r landuse-map-word, eval = word_output, fig.cap=figs(name="landusemap", caption="Land use and land cover within the North Coast AgWQ Management Area**")}
+```{r landuse-map-word, fig.cap=figs(name="landusemap", caption="Land use and land cover within the Umpqua River AgWQ Management Area**")}
 
-knitr::include_graphics(path = paste0(project_dir,"/Figures/",landuse_map_file))
+knitr::include_graphics(path = "Figures/Umpqua_River_landuse_map.png")
 
 ```
 
@@ -505,10 +506,10 @@ map
 ```
 
 
-Summary table of watershed land use by station. The stations included had at least 8 years of yearly data (between r` year(query_dates[1])` and `r year(query_dates[2])`) and/or were used to evaluate last known status. Source: 2011 NAIP
+Summary table of watershed land use by station. The stations included had at least 8 years of yearly data (between `r year(query_dates[1])` and `r year(query_dates[2])`) and/or were used to evaluate last known status. Source: 2011 NAIP
 
 
-```{r landuse-table}
+```{r landuse-table, results="asis"}
 
 stn_to_use<-c(unique(stns$Station_ID))
 
@@ -529,7 +530,7 @@ knitr::kable(landuse, digits = 0,
 ## Water Quality Limited Stream Segments
 Summary of Oregon's 2012 Integrated Report Assessment database and 303(d) list for parameters included in this report. Table based on the 2012 Integrated Report Listings by the EPA. Note that pH exceedances are values higher or lower than the given range.
 
-```{r wq-limited}
+```{r wq-limited, results="asis"}
 
 wq_lim_whole <- extract_303d(df.all, wq_limited, input$select)
 wq_lim_whole <- wq_lim_whole[,c('STREAM_LAK', 'LLID_STREA', 
@@ -565,7 +566,7 @@ For all monitoring stations with sufficient data (8 years or more), trending was
 
 <!-- Output for the Seasonal kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.   -->
 
-```{r Seasonal-Kendall}
+```{r Seasonal-Kendall, results="asis"}
 
 SK <- SeaKen %>% filter(Station_ID %in% unique(stns$Station_ID)) %>% 
   filter(signif !=  "Need at least 8 years") %>% 
@@ -581,7 +582,7 @@ if(nrow(SK) > 0) {
 
   colnames(SK) <- c("Station ID", "Analyte", "Slope", "p value", "Median", "N", "Significance Result")
   
-  knitr::kable(SK, padding = 2, format.args = list(scientific = TRUE), caption = tbls(name = "seakenTable", caption = "Output for the Seasonal Kendall analysis, which was performed on data that had at least 8 years of data between year(query_dates[1]) and year(query_dates[2]). Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.**"))
+  knitr::kable(SK, padding = 2, format.args = list(scientific = TRUE), caption = tbls(name = "seakenTable", caption = "Output for the Seasonal Kendall analysis, which was performed on stations with at least 8 years of data between year(query_dates[1]) and year(query_dates[2]). Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.**"))
 }
 
 ```
@@ -644,7 +645,7 @@ if(length(ecoli_stns) > 0) {
                        parm = unique(new_data$Analyte))
     
     print(b)
-    cat(figs(name = paste0('E_', ecoli_stns[j]), caption = paste0('Station: ', ecoli_stns[j], ' _E. Coli_ water quality status and/or trends**')))
+    cat(figs(name = paste0('E_', ecoli_stns[j]), caption = paste0('Station ', ecoli_stns[j], ' _E. Coli_ water quality status and/or trends**')))
     
   }
   
@@ -733,7 +734,7 @@ if(length(entero_stns) > 0) {
     print(entero_plots[[i]])
     
     cat(figs(name = paste0('Entero_', entero_stns[i]),
-             caption = paste0('Station: ', entero_stns[i], ' _Enterococcus_ water quality status and trends**')))
+             caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and trends**')))
   }
   
   knitr::kable(exc, padding = 2, digits = 1,
@@ -848,7 +849,7 @@ for (i in 1:length(tp_stn)) {
   tp_plots[[i]]<-b
   
   print(tp_plots[[i]])
-  cat(figs(name = paste0('TP_', tp_stn[i]), caption = paste0('Station: ', tp_stn[i], ' _Total Phosphorus_ water quality status and trends**')))
+  cat(figs(name = paste0('TP_', tp_stn[i]), caption = paste0('Station ', tp_stn[i], ' _Total Phosphorus_ water quality status and trends**')))
 } 
 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
@@ -969,7 +970,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
     tss_plots[[i]]<-b
     
     print(tss_plots[[i]])
-    cat(figs(name = paste0('TSS_', tss_stn[i]), caption = paste0('Station: ', tss_stn[i], ' _Total Suspended Solids_ water quality status and trends**')))
+    cat(figs(name = paste0('TSS_', tss_stn[i]), caption = paste0('Station ', tss_stn[i], ' _Total Suspended Solids_ water quality trends**')))
   } 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
 exc <- exc[,c(1:5)]
@@ -1098,7 +1099,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
       
       print(pH_plots[[i]])
       
-      cat(figs(name = paste0('pH_', pH_stn[i]), caption = paste0('Station: ', pH_stn[i], ' _pH_ water quality status and trends**')))
+      cat(figs(name = paste0('pH_', pH_stn[i]), caption = paste0('Station ', pH_stn[i], ' _pH_ water quality status and trends**')))
       
     } 
     
@@ -1233,7 +1234,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
             temp_plots[[i]]<-b
             
             print(temp_plots[[i]])
-            cat(figs(name = paste0('temp_', temp_stn[i]), caption = paste0('Station: ', temp_stn[i], ' _Temperature_ water quality status and trends**')))
+            cat(figs(name = paste0('temp_', temp_stn[i]), caption = paste0('Station ', temp_stn[i], ' _Temperature_ water quality status and trends**')))
             
           } else {
             print(paste("insufficient data to calculate sdadm at station:", temp_stn[i]))
@@ -1394,7 +1395,7 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
         DO_plots[[i]]<-b
         
         print(DO_plots[[i]])
-        cat(figs(name = paste0('DO_', DO_stn[i]), caption = paste0('Station: ', DO_stn[i], ' _Dissolved Oxygen_ water quality status and trends**')))
+        cat(figs(name = paste0('DO_', DO_stn[i]), caption = paste0('Station ', DO_stn[i], ' _Dissolved Oxygen_ water quality status and trends**')))
       }
     }
     
@@ -1428,7 +1429,7 @@ DO_exc <- exc
 # Summary 
 
 
-```{r DO-summary-map, eval = word_output, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
+```{r DO-summary-map, results = 'asis', eval = word_output, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
 
 knitr::include_graphics(paste0(project_dir,"/Figures/",station_summary_map_DO_file))
 
@@ -1466,7 +1467,7 @@ knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_ma
 
 ```
 
-```{r TSS-summary-map, eval = word_output, fig.cap=figs(name="TSS_map", caption="Summary of stations that fit the criteria for status and trend analysis for Total Suspended Solids. Trend was determined by significant trends associated with long-term datasets.**")}
+```{r TSS-summary-map, results = 'asis', eval = word_output, fig.cap=figs(name="TSS_map", caption="Summary of stations that fit the criteria for status and trend analysis for Total Suspended Solids. Trend was determined by significant trends associated with long-term datasets.**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_tss_file))
 
@@ -1474,11 +1475,10 @@ knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_ma
 
 Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last three years of available data defined whether a station was 'Meeting' or 'Not Meeting'. Trend was determined by significant trends associated with long-term datasets.
 
-```{r parm-summary-table}
+```{r parm-summary-table, results = 'asis'}
 
 stns_param_summary <-  parm_summary(stns = stns[,c(1:4)],
                             ecoli = ecoli,
-                            entero = entero,
                             pH = pH,
                             DO_eval = DO_eval,
                             temp = temp,
@@ -1621,7 +1621,7 @@ conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 
 
 # Appendix
 
-```{r appendix}
+```{r appendix, results="asis"}
 
 org_summary <- summarizeByOrg(df.all)
 

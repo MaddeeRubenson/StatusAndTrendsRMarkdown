@@ -1,8 +1,8 @@
 ---
 title: ""
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-author: ""
-date: ""
+author: "Brian Creutzburg"
+date: "April 2018"
 output: 
   word_document:
     reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
@@ -42,9 +42,9 @@ figs <- captioner(prefix="  \n**Figure")
 
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_shp').
-agwqma <- "North Coast"
-query_dates <- c("2000-01-01", "2018-03-01")
-project_dir <- "Y:/Agriculture/Status_and_Trend_Analysis/North Coast/2018-North-Coast"
+agwqma <- "Umpqua River"
+query_dates <- c("2000-01-01", "2018-04-01")
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Umpqua River/2018-Umpqua-River"
 
 
 word_output <- TRUE
@@ -75,15 +75,20 @@ station_summary_map_tp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_
 
 ```{r load-dataframes, include=FALSE}
 
-load(paste0(Rdata_dir, "/", df_all_file))
+load(paste0(Rdata_dir, "/", df_all_clean_file))
 load(paste0(Rdata_dir, "/", landuse_file))
 load(paste0(Rdata_dir, "/", stns_file))
 load(paste0(Rdata_dir, "/", status_file))
 load(paste0(Rdata_dir, "/", trend_file))
 load(paste0(Rdata_dir, "/", stns_param_summary_file))
 
-Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
+```
 
+```{r lookup-imports}
+
+# import github Lookups
+
+Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
 ```
 
 # Executive Summary
@@ -154,7 +159,7 @@ knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name =
 
 ```{r parm-summary-table}
 
-knitr::kable(stns_param_summary_tbl, padding = 2, digits = 3, 
+knitr::kable(stns_param_summary, format = "markdown",  padding = 2, digits = 3, 
              caption = tbls(name = "parmSumTable", 
                             caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen**"))
 
@@ -207,14 +212,14 @@ knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_ma
 
 ```{r conclusions-setup}
 
-conclusions.DO <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "DO"), c("conclusion")]
-conclusions.Ecoli <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Ecoli"), c("conclusion")]
-conclusions.Entero <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Entero"), c("conclusion")]
-conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "pH"), c("conclusion")]
-conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Temp"), c("conclusion")]
-conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TP"), c("conclusion")]
-conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TSS"), c("conclusion")]
-conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc"), c("conclusion")]
+conclusions.DO <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "DO"), c("conclusion")]
+conclusions.Ecoli <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Ecoli"), c("conclusion")]
+conclusions.Entero <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Entero"), c("conclusion")]
+conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "pH"), c("conclusion")]
+conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Temp"), c("conclusion")]
+conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "TP"), c("conclusion")]
+conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "TSS"), c("conclusion")]
+conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Add_conc"), c("conclusion")]
 
 ```
 
