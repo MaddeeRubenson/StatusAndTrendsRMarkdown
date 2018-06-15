@@ -1512,7 +1512,8 @@ plot.TSS<-function(new_data,
    ##PLOT THE TIMESERIES
 if(selectWQSTSS != 0){ #Allocation
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point(aes(color = exceed)) + theme_gdocs() + theme(axis.title = elem_text) +
+    geom_point(aes(color = exceed)) +
+    theme_gdocs() + theme(axis.title = elem_text) +
     xlim(x.lim) +
     ylim(y.lim) +
     theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
@@ -1523,7 +1524,8 @@ if(selectWQSTSS != 0){ #Allocation
     xlab(x.lab) +
     ylab(y.lab) 
     
-  g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
+  g <- g + geom_line(data = d, aes(x=x, y=y, color=variable), linetype="dashed")
+  
 } else { #no allocation 
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
     geom_point() + theme_gdocs() + theme(axis.title = elem_text) +
@@ -1555,7 +1557,8 @@ if(selectWQSTSS != 0){ #Allocation
        } else {
          g <- g + scale_color_manual("", values = c('red', 'black', 'blue', 'black'),
                                        guide = guide_legend(override.aes = list(
-                                       linetype = c('solid', 'solid', 'solid', 'solid'))))
+                                       linetype = c('blank', 'blank', 'solid', 'dashed'),
+                                       shape = c(16, 16, NA, NA))))
         }
       } else { #without exceedances
       g <- g + scale_color_manual("", values = c('blue', 'black', 'black'),
