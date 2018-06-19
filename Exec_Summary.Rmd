@@ -207,14 +207,14 @@ knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_ma
 
 ```{r conclusions-setup}
 
-conclusions.DO <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "DO"), c("conclusion")]
-conclusions.Ecoli <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Ecoli"), c("conclusion")]
-conclusions.Entero <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Entero"), c("conclusion")]
-conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "pH"), c("conclusion")]
-conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Temp"), c("conclusion")]
-conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TP"), c("conclusion")]
-conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TSS"), c("conclusion")]
-conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc"), c("conclusion")]
+conclusions.DO <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "DO"), c("conclusion")]
+conclusions.Ecoli <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Ecoli"), c("conclusion")]
+conclusions.Entero <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Entero"), c("conclusion")]
+conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "pH"), c("conclusion")]
+conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Temp"), c("conclusion")]
+conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "TP"), c("conclusion")]
+conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "TSS"), c("conclusion")]
+conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Add_conc"), c("conclusion")]
 
 ```
 
