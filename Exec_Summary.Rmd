@@ -44,7 +44,7 @@ figs <- captioner(prefix="  \n**Figure")
 # how it is named in the agwqma shapefile ('agwqma_shp').
 agwqma <- "North Coast"
 query_dates <- c("2000-01-01", "2018-03-01")
-project_dir <- "Y:/Agriculture/Status_and_Trend_Analysis/North Coast/2018-North-Coast"
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/North Coast/2018-North-Coast"
 
 
 word_output <- TRUE
@@ -75,7 +75,7 @@ station_summary_map_tp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_
 
 ```{r load-dataframes, include=FALSE}
 
-load(paste0(Rdata_dir, "/", df_all_file))
+load(paste0(Rdata_dir, "/", df_all_clean_file))
 load(paste0(Rdata_dir, "/", landuse_file))
 load(paste0(Rdata_dir, "/", stns_file))
 load(paste0(Rdata_dir, "/", status_file))
