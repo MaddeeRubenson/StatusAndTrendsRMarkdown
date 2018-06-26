@@ -133,6 +133,7 @@ update_fc2ec <- function (df.all, fc2ec.stations) {
   return(df.all)
 }
 
+
 remove_QAfail <- function (df.all) {
   #Removes data that does not meet QA objectives and keeps track of 
   #data removed from parent data frame
