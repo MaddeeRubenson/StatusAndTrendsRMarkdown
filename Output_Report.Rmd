@@ -455,21 +455,36 @@ Trends are more detectable with the average monthly daily degree hours that exce
 
 `r length(unique(stns$Station_ID))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r agwqma` AgWQ Management Area 
 
-`r tbls(name = "resutltsTable", caption = paste0("Monitoring stations with sufficient data to assess status and/or trends within the ", agwqma, " AgWQ Management Area.**")`
- Analyte         | Number of stations w/ sufficent data for status analysis | Number of stations w/ sufficent data for trend analysis
- ----------------|----------------------------------------------------- | ----------------------------------------------------
- Bacteria        | `r nrow(unique(status[status$Analyte == "E. Coli", ]))` | `r nrow(unique(trend[trend$Analyte == "E. Coli", ]))`
- Temperature     | `r nrow(unique(status[status$Analyte == "Temperature", ]))` | `r nrow(unique(trend[trend$Analyte == "Temperature", ]))`
- Dissolved Oxygen| `r nrow(unique(status[status$Analyte == "Dissolved Oxygen", ]))` | `r nrow(unique(trend[trend$Analyte == "Dissolved Oxygen", ]))`
- pH              | `r nrow(unique(status[status$Analyte == "pH", ]))` | `r nrow(unique(trend[trend$Analyte == "pH",]))`
- TSS             | `r nrow(unique(status[status$Analyte == "Total Suspended Solids", ]))` | `r nrow(unique(trend[trend$Analyte == "Total Suspended Solids", ]))`
- Total Phosphorus| `r nrow(unique(status[status$Analyte == "Total Phosphorus", ]))` | `r nrow(unique(trend[trend$Analyte == "Total Phosphorus", ]))`
+```{r results-summary, results='asis'}
+
+station_summary_tbl <- data.frame(Analyte=c("Ecoli","Enterococcus","Dissolved Oxygen","pH","Temperature","Total Phosphorus","TSS"),
+                                  status=c(nrow(unique(status[status$Analyte == "E. Coli", ])),
+                                           nrow(unique(status[status$Analyte == "Enterococcus", ])),
+                                           nrow(unique(status[status$Analyte == "Dissolved Oxygen", ])),
+                                           nrow(unique(status[status$Analyte == "pH", ])),
+                                           nrow(unique(status[status$Analyte == "Temperature", ])),
+                                           nrow(unique(status[status$Analyte == "Total Phosphorus", ])),
+                                           nrow(unique(status[status$Analyte == "Total Suspended Solids", ]))
+                                           ),
+                                  trends=c(nrow(unique(trend[trend$Analyte == "E. Coli", ])),
+                                           nrow(unique(trend[trend$Analyte == "Enterococcus", ])),
+                                           nrow(unique(trend[trend$Analyte == "Dissolved Oxygen", ])),
+                                           nrow(unique(trend[trend$Analyte == "pH",])),
+                                           nrow(unique(trend[trend$Analyte == "Temperature", ])),
+                                           nrow(unique(trend[trend$Analyte == "Total Phosphorus", ])),
+                                           nrow(unique(trend[trend$Analyte == "Total Suspended Solids", ]))
+                                           ))
+colnames(station_summary_tbl) <- c("Analyte", "Number of stations w/ sufficent data for status analysis", "Number of stations w/ sufficent data for trend analysis")                                  
+
+knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name = "StnSumTable", caption = "Summary of stations with suffcient data for status or trend analysis"))                                 
+
+```
 
 ## Station Locations
 
 Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` out of `r length(unique(df.all$Station_ID))` monitoring stations fit the criteria to assess water quality status and trends. The following maps show monitoring stations that fit the criteria within the watershed, all stations that were queried, land ownership, and landscape attributes. 
 
-```{r stations-map-word, eval = word_output, results = "asis", eval= fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the Umpqua River AgWQ Management Area**")}
+```{r stations-map-word, eval = word_output, results = "asis", fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the Umpqua River AgWQ Management Area**")}
 
 knitr::include_graphics(path = "Figures/Umpqua_River_station_map.png")
 
@@ -1602,6 +1617,7 @@ trendIcon <- function(trendColumn) {
   }, USE.NAMES = FALSE)
 }
 
+# Create function to pull the selected parameter's status and trend and create a popup table for the station. This function is called on the click of a station marker in the parameter summary map.
 popupTable <- function(param){
   table <- paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
                     lapply(rownames(stns_param_summary), 
