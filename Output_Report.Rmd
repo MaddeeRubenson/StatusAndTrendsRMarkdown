@@ -152,6 +152,8 @@ ph_crit <- merge(ph_crit, HUClist, by.x = 'plan_name', by.y = 'PlanName', all.x 
 # import GIS features
 agwqma_shp <- readOGR(dsn = support_files_dir, layer = 'ODA_AgWQMA', integer64="warn.loss", verbose = FALSE)
 tribal_lands_shp <- readOGR(dsn = support_files_dir, layer = 'tl_2017_or_aiannh', integer64="warn.loss", verbose = FALSE)
+wql_streams_shp <- readOGR(dsn = support_files_dir, layer = 'WQL_Streams_2012', integer64="warn.loss", verbose = FALSE)
+wql_streams_shp <- spTransform(wql_streams_shp, CRS("+proj=longlat +datum=NAD83"))
 
 # BTD Import Bacteria nonfreshwater GIS feature
 bacteria_nonfreshwater_shp <- readOGR(dsn = support_files_dir, layer = 'bacteria_nonfreshwater', integer64="warn.loss", verbose = FALSE)
@@ -451,29 +453,56 @@ Trends are more detectable with the average monthly daily degree hours that exce
 
 # Results
 
+`r length(unique(stns$Station_ID))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r agwqma` AgWQ Management Area 
+
+```{r results-summary, results='asis'}
+
+station_summary_tbl <- data.frame(Analyte=c("Ecoli","Enterococcus","Dissolved Oxygen","pH","Temperature","Total Phosphorus","TSS"),
+                                  status=c(nrow(unique(status[status$Analyte == "E. Coli", ])),
+                                           nrow(unique(status[status$Analyte == "Enterococcus", ])),
+                                           nrow(unique(status[status$Analyte == "Dissolved Oxygen", ])),
+                                           nrow(unique(status[status$Analyte == "pH", ])),
+                                           nrow(unique(status[status$Analyte == "Temperature", ])),
+                                           nrow(unique(status[status$Analyte == "Total Phosphorus", ])),
+                                           nrow(unique(status[status$Analyte == "Total Suspended Solids", ]))
+                                           ),
+                                  trends=c(nrow(unique(trend[trend$Analyte == "E. Coli", ])),
+                                           nrow(unique(trend[trend$Analyte == "Enterococcus", ])),
+                                           nrow(unique(trend[trend$Analyte == "Dissolved Oxygen", ])),
+                                           nrow(unique(trend[trend$Analyte == "pH",])),
+                                           nrow(unique(trend[trend$Analyte == "Temperature", ])),
+                                           nrow(unique(trend[trend$Analyte == "Total Phosphorus", ])),
+                                           nrow(unique(trend[trend$Analyte == "Total Suspended Solids", ]))
+                                           ))
+colnames(station_summary_tbl) <- c("Analyte", "Number of stations w/ sufficent data for status analysis", "Number of stations w/ sufficent data for trend analysis")                                  
+
+knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name = "StnSumTable", caption = "Summary of stations with suffcient data for status or trend analysis"))                                 
+
+```
+
 ## Station Locations
+
 Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` out of `r length(unique(df.all$Station_ID))` monitoring stations fit the criteria to assess water quality status and trends. The following maps show monitoring stations that fit the criteria within the watershed, all stations that were queried, land ownership, and landscape attributes. 
 
-```{r stations-map-word, fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the Umpqua River AgWQ Management Area**")}
+```{r stations-map-word, eval = word_output, results = "asis", fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the Umpqua River AgWQ Management Area**")}
 
 knitr::include_graphics(path = "Figures/Umpqua_River_station_map.png")
 
 ```
-
 
 ## Land Use
 
 A land use analysis for catchments above all monitoring stations that fit the criteria to assess water quality status and/or trends was generated. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA (based on the National Hydrography Dataset Plus Version 2 geospatial framework) was used to categorize land uses in the catchment upstream of each station. An informative representation of land use and land cover (NLCD 2011) is shown in the station locations map below. 
 
 
-```{r landuse-map-word, fig.cap=figs(name="landusemap", caption="Land use and land cover within the Umpqua River AgWQ Management Area**")}
+```{r landuse-map-word, eval = word_output, results = "asis", fig.cap=figs(name="landusemap", caption="Land use and land cover within the Umpqua River AgWQ Management Area**")}
 
 knitr::include_graphics(path = "Figures/Umpqua_River_landuse_map.png")
 
 ```
 
 
-```{r landuse-map-html, results= 'asis', eval = !(word_output)}
+```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=10, fig.height=8}
 
 agarea_shp <- agwqma_shp[agwqma_shp$PlanName == input$select,]
 agarea_shp <-spTransform(agarea_shp, CRS("+proj=longlat +datum=NAD83"))
@@ -1000,7 +1029,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
     cat(figs(name = paste0('TSS_', tss_stn[i]), caption = paste0('Station ', tss_stn[i], ' _Total Suspended Solids_ water quality trends**')))
   } 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
-exc <- exc[,c(1:5)]
+# exc <- exc[,c(1:5)]
   knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "tssExcTable", caption = "Total Suspended Solids observations**"))
 
 # }else {
@@ -1463,32 +1492,32 @@ knitr::include_graphics(paste0(project_dir,"/Figures/",station_summary_map_DO_fi
 ```
 
 
-```{r Ecoli-summary-map, eval = word_output, fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for E. coli.**")}
+```{r Ecoli-summary-map, eval = word_output, results='asis', fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for E. coli.**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_ecoli_file))
 
 ```
 
-```{r Entero-summary-map, eval = word_output, fig.cap=figs(name="Entero_map", caption="Summary of stations that fit the criteria for status and trend analysis for Enterococcus. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
+```{r Entero-summary-map, eval = word_output, results='asis', fig.cap=figs(name="Entero_map", caption="Summary of stations that fit the criteria for status and trend analysis for Enterococcus. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_entero_file))
 
 ```
 
-```{r Temp-summary-map, eval = word_output, fig.cap=figs(name="Temperature_map", caption="Summary of stations that fit the criteria for status and trend analysis for temperature. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
+```{r Temp-summary-map, eval = word_output, results='asis', fig.cap=figs(name="Temperature_map", caption="Summary of stations that fit the criteria for status and trend analysis for temperature. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_temp_file))
 
 ```
 
-```{r ph-summary-map, eval = word_output, fig.cap=figs(name="pH_map", caption="Summary of stations that fit the criteria for status and trend analysis for pH. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
+```{r ph-summary-map, eval = word_output, results='asis', fig.cap=figs(name="pH_map", caption="Summary of stations that fit the criteria for status and trend analysis for pH. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_pH_file))
 
 ```
 
 
-```{r TP-summary-map, eval = word_output, fig.cap=figs(name="TP_map", caption="Summary of stations that fit the criteria for trend analysis for Total Phosphorus.  Trend was determined by significant trends associated with long-term datasets.**")}
+```{r TP-summary-map, eval = word_output, results='asis', fig.cap=figs(name="TP_map", caption="Summary of stations that fit the criteria for trend analysis for Total Phosphorus.  Trend was determined by significant trends associated with long-term datasets.**")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_tp_file))
 
@@ -1500,7 +1529,7 @@ knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_ma
 
 ```
 
-Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last three years of available data defined whether a station was 'Meeting' or 'Not Meeting'. Trend was determined by significant trends associated with long-term datasets.
+Summary of stations that fit the criteria for status and/or trend analysis. One or more exceedances within the last three years of available data defined whether a station was 'Meeting' or 'Not Meeting'. Trend was determined by significant trends associated with long-term datasets.
 
 ```{r parm-summary-table, results = 'asis'}
 
@@ -1551,67 +1580,150 @@ colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
 
 save(stns_param_summary, file=paste0(Rdata_dir,"/", stns_param_summary_file))
 
-knitr::kable(stns_param_summary, format = "markdown",  padding = 2, digits = 3, 
+knitr::kable(stns_param_summary, 
+             # format = "markdown",  
+             padding = 2, digits = 3, 
              caption = tbls(name = "parmSumTable", 
                             caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen**"))
 
 ```
 
-```{r parm-summary-map-html, results = 'asis', eval = !(word_output)}
+```{r parm-summary-map-html, results = 'asis', eval = !(word_output), fig.width=10, fig.height=8}
 
-agarea_shp <- agwqma_shp[agwqma_shp$PlanName == input$select,]
-agarea_shp <-spTransform(agarea_shp, CRS("+proj=longlat +datum=NAD83"))
+library(base64enc)
+ 
+statusColor <- function(statusColumn) {
+  sapply(statusColumn, function(x){
+    if(x == "Meets"){
+      "green"
+    } else if(x == "Exceeds"){
+      "orange"
+    } else {"lightgray"}
+  }, USE.NAMES = FALSE)
+}
 
-# format for map by removing status col for TP and TSS
-stns_param_summary_map <- dplyr::select(stns_param_summary, -c(TP_S, TSS_S))
+trendIcon <- function(trendColumn) {
+  sapply(trendColumn, function(x){
+    if(x == "Improving"){
+      "glyphicon-arrow-up"
+    } else if(x == "Degrading"){
+      "glyphicon-arrow-down"
+    } else if(x == "No Sig Trend"){
+      "glyphicon-minus"
+    } else if(x == "Steady") {
+      "glyphicon-arrow-right"
+    }
+    else {""}
+  }, USE.NAMES = FALSE)
+}
 
-colnames(stns_param_summary_map) <- c("Station ID", "Station Description",
-                                  "Latitude", "Longitude",
-                                  "E.coli Status", "E.coli Trend", 
-                                  "Enterococcus Status", "Enterococcus Trend",
-                                  "DO Status", "DO Trend",
-                                  "pH Status", "pH Trend", 
-                                  "Temperature Status", "Temperature Trend",
-                                  "TP Trend", 
-                                  "TSS Trend")
+# Create function to pull the selected parameter's status and trend and create a popup table for the station. This function is called on the click of a station marker in the parameter summary map.
+popupTable <- function(param){
+  table <- paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
+                    lapply(rownames(stns_param_summary), 
+                           function(row) {
+                             htmlTable::htmlTable(stns_param_summary[row,c("Station ID", "Station Description",
+                                                                           paste(param, "Status"), paste(param, "Trend"))],
+                                                                           # "Ecoli Status", "Ecoli Trend",
+                                                                           # "Temperature Status", "Temperature Trend", 
+                                                                           # "pH Status", "pH Trend", 
+                                                                           # "DO Status", "DO Trend")
+                                                  header = c("Station ID", "Station Description",
+                                                             paste(param, "Status"), paste(param, "Trend")),
+                                                             # "Ecoli Status", "Ecoli Trend",
+                                                             # "Temperature Status", "Temperature Trend", 
+                                                             # "pH Status", "pH Trend", 
+                                                             # "DO Status", "DO Trend"),
+                                                  rnames = FALSE)
+                           }))
+  return(table)
+}
 
-marker_colnames <- c("Station ID", "Station Description", 
-                     "E.coli Status", "E.coli Trend", 
-                     "Enterococcus Status", "Enterococcus Trend",
-                     "DO Status", "DO Trend",
-                     "pH Status", "pH Trend", 
-                     "Temperature Status", "Temperature Trend", 
-                     "TP Trend", 
-                     "TSS Trend")
+# agarea_shp <- spTransform(agarea_shp, CRS("+init=epsg:3347"))
+agarea_shp_buff <- gBuffer(agwqma_shp[agwqma_shp$PlanName == input$select,], width=500)
+agarea_shp_buff <- spTransform(agarea_shp_buff, CRS("+init=epsg:4326"))
+agarea_shp <- spTransform(agarea_shp, CRS("+init=epsg:4326"))
+wql_streams_shp <- spTransform(wql_streams_shp, proj4string(agarea_shp_buff))
+wql_streams_clip <- raster::intersect(wql_streams_shp, agarea_shp_buff)
 
+lgnd <- base64enc::base64encode(paste0(project_dir, "/Figures/", "Parm_Summary_mapLegend.png"))
 
-map2 <- leaflet(agarea_shp) %>%
-  addPolygons() %>%
-  addTiles() %>%
-  addMarkers(lng = stns_param_summary_map$Longitude,
-             lat = stns_param_summary_map$Latitude,
-             popup = paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
-                           lapply(rownames(stns_param_summary_map), 
-                                  function(row) {
-                                    htmlTable::htmlTable(stns_param_summary_map[row, marker_colnames],
-                                                         header = marker_colnames,
-                                                         rnames = FALSE)
-                                  })),
-             group = 'Station Result Summary') %>%
-            addWMSTiles(GetURL("USGSTopo"),
-                        attribution = paste0("<a href='https://www.usgs.gov/'>",
-                                             "U.S. Geological Survey</a> | ",
-                                             "<ahref='https://www.usgs.gov/laws/policies_notices.html'>",
-                                             "Policies</a>"),
-                         group = "USGS Topo", layers = "0") %>%
-             addWMSTiles(GetURL("USGSHydroCached"),
-                         group = "Hydrography",
-                         options = WMSTileOptions(format = "image/png",
-                                                  transparent = TRUE),
-                         layers = "0") %>%
-            hideGroup("Hydropgraphy")
-map2
-
+leaflet(agarea_shp) %>%
+# leaflet(agarea_shp) %>%
+  # addTiles() %>%
+  addWMSTiles(GetURL("USGSTopo"),
+              attribution = paste0("<a href='https://www.usgs.gov/'>",
+                                   "U.S. Geological Survey</a> | ",
+                                   "<ahref='https://www.usgs.gov/laws/policies_notices.html'>",
+                                   "Policies</a>"),
+              group = "USGS Topo", layers = "0") %>%
+  addWMSTiles(GetURL("USGSHydroCached"),
+              group = "Hydrography",
+              options = WMSTileOptions(format = "image/png",
+                                       transparent = TRUE),
+              layers = "0") %>%
+  addPolygons(fill=FALSE, group = "AgWQMA") %>%
+  addAwesomeMarkers(data = stns_param_summary,
+                    lat = stns_param_summary$Latitude,
+                    lng = stns_param_summary$Longitude,
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Ecoli Trend`),
+                                        iconColor = 'black',
+                                        library = 'glyphicon',
+                                        markerColor = statusColor(stns_param_summary$`Ecoli Status`)),
+                    popup = popupTable("Ecoli"),
+                    group = "Ecoli"
+  ) %>%
+  addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "E. Coli",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
+               weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Ecoli") %>%
+  addAwesomeMarkers(data = stns_param_summary,
+                    lat = stns_param_summary$Latitude,
+                    lng = stns_param_summary$Longitude,
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Temperature Trend`),
+                                        iconColor = 'black',
+                                        library = 'glyphicon',
+                                        markerColor = statusColor(stns_param_summary$`Temperature Status`)),
+                    popup = popupTable("Temperature"),
+                    group = "Temperature"
+  ) %>% 
+  addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "Temperature",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
+               weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Temperature") %>%
+  addAwesomeMarkers(data = stns_param_summary,
+                    lat = stns_param_summary$Latitude,
+                    lng = stns_param_summary$Longitude,
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`pH Trend`),
+                                        iconColor = 'black',
+                                        library = 'glyphicon',
+                                        markerColor = statusColor(stns_param_summary$`pH Status`)),
+                    popup = popupTable("pH"),
+                    group = "pH"
+  ) %>% 
+  addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "pH",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
+               weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "pH") %>%
+  addAwesomeMarkers(data = stns_param_summary,
+                    lat = stns_param_summary$Latitude,
+                    lng = stns_param_summary$Longitude,
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`DO Trend`),
+                                        iconColor = 'black',
+                                        library = 'glyphicon',
+                                        markerColor = statusColor(stns_param_summary$`DO Status`)),
+                    popup = popupTable("DO"),
+                    group = "Dissolved Oxygen"
+  ) %>%
+  addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "Dissolved Oxygen",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
+               weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Dissolved Oxygen") %>%
+  addLayersControl(baseGroups = c("Ecoli", "Temperature", "pH", "Dissolved Oxygen"),
+                   overlayGroups = c("Hydrography"), options = layersControlOptions(collapsed = FALSE)) %>%
+  hideGroup("Hydrography") %>% 
+  addControl(position = "bottomleft", 
+             html = sprintf('<html><body><div style="opacity:0.8">
+                                        <img width="350" height="175" src="data:image/png;base64,%s">
+                            </div></body></html>', lgnd)) %>%
+  addEasyButton(easyButton(
+    icon = "fa-globe",
+    onClick = JS("function(btn, map){
+                var groupLayer = map.layerManager.getLayerGroup('AgWQMA');
+                map.fitBounds(groupLayer.getBounds());
+                 }")))
 
 ```
 
@@ -1626,7 +1738,7 @@ conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "
 conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Temp"), c("conclusion")]
 conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TP"), c("conclusion")]
 conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TSS"), c("conclusion")]
-conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc"), c("conclusion")]
+conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc"), c("conclusion", "sub.conclusion")]
 
 ```
 
@@ -1643,7 +1755,7 @@ conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 
 
 **Additional Conclusions:**
 
-`r paste0("* ",conclusions.add,"\n", collapse="")`
+`r paste0(ifelse(!is.na(conclusions.add[,1]), paste0("* ", conclusions.add[,1], "\n"), ""), ifelse(!is.na(conclusions.add[,2]), paste0("    + ", conclusions.add[,2]), ""), "\n", collapse="")`
 
 
 # Appendix
