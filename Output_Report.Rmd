@@ -1622,14 +1622,14 @@ popupTable <- function(param){
   table <- paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
                     lapply(rownames(stns_param_summary), 
                            function(row) {
-                             htmlTable::htmlTable(stns_param_summary[row,c("Station ID", "Station Description",
-                                                                           paste(param, "Status"), paste(param, "Trend"))],
+                             htmlTable::htmlTable(stns_param_summary[row,c("Station_ID", "Station_Description",
+                                                                           paste0(param, "_S"), paste0(param, "_T"))],
                                                                            # "Ecoli Status", "Ecoli Trend",
                                                                            # "Temperature Status", "Temperature Trend", 
                                                                            # "pH Status", "pH Trend", 
                                                                            # "DO Status", "DO Trend")
-                                                  header = c("Station ID", "Station Description",
-                                                             paste(param, "Status"), paste(param, "Trend")),
+                                                  header = c("Station_ID", "Station_Description",
+                                                             paste0(param, " Status"), paste0(param, " Trend")),
                                                              # "Ecoli Status", "Ecoli Trend",
                                                              # "Temperature Status", "Temperature Trend", 
                                                              # "pH Status", "pH Trend", 
@@ -1666,10 +1666,10 @@ leaflet(agarea_shp) %>%
   addAwesomeMarkers(data = stns_param_summary,
                     lat = stns_param_summary$DECIMAL_LAT,
                     lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Ecoli Trend`),
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Ecoli_T`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`Ecoli Status`)),
+                                        markerColor = statusColor(stns_param_summary$`Ecoli_S`)),
                     popup = popupTable("Ecoli"),
                     group = "Ecoli"
   ) %>%
@@ -1678,11 +1678,11 @@ leaflet(agarea_shp) %>%
   addAwesomeMarkers(data = stns_param_summary,
                     lat = stns_param_summary$DECIMAL_LAT,
                     lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Temperature Trend`),
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Temp_T`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`Temperature Status`)),
-                    popup = popupTable("Temperature"),
+                                        markerColor = statusColor(stns_param_summary$`Temp_S`)),
+                    popup = popupTable("Temp"),
                     group = "Temperature"
   ) %>% 
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "Temperature",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
@@ -1690,10 +1690,10 @@ leaflet(agarea_shp) %>%
   addAwesomeMarkers(data = stns_param_summary,
                     lat = stns_param_summary$DECIMAL_LAT,
                     lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`pH Trend`),
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`pH_T`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`pH Status`)),
+                                        markerColor = statusColor(stns_param_summary$`pH_S`)),
                     popup = popupTable("pH"),
                     group = "pH"
   ) %>% 
@@ -1702,10 +1702,10 @@ leaflet(agarea_shp) %>%
   addAwesomeMarkers(data = stns_param_summary,
                     lat = stns_param_summary$DECIMAL_LAT,
                     lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`DO Trend`),
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`D_T`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`DO Status`)),
+                                        markerColor = statusColor(stns_param_summary$`DO_S`)),
                     popup = popupTable("DO"),
                     group = "Dissolved Oxygen"
   ) %>%
