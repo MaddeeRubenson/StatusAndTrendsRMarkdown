@@ -1664,8 +1664,8 @@ leaflet(agarea_shp) %>%
               layers = "0") %>%
   addPolygons(fill=FALSE, group = "AgWQMA") %>%
   addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$Latitude,
-                    lng = stns_param_summary$Longitude,
+                    lat = stns_param_summary$DECIMAL_LAT,
+                    lng = stns_param_summary$DECIMAL_LONG,
                     icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Ecoli Trend`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
@@ -1676,8 +1676,8 @@ leaflet(agarea_shp) %>%
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "E. Coli",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Ecoli") %>%
   addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$Latitude,
-                    lng = stns_param_summary$Longitude,
+                    lat = stns_param_summary$DECIMAL_LAT,
+                    lng = stns_param_summary$DECIMAL_LONG,
                     icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Temperature Trend`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
@@ -1688,8 +1688,8 @@ leaflet(agarea_shp) %>%
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "Temperature",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Temperature") %>%
   addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$Latitude,
-                    lng = stns_param_summary$Longitude,
+                    lat = stns_param_summary$DECIMAL_LAT,
+                    lng = stns_param_summary$DECIMAL_LONG,
                     icon = awesomeIcons(icon = trendIcon(stns_param_summary$`pH Trend`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
@@ -1700,8 +1700,8 @@ leaflet(agarea_shp) %>%
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "pH",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "pH") %>%
   addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$Latitude,
-                    lng = stns_param_summary$Longitude,
+                    lat = stns_param_summary$DECIMAL_LAT,
+                    lng = stns_param_summary$DECIMAL_LONG,
                     icon = awesomeIcons(icon = trendIcon(stns_param_summary$`DO Trend`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
