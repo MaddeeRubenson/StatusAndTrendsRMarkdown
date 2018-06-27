@@ -1,6 +1,6 @@
 ---
-title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Oregon DEQ Water Quality Status and Trends report for the Curry County AgWQ Management Area'
-date: May 2018
+title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Oregon DEQ Water Quality Status and Trends report for the Lower Willamette AgWQ Management Area'
+date: June 2018
 output:
   word_document:
     fig_caption: yes
@@ -71,9 +71,9 @@ figs <- captioner(prefix="  \n**Figure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_shp').
 
-agwqma <- "Umpqua River"
-query_dates <- c("2000-01-01", "2018-04-01")
-project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Umpqua River/2018-Umpqua-River"
+agwqma <- "Lower Willamette"
+query_dates <- c("2000-01-01", "2018-06-01")
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Lower Willamette/2018-Lower-Willamette"
 
 # Set to TRUE if knitting a word document
 word_output <- FALSE
@@ -1622,14 +1622,14 @@ popupTable <- function(param){
   table <- paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
                     lapply(rownames(stns_param_summary), 
                            function(row) {
-                             htmlTable::htmlTable(stns_param_summary[row,c("Station ID", "Station Description",
-                                                                           paste(param, "Status"), paste(param, "Trend"))],
+                             htmlTable::htmlTable(stns_param_summary[row,c("Station_ID", "Station_Description",
+                                                                           paste0(param, "_S"), paste0(param, "_T"))],
                                                                            # "Ecoli Status", "Ecoli Trend",
                                                                            # "Temperature Status", "Temperature Trend", 
                                                                            # "pH Status", "pH Trend", 
                                                                            # "DO Status", "DO Trend")
-                                                  header = c("Station ID", "Station Description",
-                                                             paste(param, "Status"), paste(param, "Trend")),
+                                                  header = c("Station_ID", "Station_Description",
+                                                             paste0(param, " Status"), paste0(param, " Trend")),
                                                              # "Ecoli Status", "Ecoli Trend",
                                                              # "Temperature Status", "Temperature Trend", 
                                                              # "pH Status", "pH Trend", 
@@ -1664,48 +1664,48 @@ leaflet(agarea_shp) %>%
               layers = "0") %>%
   addPolygons(fill=FALSE, group = "AgWQMA") %>%
   addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$Latitude,
-                    lng = stns_param_summary$Longitude,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Ecoli Trend`),
+                    lat = stns_param_summary$DECIMAL_LAT,
+                    lng = stns_param_summary$DECIMAL_LONG,
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Ecoli_T`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`Ecoli Status`)),
+                                        markerColor = statusColor(stns_param_summary$`Ecoli_S`)),
                     popup = popupTable("Ecoli"),
                     group = "Ecoli"
   ) %>%
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "E. Coli",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Ecoli") %>%
   addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$Latitude,
-                    lng = stns_param_summary$Longitude,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Temperature Trend`),
+                    lat = stns_param_summary$DECIMAL_LAT,
+                    lng = stns_param_summary$DECIMAL_LONG,
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Temp_T`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`Temperature Status`)),
-                    popup = popupTable("Temperature"),
+                                        markerColor = statusColor(stns_param_summary$`Temp_S`)),
+                    popup = popupTable("Temp"),
                     group = "Temperature"
   ) %>% 
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "Temperature",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Temperature") %>%
   addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$Latitude,
-                    lng = stns_param_summary$Longitude,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`pH Trend`),
+                    lat = stns_param_summary$DECIMAL_LAT,
+                    lng = stns_param_summary$DECIMAL_LONG,
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`pH_T`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`pH Status`)),
+                                        markerColor = statusColor(stns_param_summary$`pH_S`)),
                     popup = popupTable("pH"),
                     group = "pH"
   ) %>% 
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "pH",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "pH") %>%
   addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$Latitude,
-                    lng = stns_param_summary$Longitude,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`DO Trend`),
+                    lat = stns_param_summary$DECIMAL_LAT,
+                    lng = stns_param_summary$DECIMAL_LONG,
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`D_T`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`DO Status`)),
+                                        markerColor = statusColor(stns_param_summary$`DO_S`)),
                     popup = popupTable("DO"),
                     group = "Dissolved Oxygen"
   ) %>%
