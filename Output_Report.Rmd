@@ -72,13 +72,13 @@ figs <- captioner(prefix="  \n**Figure")
 # how it is named in the agwqma shapefile ('agwqma_shp').
 agwqma <- "Curry County"
 query_dates <- c("2000-01-01", "2018-05-01")
-project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Curry County/2018-Curry-County"
+project_dir <- "N:/Agriculture/Status_and_Trend_Analysis/Curry County/2018-Curry-County"
 
 # Set to TRUE if knitting a word document
-word_output <- FALSE
+word_output <- TRUE
 
 # Everything below here should not change
-support_files_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files"
+support_files_dir <- "N:/Agriculture/Status_and_Trend_Analysis/R_support_files"
 Rdata_dir <- paste0(project_dir,"/RData")
 GIS_dir <- paste0(project_dir,"/GIS")
 
@@ -393,7 +393,7 @@ This report presents data and analysis that will help DEQ fulfill its roles in t
 *	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
-DEQ basin coordinators review pertinent information including this report as part of ODA's biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL load allocations through ODA's survey. 
+DEQ basin coordinators review pertinent information including this report as part of ODA's biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL load allocations through ODA's survey.   
 
 ## Basin Contact
 
