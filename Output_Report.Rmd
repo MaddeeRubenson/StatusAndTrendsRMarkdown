@@ -140,7 +140,7 @@ BC_LU <- read.csv("Lookups/BC_LU.csv")
 Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
 OAR_LU <- read.csv("Lookups/OAR_LU.csv")
 Ben_use_LU <- read.csv("Lookups/stations.csv", na.strings = c("", "NA"))
-wq_limited <- read.csv('Lookups/wq_limited_2012_df_temp_bact_ph_DO_TP_Sediment.csv')
+wq_limited <- read.csv('Lookups/wq_limited_2012_Curry_County.txt')
 HUClist <- read.csv('Lookups/PlanHUC_LU.csv')
 stations_huc <- read.csv('Lookups/station_wbd_12132016.csv')
 ph_crit <- read.csv('Lookups/PlanOWRDBasinpH_LU.csv')
@@ -1548,9 +1548,9 @@ colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
                                   "TSS Trend")
 
 
-save(stns_param_summary, file=paste0(Rdata_dir,"/", stns_param_summary_file))
+save(stns_param_summary_tbl, file=paste0(Rdata_dir,"/", stns_param_summary_file))
 
-knitr::kable(stns_param_summary, format = "markdown",  padding = 2, digits = 3, 
+knitr::kable(stns_param_summary_tbl, format = "markdown",  padding = 2, digits = 3, 
              caption = tbls(name = "parmSumTable", 
                             caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen**"))
 
