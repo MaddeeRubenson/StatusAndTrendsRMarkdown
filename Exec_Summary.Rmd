@@ -154,7 +154,7 @@ knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name =
 
 ```{r parm-summary-table}
 
-knitr::kable(stns_param_summary, padding = 2, digits = 3, 
+knitr::kable(stns_param_summary_tbl, padding = 2, digits = 3, 
              caption = tbls(name = "parmSumTable", 
                             caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen**"))
 
