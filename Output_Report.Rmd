@@ -2,16 +2,16 @@
 title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Oregon DEQ Water Quality Status and Trends report for the Lower Willamette AgWQ Management Area'
 date: June 2018
 output:
-  word_document:
-    fig_caption: yes
-    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
-    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
+  word_document:
+    fig_caption: yes
+    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+    toc: yes
 always_allow_html: yes
 ---
 
@@ -1580,7 +1580,7 @@ colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
 
 save(stns_param_summary, file=paste0(Rdata_dir,"/", stns_param_summary_file))
 
-knitr::kable(stns_param_summary, 
+knitr::kable(stns_param_summary_tbl, 
              # format = "markdown",  
              padding = 2, digits = 3, 
              caption = tbls(name = "parmSumTable", 
@@ -1657,6 +1657,7 @@ leaflet(agarea_shp) %>%
                                    "<ahref='https://www.usgs.gov/laws/policies_notices.html'>",
                                    "Policies</a>"),
               group = "USGS Topo", layers = "0") %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap, group = "NatGeo World Map") %>%
   addWMSTiles(GetURL("USGSHydroCached"),
               group = "Hydrography",
               options = WMSTileOptions(format = "image/png",
@@ -1702,7 +1703,7 @@ leaflet(agarea_shp) %>%
   addAwesomeMarkers(data = stns_param_summary,
                     lat = stns_param_summary$DECIMAL_LAT,
                     lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`D_T`),
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`DO_T`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
                                         markerColor = statusColor(stns_param_summary$`DO_S`)),
@@ -1712,8 +1713,8 @@ leaflet(agarea_shp) %>%
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "Dissolved Oxygen",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Dissolved Oxygen") %>%
   addLayersControl(baseGroups = c("Ecoli", "Temperature", "pH", "Dissolved Oxygen"),
-                   overlayGroups = c("Hydrography"), options = layersControlOptions(collapsed = FALSE)) %>%
-  hideGroup("Hydrography") %>% 
+                   overlayGroups = c("NatGeo World Map", "Hydrography"), options = layersControlOptions(collapsed = FALSE)) %>%
+  hideGroup(c("Hydrography", "NatGeo World Map")) %>% 
   addControl(position = "bottomleft", 
              html = sprintf('<html><body><div style="opacity:0.8">
                                         <img width="350" height="175" src="data:image/png;base64,%s">
