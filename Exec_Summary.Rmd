@@ -1,8 +1,7 @@
 ---
-title: ""
+title: Umpqua River Agricultural Water Quality Management Area Water Quality Status and Trends Report
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-author: "Brian Creutzburg"
-date: "April 2018"
+date: April 2018
 output: 
   word_document:
     reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
@@ -32,8 +31,8 @@ library(lubridate)
 library(base)
 library(captioner)
 
-tbls  <- captioner(prefix="**Table")
-figs <- captioner(prefix="  \n**Figure")
+tbls  <- captioner(prefix="Table")
+figs <- captioner(prefix="Figure")
 
 ```
 
@@ -97,23 +96,21 @@ Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
 
 This report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Dependent on data availability, DEQ will use the available water quality data to answer the first three questions below. For the fourth bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources:
 
-* What is the status of water quality?
-* What is the trend in water quality?
-* When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
+*	What is the status of water quality? 
+*	What is the trend in water quality? 
+*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 
-## Analysis
+## Methods
 
-Analysts retrieved data from DEQ (volunteer monitoring database was not included, however some volunteer data is queried from the Water Quality Portal), EPA and USGS databases. Many organizations provided data that was queried and evaluated for use in this report (see Appendix). The time period for the query was from `r query_dates[1]` to `r query_dates[2]`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. Monitoring stations which had at least two years of recent data and/or at least 8 years of data fit the criteria to assess status and trends (see flow chart in full report). 
+Water quality data were retrieved from DEQ, EPA and USGS databases. DEQ's volunteer monitoring database was not included, however some volunteer data is queried from EPA's database. Many organizations provided data used in this report (see Appendix). Data collected between `r format(ymd(query_dates[1]), format="%B %d, %Y")` to `r format(ymd(query_dates[2]), format="%B %d, %Y")` and only within the `r agwqma` agricultural water quality management area were included in this report. Parameters included in the data query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). 
 
-## Data Sources
-
-The data returned were evaluated for data quality. DEQ data included `r unique(df.all$Status)` data determined following the DEQ's Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. Data was evaluated against the applicable Oregon water quality criterion. 
+The data returned were evaluated for data qualit. Data included `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` data determined following the DEQ's Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Data was evaluated against the applicable Oregon water quality criterion. 
 
 ## Land Use
 
-Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) developed by EPA was used to summarize the cumulative upstream catchment of each station for primary land use characteristics, based on the National Hydrography Dataset Plus Version 2 geospatial framework.
+Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. The map below shows station locations in relation to the 2011 Natinal Land Cover dataset (Homer et al 2015).
 
 ```{r landuse-exec}
 
@@ -123,7 +120,7 @@ library(plyr)
 
 stn_to_use <-c(unique(stns$Station_ID))
 
-knitr::kable(landuse, digits = 0, padding = 2, caption = tbls(name = "landUse", caption = "Land use and land cover for upstream catchments of stations used in this analysis, stations which fit the decision criteria and have >20% Agriculture and Range coverage are included. Land use and land cover for all stations used in analysis can be found in full report. Source: 2011 NAIP"))
+knitr::kable(landuse, digits = 0, padding = 2, caption = tbls(name = "landUse", caption = "Land use and land cover for upstream catchments of stations used in this analysis, stations which fit the decision criteria and have >20% Agriculture and Range coverage are included. Land use and land cover for all stations used in analysis can be found in full report"))
 
 ```
 
@@ -161,48 +158,48 @@ knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name =
 
 knitr::kable(stns_param_summary, format = "markdown",  padding = 2, digits = 3, 
              caption = tbls(name = "parmSumTable", 
-                            caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen**"))
+                            caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen"))
 
 ```
 
 
-```{r DO-summary-map, eval = word_output, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
+```{r DO-summary-map, eval = word_output, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
 knitr::include_graphics(paste0(project_dir,"/Figures/",station_summary_map_DO_file))
 
 ```
 
-```{r Ecoli-summary-map, eval = word_output, fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for E. coli.**")}
+```{r Ecoli-summary-map, eval = word_output, fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for E. coli.")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_ecoli_file))
 
 ```
 
-```{r Entero-summary-map, eval = word_output, fig.cap=figs(name="Entero_map", caption="Summary of stations that fit the criteria for status and trend analysis for Enterococcus. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
+```{r Entero-summary-map, eval = word_output, fig.cap=figs(name="Entero_map", caption="Summary of stations that fit the criteria for status and trend analysis for Enterococcus. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_entero_file))
 
 ```
 
-```{r Temp-summary-map, eval = word_output, fig.cap=figs(name="Temperature_map", caption="Summary of stations that fit the criteria for status and trend analysis for temperature. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
+```{r Temp-summary-map, eval = word_output, fig.cap=figs(name="Temperature_map", caption="Summary of stations that fit the criteria for status and trend analysis for temperature. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_temp_file))
 
 ```
 
-```{r ph-summary-map, eval = word_output, fig.cap=figs(name="pH_map", caption="Summary of stations that fit the criteria for status and trend analysis for pH. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.**")}
+```{r ph-summary-map, eval = word_output, fig.cap=figs(name="pH_map", caption="Summary of stations that fit the criteria for status and trend analysis for pH. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_pH_file))
 
 ```
 
-```{r TP-summary-map, eval = word_output, fig.cap=figs(name="TP_map", caption="Summary of stations that fit the criteria for trend analysis for Total Phosphorus.  Trend was determined by significant trends associated with long-term datasets.**")}
+```{r TP-summary-map, eval = word_output, fig.cap=figs(name="TP_map", caption="Summary of stations that fit the criteria for trend analysis for Total Phosphorus.  Trend was determined by significant trends associated with long-term datasets.")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_tp_file))
 
 ```
 
-```{r TSS-summary-map, eval = word_output, fig.cap=figs(name="TSS_map", caption="Summary of stations that fit the criteria for status and trend analysis for Total Suspended Solids. Trend was determined by significant trends associated with long-term datasets.**")}
+```{r TSS-summary-map, eval = word_output, fig.cap=figs(name="TSS_map", caption="Summary of stations that fit the criteria for status and trend analysis for Total Suspended Solids. Trend was determined by significant trends associated with long-term datasets.")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_tss_file))
 
@@ -219,7 +216,7 @@ conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "pH"), 
 conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Temp"), c("conclusion")]
 conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "TP"), c("conclusion")]
 conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "TSS"), c("conclusion")]
-conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Add_conc"), c("conclusion")]
+conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Add_conc"), c("conclusion", "sub.conclusion")]
 
 ```
 
