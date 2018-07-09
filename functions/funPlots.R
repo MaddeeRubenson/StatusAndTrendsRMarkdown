@@ -1091,7 +1091,7 @@ plot.DO<-function(new_data,
   if (plot_trend & !is.na(p.value)) {
     g <- g + geom_line(aes(x = x, y = y, color = variable), 
                        data = df_trend_line)  
-    if (selectSpawning == 'No spawning') {
+    if (tolower(selectSpawning) == 'no spawning') {
       if (any('Exceeds' %in% new_data$exceed)) {
         if (any('Meets b/c %Sat' %in% new_data$exceed)) {
           g <- g + scale_color_manual("", values = c('black','red','black',
@@ -1259,7 +1259,7 @@ plot.DO<-function(new_data,
       }
     }
   } else {
-    if (selectSpawning == 'No spawning') {
+    if (tolower(selectSpawning) == 'no spawning') {
       if (any('Exceeds' %in% new_data$exceed)) {
         if (any('Meets b/c %Sat' %in% new_data$exceed)) {
           g <- g + scale_color_manual("", values = c('black', 'red',
