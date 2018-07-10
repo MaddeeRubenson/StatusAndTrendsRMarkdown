@@ -357,7 +357,7 @@ if(NROW(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass")) > 0
 
 SeaKen <- rbind(seaken_other, seaken_temp)
 
-status_years <- seq(year(round_date(ydm(input$dates[2]) - years(2), unit="year")), 
+status_years <- seq(year(floor_date(ydm(input$dates[2]) - years(2), unit="year")), 
     year(ydm(input$dates[2])), by = 1)
 
 status <- Stations_Status(df.all, status.years=status_years)
