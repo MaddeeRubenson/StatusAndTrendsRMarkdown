@@ -1778,7 +1778,7 @@ Mann, H. B., 1945, Nonparametric test against trend: *Econometrica* 13, 245-259.
 
 Oregon Department of Environmental Quality, 2013. Quality Manual. DEQ91-LAB-0006-LQM Version 8.2.
 
-U.S. Environmental Protection Agency. 2016. National Rivers and Streams Assessment 2008-2009. Availiable from U.S. EPA website: http://www.epa.gov/national-aquatic-resource-surveys/data-national-aquatic-resource-surves, accessed `r format(ymd(input$dates[2]), format="%B %d, %Y")`.
+U.S. Environmental Protection Agency. 2016. National Rivers and Streams Assessment 2008-2009. Available from U.S. EPA website: http://www.epa.gov/national-aquatic-resource-surveys/data-national-aquatic-resource-surves, accessed `r format(ymd(input$dates[2]), format="%B %d, %Y")`.
 
 U.S. Geological Survey, 2016, National Water Information System data available on the World Wide Web (USGS Water Data for the Nation), accessed `r format(ymd(input$dates[2]), format="%B %d, %Y")`, at URL [http://waterdata.usgs.gov/nwis/].
 
