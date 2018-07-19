@@ -1921,9 +1921,9 @@ parm_summary <- function(stns,
     
     if(pH_seaken$signif != "Not Significant") {
       if(pH_seaken$pvalue < 0.2 & pH_seaken$slope > 0) {
-        stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <-'Degrading'
+        stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <-'Decreasing'
       } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope < 0){
-        stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <- 'Improving'
+        stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <- 'Increasing'
       } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope == 0) {
         stns[stns$Station_ID == pH_trend_stns[j], ]$Trend_pH <-'Steady'
       } 

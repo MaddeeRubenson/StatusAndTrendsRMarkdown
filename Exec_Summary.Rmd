@@ -30,6 +30,10 @@ library(zoo)
 library(dplyr)
 library(lubridate)
 library(base)
+library(captioner)
+
+tbls  <- captioner(prefix="**Table")
+figs <- captioner(prefix="  \n**Figure")
 
 ```
 
@@ -39,8 +43,8 @@ library(base)
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_shp').
 agwqma <- "Molalla-Pudding French Prairie North Santiam"
-query_dates <- c("2000-01-01", "2018-04-01")
-project_dir <- "E:/GitHub/StatusAndTrendsRMarkdown"
+query_dates <- c("2000-01-01", "2018-03-01")
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Molalla-Pudding French Prairie North Santiam/2018/StatusAndTrendsRMarkdown"
 
 # Everything below here should not change
 Rdata_dir <- paste0(project_dir,"/RData")
@@ -70,7 +74,7 @@ load(paste0(Rdata_dir, "/", stns_param_summary_file))
 
 # Executive Summary
 
-### Purpose
+## Purpose
 
 The report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ.  This water quality status and trends report can be used to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting.  The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. DEQ will use available water quality data to answer the following questions: 
 
@@ -79,20 +83,17 @@ The report presents data and analysis that will help DEQ fulfill its roles in th
 *	Are TMDL load allocations being met?
 *	Can water quality status and trends be attributed to a source or sources?
 
+## Methods
 
-### Analysis
+Water quality data were retrieved from DEQ, EPA and USGS databases. DEQ's volunteer monitoring database was not included, however some volunteer data is queried from EPA's database. Many organizations provided data used in this report (see Appendix). Data collected between `r format(ymd(query_dates[1]), format="%B %d, %Y")` to `r format(ymd(query_dates[2]), format="%B %d, %Y")` and only within the `r agwqma` agricultural water quality management area were included in this report. Parameters included in the data query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). 
 
-Analysts retrieved data from DEQ (volunteer monitoring database was not included, however some volunteer data is queried from the Water Quality Portal), EPA and USGS databases. Many organizations provided data that was queried and evaluated for use in this report (see Appendix). The time period for the query was from `r query_dates[1]` to `r query_dates[2]`. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. Monitoring stations which had at least two years of recent data and/or at least 8 years of data fit the criteria to assess status and trends (see flow chart in full report). 
+The data returned were evaluated for data qualit. Data included `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` data determined following the DEQ's Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Data was evaluated against the applicable Oregon water quality criterion.
 
-### Data Sources
-
-The data returned were evaluated for data quality. DEQ data included `r unique(df.all$Status)` data determined following the DEQ’s Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Recent data (after June 2014) from the USGS was marked as provisional data and included in this analysis. Data was evaluated against the applicable Oregon water quality criterion. 
-
-### Land Use
+## Land Use
 
 Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) developed by EPA was used to summarize the cumulative upstream catchment of each station for primary land use characteristics, based on the National Hydrography Dataset Plus Version 2 geospatial framework.
 
-```{r landuse-exec}
+```{r landuse-exec, results='asis'}
 
 library(knitr)
 library(dplyr)
@@ -100,11 +101,11 @@ library(plyr)
 
 stn_to_use <-c(unique(stns$Station_ID))
 
-knitr::kable(landuse, digits = 0, format = "markdown", padding = 2, caption = "Land use and land cover for upstream catchments of stations used in this analysis, stations which fit the decision criteria and have >20% Agriculture and Range coverage are included. Land use and land cover for all stations used in analysis can be found in full report. Source: 2011 NAIP")
+knitr::kable(landuse, digits = 0, padding = 2, caption = tbls(name = "landUse", caption = "Summary table of watershed land use by station, only stations which have at least 8 years of yearly data (between 2000 and 2017) and/or are used to evaluate last known status.**"))
 
 ```
 
-### Results Summary
+## Results Summary
 
 `r length(unique(stn_to_use))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r agwqma` AgWQ Management Area 
 
