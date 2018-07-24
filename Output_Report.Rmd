@@ -429,15 +429,15 @@ knitr::kable(BC_table,
 
 ## Data Sources
 
-Water quality data were retrieved from [DEQ](http://www.oregon.gov/deq/wq/Pages/WQdata.aspx) (LASAR and ELEMENT), U.S. Environmental Protection Agency ([WQX/Storet](https://www.epa.gov/waterdata/water-quality-data-wqx)) U.S. Geological Survey [NWIS](https://qwwebservices.usgs.gov/) (USGS 2016), and [Water Quality Portal](https://www.waterqualitydata.us/)) databases. Many other organizations provided data that were queried and evaluated for use in this report (see Appendix). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")` and only within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*).
+Water quality data were retrieved from [DEQ](http://www.oregon.gov/deq/wq/Pages/WQdata.aspx) (LASAR and ELEMENT), U.S. Environmental Protection Agency ([WQX/Storet](https://www.epa.gov/waterdata/water-quality-data-wqx)) U.S. Geological Survey [NWIS](https://qwwebservices.usgs.gov/) (USGS 2016), and [Water Quality Portal](https://www.waterqualitydata.us/)) databases. Many other organizations provided data that were queried and evaluated for use in this report (see Appendix). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*).
 
-The data returned were evaluated for quality. Data quality retrieved from DEQ's databases included `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` data that were rated under the [DEQ's Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf) (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data.
+The data returned were evaluated for quality. Data retrieved from the DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf) (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data.
 
 ## Analysis
 
-The status of water quality standards attainment for dissolved oxygen, E. coli, Enterococcus, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. On some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids and total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters.
+The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids and total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters.
 
-Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A trend result was made at a site if there were a minimum of eight or more years of available data. A seasonal Kendall test removes the influence of season-to-season fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p < 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons". Multiple observations within any given month were collapsed into a single value using the median.
+Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A trend result was made at a site if there were a minimum of eight or more years of available data. A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p < 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median.
 
 A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(round_date(ydm(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ydm(input$dates[2]), format="%B %d, %Y")`. A trend assessment was made if data were available in a minimum of eight different years for any year in the period from `r format(ydm(input$dates[1]), format="%B %d, %Y")` to `r format(ydm(input$dates[2]), format="%B %d, %Y")`. Stations that met at least one of those data requirements were assessed with the results presented in this report. In some cases a station had sufficient data for trend but not status because data were not available anytime in the last two years. In these cases the status was shown on the plot for the older data along with the trend result but the status was not recorded in the maps, summary tables, or conclusions.
 
@@ -445,11 +445,11 @@ Results for pH from both grab and continuous sample data were compared to the ap
 
 Results for bacteria samples were compared to the applicable bacteria criterion as found in [OAR 340-041-0009][2.2]. The bacteria standard for freshwater contact recreation is based on the presence of *E. coli* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The bacteria standard for coastal water contact recreation is based on the presence of *Enterococcus* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period.
 
-Dissolved oxygen (DO) status was assessed by comparing the observed concentration values to the applicable daily minimum water quality criterion found in [OAR 340-041-0016][2.3]. If the DO concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality criterion. These points were noted in the plots using a different shape. Assessments were not made against the seven and 30-day mean minimum DO criteria due to the general lack of continuous DO data.
+Dissolved oxygen status was assessed by comparing the observed concentration values to the applicable daily minimum water quality criterion found in [OAR 340-041-0016][2.3]. If the dissolved oxygen concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality criterion. These points were noted in the plots using a different shape. Assessments were not made against the seven and 30-day mean minimum dissolved oxygen criteria due to the general lack of continuous dissolved oxygen data.
 
 Results for continuous temperature data were compared against the applicable temperature criteria found in [OAR 340-041-0028][2.4]. The applicable temperature criteria is based on the seven day average daily maximum (7DADM) stream temperature metric. In order to ensure there was sufficient continuous data to calculate 7DADM, at least one observation per hour from noon to midnight must have been recorded. In addition, each month can have no more than one day of missing observations to ensure that no more than 10% of the 7DADM results in that month were missing.
 
-A land use summary was developed for all monitoring stations that fit the criteria to assess water quality status and/or trends. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. A map was made showing station locations in relation to 2011 national land cover dataset (Homer et al 2015).
+A land use summary was developed for all monitoring stations that fit the criteria to assess water quality status and/or trends. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. A map was made showing station locations in relation to 2011 national land cover dataset (Homer et al. 2015).
 
 [2.1]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68713
 [2.2]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68695
@@ -458,7 +458,7 @@ A land use summary was developed for all monitoring stations that fit the criter
 
 # Results
 
-Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations 
+Within the `r input$select` AgWQ Management Area, `r length(unique(stns$Station_ID))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations. 
 
 ```{r results-summary, results='asis'}
 
@@ -479,9 +479,9 @@ station_summary_tbl <- data.frame(Analyte=c("Ecoli","Enterococcus","Dissolved Ox
                                            nrow(unique(trend[trend$Analyte == "Total Phosphorus", ])),
                                            nrow(unique(trend[trend$Analyte == "Total Suspended Solids", ]))
                                            ))
-colnames(station_summary_tbl) <- c("Analyte", "Number of stations w/ sufficent data for status analysis", "Number of stations w/ sufficent data for trend analysis")                                  
+colnames(station_summary_tbl) <- c("Analyte", "Number of stations w/ sufficient data for status analysis", "Number of stations w/ sufficient data for trend analysis")                                  
 
-knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name = "StnSumTable", caption = "Summary of stations with suffcient data for status or trend analysis"))                                 
+knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name = "StnSumTable", caption = "Summary of stations with sufficient data for status or trend analysis"))                                 
 
 ```
 
@@ -489,7 +489,7 @@ knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name =
 
 The map in `r figs("stationsmap", display="cite")` show the general location of monitoring stations that fit the status and/or trend data requirements along with the distribution of federal and non-federal lands. 
 
-```{r stations-map-word, eval = word_output, results = "asis", fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the Umpqua River AgWQ Management Area")}
+```{r stations-map-word, eval = word_output, results = "asis", fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the Umpqua River AgWQ Management Area.")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_map_file))
 
@@ -497,16 +497,16 @@ knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_map_file))
 
 ## Land Use
 
-The map in `r figs("landusemap", display="cite")` shows station location in relation to the 2011 national land cover dataset (Homer et al 2015).
+The map in `r figs("landusemap", display="cite")` shows station location in relation to the 2011 national land cover dataset (Homer et al. 2015).
 
-```{r landuse-map-word, eval = word_output, results = "asis", fig.cap=figs(name="landusemap", caption="Land use and land cover within the Umpqua River AgWQ Management Area")}
+```{r landuse-map-word, eval = word_output, results = "asis", fig.cap=figs(name="landusemap", caption="Land use and land cover within the Umpqua River AgWQ Management Area.")}
 
 knitr::include_graphics(path = paste0(project_dir,"/Figures/",landuse_map_file))
 
 ```
 
 
-```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=10, fig.height=8, fig.cap=figs(name="landusemap", caption="Land use and land cover within the Umpqua River AgWQ Management Area")}
+```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=10, fig.height=8, fig.cap=figs(name="landusemap", caption="Land use and land cover within the Umpqua River AgWQ Management Area.")}
 
 agarea_shp <- agwqma_shp[agwqma_shp$PlanName == input$select,]
 agarea_shp <-spTransform(agarea_shp, CRS("+proj=longlat +datum=NAD83"))
@@ -566,7 +566,7 @@ map
 ```
 
 
-A summary table of watershed land use by station that met data requirements for status or trend is presented in `r tbls("landUse", display="cite")`. The table is sorted in descending order by percent agriculture ("% Ag" ) so stations located in watersheds with the highest percent agricultural land uses are at the top of the table.
+A summary table of watershed land use by station that met data requirements for status or trend is presented in `r tbls("landUse", display="cite")`. The table is sorted in descending order by percent agriculture ("% Ag"), so stations located in watersheds with the highest percent agricultural land uses are at the top of the table.
 
 
 ```{r landuse-table, results="asis"}
@@ -616,16 +616,16 @@ wq_limited_df$`Listing Status` <- revalue(wq_limited_df$`Listing Status`,
                                             "TMDL approved" = "Cat 4A",
                                             "303(d)" = "Cat 5"))
 
-knitr::kable(wq_limited_df, padding = 2, caption = tbls(name = "wqLimited", caption = "Summary of Integrated Report listings for parameters included in this report. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA"))
+knitr::kable(wq_limited_df, padding = 2, caption = tbls(name = "wqLimited", caption = "Summary of Integrated Report listings for parameters included in this report. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA."))
 
 ```
 
 ## Seasonal Kendall Trend Analysis
 
-For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal kendall trend analysis. Results are summarized in `r tbls(name = "seakenTable", display="cite")`. If no table is visible, there were no monitoring stations with sufficient data to assess trends.
+For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal Kendall trend analysis. Results are summarized in `r tbls(name = "seakenTable", display="cite")` below. If no table is visible, there were no monitoring stations with sufficient data to assess trends.
 
 
-<!-- Output for the Seasonal kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.   -->
+<!-- Output for the Seasonal Kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.   -->
 
 ```{r Seasonal-Kendall, results="asis"}
 
@@ -707,7 +707,7 @@ if(length(ecoli_stns) > 0) {
                        parm = unique(new_data$Analyte))
     
     print(b)
-    cat(figs(name = paste0('E_', ecoli_stns[j]), caption = paste0('Station ', ecoli_stns[j], ' _E. Coli_ water quality status and/or trends')))
+    cat(figs(name = paste0('E_', ecoli_stns[j]), caption = paste0('Station ', ecoli_stns[j], ' _E. coli_ water quality status and/or trends.')))
     
   }
   
@@ -717,9 +717,9 @@ if(length(ecoli_stns) > 0) {
   
   knitr::kable(exc, padding = 2, digits = 1,
                caption = tbls(name = "ecoliExcTable", 
-                              caption = "E. Coli status. If sufficient data exists to calculate the geometric mean, it is included in the table."))
+                              caption = "_E. coli_ status. If sufficient data exists to calculate the geometric mean, it is included in the table."))
 }  else {
-  print("No monitoring stations have data to assess status and/or trend of E. Coli") 
+  print("No monitoring stations have data to assess status and/or trend of _E. coli_") 
 } 
 
 ```
@@ -796,12 +796,12 @@ if(length(entero_stns) > 0) {
     print(entero_plots[[i]])
     
     cat(figs(name = paste0('Entero_', entero_stns[i]),
-             caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and trends')))
+             caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and/or trends.')))
   }
   
   knitr::kable(exc, padding = 2, digits = 1,
                caption = tbls(name = "enterExcTable", 
-                              caption = "Enterococcus status. If sufficient data exists to calculate the geometric mean, it is included in the table."))
+                              caption = "_Enterococcus_ status. If sufficient data exists to calculate the geometric mean, it is included in this table."))
 }  else {
   print("No monitoring stations have data to assess status and/or trend of Enterococcus") 
 } 
@@ -911,7 +911,7 @@ for (i in 1:length(tp_stn)) {
   tp_plots[[i]]<-b
   
   print(tp_plots[[i]])
-  cat(figs(name = paste0('TP_', tp_stn[i]), caption = paste0('Station ', tp_stn[i], ' _Total Phosphorus_ water quality status and trends')))
+  cat(figs(name = paste0('TP_', tp_stn[i]), caption = paste0('Station ', tp_stn[i], ' Total Phosphorus water quality trends.')))
 } 
 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
@@ -919,7 +919,7 @@ exc <- exc[,c(1:5)]
 knitr::kable(exc,padding = 2, digits = 1, caption = tbls(name = "tpExcTable", caption = "Total Phosphorus observations"))
 
 # }else {
-#   print("No monitoring stations have sufficent data to assess status and/or trend of total phosphorus")
+#   print("No monitoring stations have sufficient data to assess status and/or trend of total phosphorus")
 # }
 #} 
 
@@ -1032,14 +1032,14 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
     tss_plots[[i]]<-b
     
     print(tss_plots[[i]])
-    cat(figs(name = paste0('TSS_', tss_stn[i]), caption = paste0('Station ', tss_stn[i], ' _Total Suspended Solids_ water quality trends')))
+    cat(figs(name = paste0('TSS_', tss_stn[i]), caption = paste0('Station ', tss_stn[i], ' Total Suspended Solids water quality trends.')))
   } 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
 # exc <- exc[,c(1:5)]
-  knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "tssExcTable", caption = "Total Suspended Solids observations"))
+  knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "tssExcTable", caption = "Total Suspended Solids observations."))
 
 # }else {
-#   "No monitoring stations have sufficent data to assess status and/or trend of total suspended solids"
+#   "No monitoring stations have sufficient data to assess trends in total suspended solids concentration."
 # }
 }
 tss_exc <- exc
@@ -1161,7 +1161,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
       
       print(pH_plots[[i]])
       
-      cat(figs(name = paste0('pH_', pH_stn[i]), caption = paste0('Station ', pH_stn[i], ' _pH_ water quality status and trends')))
+      cat(figs(name = paste0('pH_', pH_stn[i]), caption = paste0('Station ', pH_stn[i], ' pH water quality status and/or trends.')))
       
     } 
     
@@ -1296,7 +1296,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
             temp_plots[[i]]<-b
             
             print(temp_plots[[i]])
-            cat(figs(name = paste0('temp_', temp_stn[i]), caption = paste0('Station ', temp_stn[i], ' _Temperature_ water quality status and trends')))
+            cat(figs(name = paste0('temp_', temp_stn[i]), caption = paste0('Station ', temp_stn[i], ' Temperature water quality status and/or trends.')))
             
           } else {
             print(paste("insufficient data to calculate sdadm at station:", temp_stn[i]))
@@ -1457,7 +1457,7 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
         DO_plots[[i]]<-b
         
         print(DO_plots[[i]])
-        cat(figs(name = paste0('DO_', DO_stn[i]), caption = paste0('Station ', DO_stn[i], ' _Dissolved Oxygen_ water quality status and trends')))
+        cat(figs(name = paste0('DO_', DO_stn[i]), caption = paste0('Station ', DO_stn[i], ' Dissolved Oxygen water quality status and/or trends.')))
       }
     }
     
@@ -1590,7 +1590,7 @@ knitr::kable(stns_param_summary,
              # format = "markdown",  
              padding = 2, digits = 3, 
              caption = tbls(name = "parmSumTable", 
-                            caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen"))
+                            caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen."))
 
 ```
 
@@ -1748,7 +1748,7 @@ conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 
 
 ```
 
-**What are the overall status or trends?**
+**What is the overall status or trends in water quality?**
 
 * *Dissolved Oxygen*: `r conclusions.DO`
 * *E. coli*: `r conclusions.Ecoli`
@@ -1788,13 +1788,13 @@ U.S. Geological Survey, 2016, National Water Information System data available o
 
 org_summary <- summarizeByOrg(df.all)
 
-knitr::kable(org_summary, padding = 2, digits = 1, caption = tbls(name = "AppendixorgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report"))
+knitr::kable(org_summary, padding = 2, digits = 1, caption = tbls(name = "AppendixorgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report."))
 
-knitr::kable(status, padding = 2, digits = 1, caption = tbls(name = "AppendixstatusTable", caption = "Monitoring stations that fit the criteria to assess status; note value represents the number of results for each monitoring station per year"))
+knitr::kable(status, padding = 2, digits = 1, caption = tbls(name = "AppendixstatusTable", caption = "Monitoring stations that fit the criteria to assess status; note value represents the number of results for each monitoring station per year."))
 
-knitr::kable(trend, padding = 1, digits = 1, caption = tbls(name = "AppendixtrendTable", caption = "Monitoring stations that fit the criteria to assess trends; note value represents the number of results for each monitoring station per year"))
+knitr::kable(trend, padding = 1, digits = 1, caption = tbls(name = "AppendixtrendTable", caption = "Monitoring stations that fit the criteria to assess trends; note value represents the number of results for each monitoring station per year."))
 
-knitr::kable(stns_by_year, padding = 1, digits = 1, caption = tbls(name = "AppendixstnByYrTable", caption = "All monitoring stations that were queried and the number of results per year during the query period"))
+knitr::kable(stns_by_year, padding = 1, digits = 1, caption = tbls(name = "AppendixstnByYrTable", caption = "All monitoring stations that were queried and the number of results per year during the query period."))
 
 ```
 
