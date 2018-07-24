@@ -1,7 +1,7 @@
 ---
-title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Umpqua River Agricultural Water Quality Management Area Water Quality Status and Trends Report'
+title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Lower Deschutes Agricultural Water Quality Management Area Water Quality Status and Trends Report'
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: June 2018
+date: July 2018
 output:
   word_document:
     fig_caption: yes
@@ -72,9 +72,9 @@ figs <- captioner(prefix="Figure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_shp').
 
-agwqma <- "Umpqua River"
-query_dates <- c("2000-01-01", "2018-04-01")
-project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Umpqua River/2018-Umpqua-River"
+agwqma <- "Lower Deschutes"
+query_dates <- c("2000-01-01", "2018-07-01")
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Lower Deschutes/2018-Lower-Deschutes"
 
 # Set to TRUE if knitting a word document
 word_output <- FALSE
@@ -1391,7 +1391,7 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
           
         #if(!is.na(any(new_data$sdadm))) {
         
-        DO_Benuse <- (Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[j], 'DO_use'])
+        DO_Benuse <- (Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[j] & Ben_use_LU$AgArea == agwqma, 'DO_use'])
         spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[j], 'spwn_time'])
         
         
