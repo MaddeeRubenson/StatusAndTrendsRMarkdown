@@ -13,6 +13,7 @@ Figures/*pH*
 Figures/*Temperature*
 Figures/*Phosphorus*
 Figures/*TSS*
+Figures/Thumbs.db
 
 # History files
 .Rhistory
