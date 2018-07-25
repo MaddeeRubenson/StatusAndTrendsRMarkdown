@@ -1,5 +1,5 @@
 ---
-title: Lower Willamette Agricultural Water Quality Management Area Water Quality Status and Trends Report
+title: Lower Deschutes Agricultural Water Quality Management Area Water Quality Status and Trends Report
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
 date: June 2018
 output: 
@@ -42,9 +42,9 @@ figs <- captioner(prefix="Figure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_shp').
 
-agwqma <- "Lower Willamette"
-query_dates <- c("2000-01-01", "2018-06-01")
-project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Lower Willamette/2018-Lower-Willamette"
+agwqma <- "Lower Deschutes"
+query_dates <- c("2000-01-01", "2018-07-01")
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Lower Deschutes/2018-Lower-Deschutes"
 
 word_output <- TRUE
 split_param_summary <- FALSE
@@ -95,7 +95,7 @@ Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
 
 ## Purpose
 
-This report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Dependent on data availability, DEQ will use the available water quality data to answer the first three questions below. For the fourth bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources:
+This report presents data and analysis that will help DEQ fulfill its role in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. The DEQ will use available water quality data to answer the first three questions below. For the fourth bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources of pollution:
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
@@ -105,13 +105,13 @@ This report presents data and analysis that will help DEQ fulfill its roles in t
 
 ## Methods
 
-Water quality data were retrieved from DEQ, EPA and USGS databases. DEQ's volunteer monitoring database was not included, however some volunteer data is queried from EPA's database. Many organizations provided data used in this report (see Appendix). Data collected between `r format(ymd(query_dates[1]), format="%B %d, %Y")` to `r format(ymd(query_dates[2]), format="%B %d, %Y")` and only within the `r agwqma` agricultural water quality management area were included in this report. Parameters included in the data query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). 
+Water quality data were retrieved from DEQ, EPA and USGS databases. DEQ's volunteer monitoring database was not included, however some volunteer data is queried from EPA's database. Many organizations provided data used in this report (see Appendix for a complete list). Data collected between `r format(ymd(query_dates[1]), format="%B %d, %Y")` and `r format(ymd(query_dates[2]), format="%B %d, %Y")` within the `r agwqma` agricultural water quality management area were included in this report. Parameters included in the data query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). 
 
-The data returned were evaluated for data qualit. Data included `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` data determined following the DEQ's Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Data was evaluated against the applicable Oregon water quality criterion. 
+The data returned were evaluated for quality. Data retrieved from the DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf) (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data. Data was evaluated against the applicable Oregon water quality criterion. 
 
 ## Land Use
 
-Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. The map below shows station locations in relation to the 2011 Natinal Land Cover dataset (Homer et al 2015).
+Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. The map below shows station locations in relation to the 2011 Natinal Land Cover dataset (Homer et al. 2015).
 
 ```{r landuse-exec}
 
@@ -152,7 +152,7 @@ knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name =
 
 ```
 
-`r length(unique(stn_to_use))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r agwqma` AgWQ Management Area 
+`r length(unique(stn_to_use))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r agwqma` AgWQ Management Area. 
 
 
 ```{r parm-summary-table}
@@ -161,7 +161,7 @@ knitr::kable(stns_param_summary,
              # format = "markdown",  
              padding = 2, digits = 3, 
              caption = tbls(name = "parmSumTable", 
-                            caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen"))
+                            caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen."))
 
 ```
 
