@@ -230,7 +230,7 @@ plot.Temperature <- function(new_data,
   elem_text <- element_text(face = "bold")
   
   if(selectSpawning == 'No spawning' & any(selectUse %in%  c('Cool water species', 'Oceans and Bays', 'No Salmonid Use/Out of State'))) {
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result), color = 'black') + 
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed, linetype=exceed)) + 
       geom_point() +   theme_gdocs() + theme(axis.title = elem_text) +
       xlab(x.lab) + 
       ylab(y.lab) + 
@@ -242,7 +242,7 @@ plot.Temperature <- function(new_data,
                    legend.title = element_blank(),
                    legend.direction = 'horizontal')
   } else {
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) + 
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed, linetype=exceed)) + 
       geom_point() +   theme_gdocs() + theme(axis.title = elem_text) +
       xlab(x.lab) + 
       ylab(y.lab) + 
@@ -286,8 +286,10 @@ plot.Temperature <- function(new_data,
                                                 'criteria_value']),
                            y2 = unique(new_data[spn_index[1]:spn_1,
                                                 'criteria_value']))
-          g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning'),
-                                data = df, inherit.aes = FALSE)
+          g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
+                                data = df
+                                # , inherit.aes = FALSE
+                                )
         } 
       } else {
         spn_stop <- spn_index[which(spn_diff > 1)]
@@ -304,8 +306,10 @@ plot.Temperature <- function(new_data,
                                                   'criteria_value']),
                              y2 = unique(new_data[spn_start[i]:spn_stop[i + 1],
                                                   'criteria_value']))
-            g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning'),
-                                  data = df, inherit.aes = FALSE)
+            g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
+                                  data = df
+                                  # , inherit.aes = FALSE
+                                  )
           } else {
             #Plot last spawn-time period
             df <- data.frame(x1 = new_data[spn_start[i], 'Sampled'],
@@ -314,8 +318,10 @@ plot.Temperature <- function(new_data,
                                                   'criteria_value']),
                              y2 = unique(new_data[spn_start[i]:max(spn_index),
                                                   'criteria_value']))
-            g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning'),
-                                  data = df, inherit.aes = FALSE)
+            g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
+                                  data = df
+                                  # , inherit.aes = FALSE
+                                  )
           }
         }
       }
@@ -327,8 +333,10 @@ plot.Temperature <- function(new_data,
                                             'criteria_value']),
                        y2 = unique(new_data[spn_index[1]:spn_stop[1],
                                             'criteria_value']))
-      g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning'),
-                            data = df, inherit.aes = FALSE)
+      g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
+                            data = df
+                            # , inherit.aes = FALSE
+                            )
     } else {
       spn_index <- which(new_data$criteria_value == 13)
       spn_diff <- diff(spn_index)
@@ -345,8 +353,10 @@ plot.Temperature <- function(new_data,
                                                   'criteria_value']),
                              y2 = unique(new_data[1:(spn_index[1] - 1), 
                                                   'criteria_value']))
-            g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Non-spawning'),
-                                  data = df, inherit.aes = FALSE)
+            g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Non-spawning', color = 'Non-spawning'),
+                                  data = df
+                                  # , inherit.aes = FALSE
+                                  )
           } else {
             #Plot non-spawn time-period
             df <- data.frame(x1 = new_data[spn_1 + 1, 'Sampled'],
@@ -355,8 +365,10 @@ plot.Temperature <- function(new_data,
                                                   'criteria_value']),
                              y2 = unique(new_data[(spn_1 + 1):nrow(new_data),
                                                   'criteria_value']))
-            g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Non-spawning'),
-                                  data = df, inherit.aes = FALSE)
+            g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Non-spawning', color = 'Non-spawning'),
+                                  data = df
+                                  # , inherit.aes = FALSE
+                                  )
           }
           #Plot spawn time period
           df <- data.frame(x1 = new_data[spn_index[1],'Sampled'],
@@ -365,15 +377,19 @@ plot.Temperature <- function(new_data,
                                                 'criteria_value']),
                            y2 = unique(new_data[spn_index[1]:spn_1,
                                                 'criteria_value']))
-          g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning'),
-                                data = df, inherit.aes = FALSE)
+          g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
+                                data = df
+                                # , inherit.aes = FALSE
+                                )
         } else {
           df <- data.frame(x1 = new_data[1,'Sampled'],
                            x2 = new_data[nrow(new_data), 'Sampled'],
                            y1 = unique(new_data[1:nrow(new_data), 'criteria_value']),
                            y2 = unique(new_data[1:nrow(new_data), 'criteria_value']))
-          g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = "Non-spawning"),
-                                data = df, inherit.aes = FALSE) 
+          g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = "Non-spawning", color = 'Non-spawning'),
+                                data = df
+                                # , inherit.aes = FALSE
+                                ) 
         }
       } else {
         spn_stop <- spn_index[which(spn_diff > 1)]
@@ -390,8 +406,10 @@ plot.Temperature <- function(new_data,
                                                   'criteria_value']),
                              y2 = unique(new_data[spn_start[i]:spn_stop[i + 1],
                                                   'criteria_value']))
-            g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning'),
-                                  data = df, inherit.aes = FALSE)
+            g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
+                                  data = df
+                                  # , inherit.aes = FALSE
+                                  )
             #Plot non-spawn time period
             df <- data.frame(x1 = new_data[nspn_start[i], 'Sampled'],
                              x2 = new_data[nspn_stop[i], 'Sampled'],
@@ -399,8 +417,10 @@ plot.Temperature <- function(new_data,
                                                   'criteria_value']),
                              y2 = unique(new_data[nspn_start[i]:nspn_stop[i],
                                                   'criteria_value']))
-            g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = 'Non-spawning'),
-                                  data = df, inherit.aes = FALSE)
+            g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = 'Non-spawning', color = 'Non-spawning'),
+                                  data = df
+                                  # , inherit.aes = FALSE
+                                  )
           } else {
             #Plot last spawn-time period
             df <- data.frame(x1 = new_data[spn_start[i], 'Sampled'],
@@ -409,8 +429,10 @@ plot.Temperature <- function(new_data,
                                                   'criteria_value']),
                              y2 = unique(new_data[spn_start[i]:max(spn_index),
                                                   'criteria_value']))
-            g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning'),
-                                  data = df, inherit.aes = FALSE)
+            g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
+                                  data = df
+                                  # , inherit.aes = FALSE
+                                  )
             #Plot non-spawn time period
             df <- data.frame(x1 = new_data[nspn_start[i], 'Sampled'],
                              x2 = new_data[nspn_stop[i], 'Sampled'],
@@ -418,8 +440,10 @@ plot.Temperature <- function(new_data,
                                                   'criteria_value']),
                              y2 = unique(new_data[nspn_start[i]:nspn_stop[i],
                                                   'criteria_value']))
-            g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = 'Non-spawning'),
-                                  data = df, inherit.aes = FALSE)
+            g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = 'Non-spawning', color = 'Non-spawning'),
+                                  data = df
+                                  # , inherit.aes = FALSE
+                                  )
             #Plot last non-spawn time period
             if (new_data[nrow(new_data),'criteria_value'] != 13) {
               df <- data.frame(x1 = new_data[max(spn_index) + 1, 'Sampled'],
@@ -428,8 +452,10 @@ plot.Temperature <- function(new_data,
                                                     'criteria_value']),
                                y2 = unique(new_data[(max(spn_index) + 1):nrow(new_data),
                                                     'criteria_value']))
-              g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = 'Non-spawning'),
-                                    data = df, inherit.aes = FALSE)
+              g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = 'Non-spawning', color = 'Non-spawning'),
+                                    data = df
+                                    # , inherit.aes = FALSE
+                                    )
             }
           }
         }
@@ -442,9 +468,11 @@ plot.Temperature <- function(new_data,
                                                 'criteria_value']),
                            y2 = unique(new_data[spn_index[1]:spn_stop[1],
                                                 'criteria_value']))
-          g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = 'Non-spawning'),
-                                data = df, inherit.aes = FALSE)
-        }
+          g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = 'Non-spawning', color = 'Non-spawning'),
+                                data = df
+                                # , inherit.aes = FALSE
+                                )
+        } 
         
         #Plot first spawn time period
         df <- data.frame(x1 = new_data[spn_index[1],'Sampled'],
@@ -453,23 +481,69 @@ plot.Temperature <- function(new_data,
                                               'criteria_value']),
                          y2 = unique(new_data[spn_index[1]:spn_stop[1],
                                               'criteria_value']))
-        g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning'),
-                              data = df, inherit.aes = FALSE)
+        g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
+                              data = df
+                              # , inherit.aes = FALSE
+                              )
       }
     }
     
     if (plot_trend & !is.na(p.value)) {
-      g <- g + geom_line(aes(x = x, y = y, linetype = "Trend"), color = "blue", data = df_trend_line, inherit.aes = FALSE)
+      g <- g + geom_line(aes(x = x, y = y, linetype = "Trend", color="Trend"), data = df_trend_line
+                         # , inherit.aes = FALSE
+                         )
       
       g <- g + ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
         theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))
     }
     
-    g <- g + guides(color = guide_legend(override.aes = list(linetype = 0)))
+    g <- g + scale_colour_manual(name = "Criteria, Status, and Trends",
+                                 breaks = c('Meets', 'Exceeds', 'Spawning', 'Non-spawning', 'Trend'),
+                                 labels = c('Meets', 'Exceeds', 'Spawning', 'Non-spawning', 'Trend'),
+                                 values = c("Meets" = 'black',
+                                            "Exceeds" = 'red',
+                                            "Spawning" = 'black',
+                                            "Non-spawning" = 'black',
+                                            "Trend" = 'blue')
+                                 )
     
-    g <- g + scale_linetype_manual(values = c('Non-spawning' = "longdash",
+    g <- g + scale_linetype_manual(name = "Criteria, Status, and Trends",
+                                   breaks = c('Meets', 'Exceeds', 'Spawning', 'Non-spawning', 'Trend'),
+                                   labels = c('Meets', 'Exceeds', 'Spawning', 'Non-spawning', 'Trend'),
+                                   values = c('Meets' = 'blank',
+                                              'Exceeds' = 'blank',
+                                              'Non-spawning' = "dashed",
                                               'Spawning' = "dotted",
-                                              'Trend' = "solid"))
+                                              'Trend' = "solid")
+                                   )
+    if (plot_trend & !is.na(p.value)) {
+      if(all(new_data$exceed=='Meets')){
+        if(selectSpawning != 'No spawning'){
+          g <- g + guides(color=guide_legend(override.aes = list(shape = c(16,NA,NA,NA))))
+        } else {
+          g <- g + guides(color=guide_legend(override.aes = list(shape = c(16,NA,NA))))
+        }
+      } else {
+        if(selectSpawning != 'No spawning'){
+          g <- g + guides(color=guide_legend(override.aes = list(shape = c(16,16,NA,NA,NA))))
+        } else {
+          g <- g + guides(color=guide_legend(override.aes = list(shape = c(16,16,NA,NA))))
+        }
+      }
+    }
+    
+    # g <- g + scale_shape_manual(name = "Criteria, Status, and Trends",
+    #                             breaks = c('Meets', 'Exceeds', 'Spawning', 'Non-spawning', 'Trend'),
+    #                             labels = c('Meets', 'Exceeds', 'Spawning', 'Non-spawning', 'Trend'),
+    #                             values = c('Meets' = 16,
+    #                                        'Exceeds' = 16,
+    #                                        'Non-spawning' = NA,
+    #                                        'Spawning' = NA,
+    #                                        'Trend' = NA))
+    
+    # g <- g + guides(colour='legend', linetype='none') + guides(colour=guide_legend("Legend"))
+
+    # g <- g + guides(linetype = guide_legend(override.aes = list(color = c('Meets' = 'black','Exceeds' = 'red','Non-spawning'='black','Spawning'='black','Trend'='blue'))))
     
     # g <- g + scale_linetype_manual(values = c('Non-spawning' = 5,
     #                                           'Spawning' = 2,
@@ -1091,7 +1165,7 @@ plot.DO<-function(new_data,
   if (plot_trend & !is.na(p.value)) {
     g <- g + geom_line(aes(x = x, y = y, color = variable), 
                        data = df_trend_line)  
-    if (selectSpawning == 'No spawning') {
+    if (tolower(selectSpawning) == 'no spawning') {
       if (any('Exceeds' %in% new_data$exceed)) {
         if (any('Meets b/c %Sat' %in% new_data$exceed)) {
           g <- g + scale_color_manual("", values = c('black','red','black',
@@ -1259,7 +1333,7 @@ plot.DO<-function(new_data,
       }
     }
   } else {
-    if (selectSpawning == 'No spawning') {
+    if (tolower(selectSpawning) == 'no spawning') {
       if (any('Exceeds' %in% new_data$exceed)) {
         if (any('Meets b/c %Sat' %in% new_data$exceed)) {
           g <- g + scale_color_manual("", values = c('black', 'red',
