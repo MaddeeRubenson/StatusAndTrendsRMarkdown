@@ -300,7 +300,7 @@ extract_303d <- function (df.all, wq_limited, selectedPlanArea) {
   return(wq_limited)
 }
 
-Stations_Status<-function(df.all) {
+Stations_Status <- function(df.all, status.years) {
   require(dplyr)
   require(reshape2)
   dta<-df.all
@@ -312,19 +312,15 @@ Stations_Status<-function(df.all) {
   dta$Sampled<-as.Date(dta$Sampled)
   dta$year<-as.numeric(format(dta$Sampled, format="%Y"))
   
-  maxyear <- max(dta$year, na.rm = TRUE)
-  statyear<-seq(maxyear-3, maxyear, by = 1)
-  # statyear<-c('2014', '2015', '2016', '2017')
-  
   # dta<-dta%>%
   #   filter(Analyte == parm)
   
-  if(any(dta$year %in% statyear)){
+  if(any(dta$year %in% status.years)){
     lst_stat <- list()
     for (j in 1 : (length(unique(dta$Analyte)))) {
     sub_data <- dta[dta$Analyte == unique(dta$Analyte)[j],]
     status<-sub_data%>%
-      filter(year %in% statyear) %>%
+      filter(year %in% status.years) %>%
       group_by(Station_ID)%>%
       dplyr::summarise(n_years=length(unique(year))) %>%
       filter(n_years>2)
@@ -332,7 +328,7 @@ Stations_Status<-function(df.all) {
     #trend[trend$Station_ID %in% stns, ]
     dta_stns<-sub_data%>%
       dplyr::filter(Station_ID %in% stns) %>%
-      filter(year %in% statyear)
+      filter(year %in% status.years)
     
     if (nrow(status) == 0) {
       lst_stat[[j]] <- NULL
@@ -887,8 +883,8 @@ EvaluateDOWQS<-function(new_data,
   library(dplyr)
  
   new_data$Result <- as.numeric(new_data$Result)
-  new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column],
-                                          format = datetime_format))
+  new_data$Sampled <- as.POSIXct(new_data$Sampled,
+                                          format = datetime_format)
   #new_data$Sampled<-as.Date(new_data$Sampled)
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
