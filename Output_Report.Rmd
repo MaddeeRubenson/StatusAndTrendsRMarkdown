@@ -77,7 +77,10 @@ query_dates <- c("2000-01-01", "2018-07-01")
 project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Lower Deschutes/2018-Lower-Deschutes"
 
 # Set to TRUE if knitting a word document
-word_output <- FALSE
+word_output <- TRUE
+
+# Set to TRUE if you want individual parameter summary maps for each parameter
+split_param_summary <- FALSE
 
 # Everything below here should not change
 support_files_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files"
@@ -87,6 +90,7 @@ GIS_dir <- paste0(project_dir,"/GIS")
 # Name of input map files
 landuse_map_file <- paste0(gsub(" ", "_", agwqma), "_landuse_map.png")
 station_map_file <- paste0(gsub(" ", "_", agwqma), "_station_map.png")
+station_summary_map_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map.png")
 station_summary_map_DO_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_DO.png")
 station_summary_map_pH_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_pH.png")
 station_summary_map_temp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_temp.png")
@@ -132,6 +136,12 @@ if (!file.exists(paste0(project_dir,"/RData"))) {
 if (!file.exists(paste0(project_dir,"/Figures"))) {
     dir.create(paste0(project_dir,"/Figures"))
 }
+
+# Account for Executive Summary tables and figures in caption numbers
+tbls(name="placehold1", display=FALSE)
+tbls(name="placehold2", display=FALSE)
+tbls(name="placehold2", display=FALSE)
+figs(name="placeholdF1", display=FALSE)
 
 ```
 
@@ -489,9 +499,9 @@ knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name =
 
 The map in `r figs("stationsmap", display="cite")` show the general location of monitoring stations that fit the status and/or trend data requirements along with the distribution of federal and non-federal lands. 
 
-```{r stations-map-word, eval = word_output, results = "asis", fig.cap=figs(name="stationsmap", caption="Monitoring station locations within the Umpqua River AgWQ Management Area")}
+```{r stations-map-word, eval = word_output, results = "asis", fig.cap=figs(name="stationsmap", caption=paste0("Monitoring station locations within the ", agwqma, " AgWQ Management Area"))}
 
-knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_map_file))
+knitr::include_graphics(path = paste0("Figures/", station_map_file))
 
 ```
 
@@ -499,9 +509,9 @@ knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_map_file))
 
 The map in `r figs("landusemap", display="cite")` shows station location in relation to the 2011 national land cover dataset (Homer et al 2015).
 
-```{r landuse-map-word, eval = word_output, results = "asis", fig.cap=figs(name="landusemap", caption="Land use and land cover within the Umpqua River AgWQ Management Area")}
+```{r landuse-map-word, eval = word_output, results = "asis", fig.cap=figs(name="landusemap", caption=paste0("Land use and land cover within the ", agwqma, " AgWQ Management Area"))}
 
-knitr::include_graphics(path = paste0(project_dir,"/Figures/",landuse_map_file))
+knitr::include_graphics(path = paste0("Figures/", landuse_map_file))
 
 ```
 
@@ -1490,48 +1500,55 @@ DO_exc <- exc
 
 # Summary 
 
+```{r Summary-map, results = 'asis', eval = word_output & !(split_param_summary), fig.cap=figs(name="Summary_map", caption="Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
-```{r DO-summary-map, results = 'asis', eval = word_output, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last two years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+knitr::include_graphics(paste0("Figures/",station_summary_map_file))
 
-knitr::include_graphics(paste0(project_dir,"/Figures/",station_summary_map_DO_file))
+```
+
+```{r DO-summary-map, results = 'asis', eval = word_output & split_param_summary, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+
+knitr::include_graphics(paste0("Figures/",station_summary_map_DO_file))
 
 ```
 
 
-```{r Ecoli-summary-map, eval = word_output, results='asis', fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last two years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for E. coli.")}
 
-knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_ecoli_file))
+```{r Ecoli-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for E. coli.")}
 
-```
-
-```{r Entero-summary-map, eval = word_output, results='asis', fig.cap=figs(name="Entero_map", caption="Summary of stations that fit the criteria for status and trend analysis for Enterococcus. One or more exceedances within the last two years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
-
-knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_entero_file))
-
-```
-
-```{r Temp-summary-map, eval = word_output, results='asis', fig.cap=figs(name="Temperature_map", caption="Summary of stations that fit the criteria for status and trend analysis for temperature. One or more exceedances within the last two years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
-
-knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_temp_file))
-
-```
-
-```{r ph-summary-map, eval = word_output, results='asis', fig.cap=figs(name="pH_map", caption="Summary of stations that fit the criteria for status and trend analysis for pH. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
-
-knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_pH_file))
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_ecoli_file))
 
 ```
 
 
-```{r TP-summary-map, eval = word_output, results='asis', fig.cap=figs(name="TP_map", caption="Summary of stations that fit the criteria for trend analysis for Total Phosphorus.  Trend was determined by significant trends associated with long-term datasets.")}
+```{r Entero-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Entero_map", caption="Summary of stations that fit the criteria for status and trend analysis for Enterococcus. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
-knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_tp_file))
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_entero_file))
 
 ```
 
-```{r TSS-summary-map, results = 'asis', eval = word_output, fig.cap=figs(name="TSS_map", caption="Summary of stations that fit the criteria for status and trend analysis for Total Suspended Solids. Trend was determined by significant trends associated with long-term datasets.")}
+```{r Temp-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Temperature_map", caption="Summary of stations that fit the criteria for status and trend analysis for temperature. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
-knitr::include_graphics(path = paste0(project_dir,"/Figures/",station_summary_map_tss_file))
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_temp_file))
+
+```
+
+```{r ph-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="pH_map", caption="Summary of stations that fit the criteria for status and trend analysis for pH. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_pH_file))
+
+```
+
+
+```{r TP-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="TP_map", caption="Summary of stations that fit the criteria for trend analysis for Total Phosphorus.  Trend was determined by significant trends associated with long-term datasets.")}
+
+knitr::include_graphics(path = paste0("/Figures/",station_summary_map_tp_file))
+
+```
+
+```{r TSS-summary-map, results = 'asis', eval = word_output & split_param_summary, fig.cap=figs(name="TSS_map", caption="Summary of stations that fit the criteria for status and trend analysis for Total Suspended Solids. Trend was determined by significant trends associated with long-term datasets.")}
+
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_tss_file))
 
 ```
 
@@ -1586,7 +1603,7 @@ colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
 
 save(stns_param_summary, file=paste0(Rdata_dir,"/", stns_param_summary_file))
 
-knitr::kable(stns_param_summary, 
+knitr::kable(stns_param_summary_tbl, 
              # format = "markdown",  
              padding = 2, digits = 3, 
              caption = tbls(name = "parmSumTable", 
@@ -1663,6 +1680,7 @@ leaflet(agarea_shp) %>%
                                    "<ahref='https://www.usgs.gov/laws/policies_notices.html'>",
                                    "Policies</a>"),
               group = "USGS Topo", layers = "0") %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap, group = "NatGeo World Map") %>%
   addWMSTiles(GetURL("USGSHydroCached"),
               group = "Hydrography",
               options = WMSTileOptions(format = "image/png",
@@ -1708,7 +1726,7 @@ leaflet(agarea_shp) %>%
   addAwesomeMarkers(data = stns_param_summary,
                     lat = stns_param_summary$DECIMAL_LAT,
                     lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`D_T`),
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`DO_T`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
                                         markerColor = statusColor(stns_param_summary$`DO_S`)),
@@ -1718,8 +1736,8 @@ leaflet(agarea_shp) %>%
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "Dissolved Oxygen",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Dissolved Oxygen") %>%
   addLayersControl(baseGroups = c("Ecoli", "Temperature", "pH", "Dissolved Oxygen"),
-                   overlayGroups = c("Hydrography"), options = layersControlOptions(collapsed = FALSE)) %>%
-  hideGroup("Hydrography") %>% 
+                   overlayGroups = c("NatGeo World Map", "Hydrography"), options = layersControlOptions(collapsed = FALSE)) %>%
+  hideGroup(c("Hydrography", "NatGeo World Map")) %>% 
   addControl(position = "bottomleft", 
              html = sprintf('<html><body><div style="opacity:0.8">
                                         <img width="350" height="175" src="data:image/png;base64,%s">
