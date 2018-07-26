@@ -95,7 +95,7 @@ Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
 
 ## Purpose
 
-This report presents data and analysis that will help DEQ fulfill its role in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. The DEQ will use available water quality data to answer the first three questions below. For the fourth bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources of pollution:
+This report presents data and analysis that will help DEQ fulfill its role in the biennial review process described in the [Memorandum of Agreement](https://www.oregon.gov/ODA/shared/Documents/Publications/NaturalResources/DEQODAmoa.pdf) between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. The DEQ will use available water quality data to answer the first three questions below. For the fourth bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources of pollution:
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
@@ -111,7 +111,7 @@ The data returned were evaluated for quality. Data retrieved from the DEQ's data
 
 ## Land Use
 
-Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. The map below shows station locations in relation to the 2011 Natinal Land Cover dataset (Homer et al. 2015).
+Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. The map below shows station locations in relation to the 2011 National Land Cover dataset (Homer et al. 2015).
 
 ```{r landuse-exec}
 
@@ -126,6 +126,8 @@ knitr::kable(landuse, digits = 0, padding = 2, caption = tbls(name = "landUse", 
 ```
 
 ## Results Summary
+
+Within the `r input$select` AgWQ Management Area, data from `r length(unique(stns$Station_ID))` monitoring stations were sufficient to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations. 
 
 ```{r results-summary}
 
@@ -151,8 +153,6 @@ colnames(station_summary_tbl) <- c("Analyte", "Number of stations w/ sufficent d
 knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name = "StnSumTable", caption = "Summary of stations with suffcient data for status or trend analysis**"))                                 
 
 ```
-
-`r length(unique(stn_to_use))` monitoring stations contained sufficient data to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations within the `r agwqma` AgWQ Management Area. 
 
 
 ```{r parm-summary-table}
