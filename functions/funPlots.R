@@ -156,7 +156,7 @@ plot.Temperature <- function(new_data,
   library(ggplot2)
   
   new_data$Sampled <- as.POSIXct(strptime(new_data[,datetime_column], 
-                                          format = datetime_format))  
+                                          format = '%Y-%m-%d'))                                         ## BTD 8/8/18 Changed * format = datetime_format * to * format = '%Y-%m-%d' *
   new_data[!is.na(new_data$Result) & is.na(new_data$exceed), 'exceed'] <- FALSE
   new_data$exceed <- factor(new_data$exceed, levels = c(TRUE, FALSE), labels = c('Exceeds', 'Meets'))
   x.min <- min(new_data$Sampled) 
