@@ -3,16 +3,16 @@ title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px;
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
 date: July 2018
 output:
-  word_document:
-    fig_caption: yes
-    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
-    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
+  word_document:
+    fig_caption: yes
+    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+    toc: yes
 always_allow_html: yes
 ---
 
