@@ -1561,6 +1561,7 @@ Summary of stations that fit the criteria for status and/or trend analysis. One 
 
 stns_param_summary <-  parm_summary(stns = stns[,c(1:4)],
                             ecoli = ecoli,
+                            entero = entero,
                             pH = pH,
                             DO_eval = DO_eval,
                             temp = temp,
