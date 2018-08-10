@@ -454,7 +454,7 @@ Results for pH from both grab and continuous sample data were compared to the ap
 
 Results for bacteria samples were compared to the applicable bacteria criterion as found in [OAR 340-041-0009][2.2]. The bacteria standard for freshwater contact recreation is based on the presence of *E. coli* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The bacteria standard for coastal water contact recreation is based on the presence of *Enterococcus* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period.
 
-Dissolved oxygen status was assessed by comparing the observed concentration values to the applicable daily minimum water quality criterion found in [OAR 340-041-0016][2.3]. If the dissolved oxygen concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality criterion. These points were noted in the plots using a different shape. Assessments were not made against the seven and 30-day mean minimum dissolved oxygen criteria due to the general lack of continuous dissolved oxygen data.
+Dissolved oxygen status was assessed by comparing the measured concentration values to the applicable daily minimum water quality criterion found in [OAR 340-041-0016][2.3]. If the dissolved oxygen concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to meet the water quality criterion. These points were noted in the plots using a different shape. Assessments were not made against the seven and 30-day mean minimum dissolved oxygen criteria due to the general lack of continuous dissolved oxygen data.
 
 Results for continuous temperature data were compared against the applicable temperature criteria found in [OAR 340-041-0028][2.4]. The applicable temperature criteria is based on the seven day average daily maximum (7DADM) stream temperature metric. In order to ensure there was sufficient continuous data to calculate 7DADM, at least one observation per hour from noon to midnight must have been recorded. In addition, each month can have no more than one day of missing observations to ensure that no more than 10% of the 7DADM results in that month were missing.
 
@@ -1285,13 +1285,16 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
             Temp_Benuse <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[i], 'Temp_Benuse'])
             spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[i], 'spwn_time'])
             
-            temp_evaluate <- EvaluateTempWQS(sdadm_df = new_data,
-                                             selectUse = Temp_Benuse[1],
-                                             selectSpawning = spwn_time[1],
-                                             station_column_name = 'Station_ID')
             
             
-            b <- plot.Temperature(new_data = temp_evaluate,
+            #temp_evaluate <- EvaluateTempWQS(sdadm_df = new_data,
+            #                                 selectUse = Temp_Benuse[1],
+            #                                 selectSpawning = spwn_time[1],
+            #                                 station_column_name = 'Station_ID')
+            
+            
+            
+            b <- plot.Temperature(new_data = temp_evaluate[temp_evaluate$Station_ID==temp_stn[i],],
                                   all_data = df.all,
                                   sea_ken_table = SeaKen,
                                   selectUse = Temp_Benuse[1],
@@ -1558,7 +1561,6 @@ Summary of stations that fit the criteria for status and/or trend analysis. One 
 
 stns_param_summary <-  parm_summary(stns = stns[,c(1:4)],
                             ecoli = ecoli,
-                            entero = entero,
                             pH = pH,
                             DO_eval = DO_eval,
                             temp = temp,

@@ -157,7 +157,7 @@ knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name =
 
 ```{r parm-summary-table}
 
-knitr::kable(stns_param_summary, 
+knitr::kable(stns_param_summary_tbl,             
              # format = "markdown",  
              padding = 2, digits = 3, 
              caption = tbls(name = "parmSumTable", 
