@@ -1650,16 +1650,8 @@ popupTable <- function(param){
                            function(row) {
                              htmlTable::htmlTable(stns_param_summary[row,c("Station_ID", "Station_Description",
                                                                            paste0(param, "_S"), paste0(param, "_T"))],
-                                                                           # "Ecoli Status", "Ecoli Trend",
-                                                                           # "Temperature Status", "Temperature Trend", 
-                                                                           # "pH Status", "pH Trend", 
-                                                                           # "DO Status", "DO Trend")
                                                   header = c("Station_ID", "Station_Description",
                                                              paste0(param, " Status"), paste0(param, " Trend")),
-                                                             # "Ecoli Status", "Ecoli Trend",
-                                                             # "Temperature Status", "Temperature Trend", 
-                                                             # "pH Status", "pH Trend", 
-                                                             # "DO Status", "DO Trend"),
                                                   rnames = FALSE)
                            }))
   return(table)
@@ -1705,6 +1697,18 @@ leaflet(agarea_shp) %>%
   addAwesomeMarkers(data = stns_param_summary,
                     lat = stns_param_summary$DECIMAL_LAT,
                     lng = stns_param_summary$DECIMAL_LONG,
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Entero_T`),
+                                        iconColor = 'black',
+                                        library = 'glyphicon',
+                                        markerColor = statusColor(stns_param_summary$`Entero_S`)),
+                    popup = popupTable("Entero"),
+                    group = "Enterococcus"
+  ) %>%
+  addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "Enterococcus",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
+               weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Enterococcus") %>%
+  addAwesomeMarkers(data = stns_param_summary,
+                    lat = stns_param_summary$DECIMAL_LAT,
+                    lng = stns_param_summary$DECIMAL_LONG,
                     icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Temp_T`),
                                         iconColor = 'black',
                                         library = 'glyphicon',
@@ -1738,7 +1742,28 @@ leaflet(agarea_shp) %>%
   ) %>%
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "Dissolved Oxygen",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Dissolved Oxygen") %>%
-  addLayersControl(baseGroups = c("Ecoli", "Temperature", "pH", "Dissolved Oxygen"),
+  addAwesomeMarkers(data = stns_param_summary,
+                    lat = stns_param_summary$DECIMAL_LAT,
+                    lng = stns_param_summary$DECIMAL_LONG,
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`TP_T`),
+                                        iconColor = 'black',
+                                        library = 'glyphicon',
+                                        markerColor = statusColor(stns_param_summary$`TP_S`)),
+                    popup = popupTable("TP"),
+                    group = "Total Phosphorus"
+  ) %>%
+  addAwesomeMarkers(data = stns_param_summary,
+                    lat = stns_param_summary$DECIMAL_LAT,
+                    lng = stns_param_summary$DECIMAL_LONG,
+                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`TSS_T`),
+                                        iconColor = 'black',
+                                        library = 'glyphicon',
+                                        markerColor = statusColor(stns_param_summary$`TSS_S`)),
+                    popup = popupTable("TSS"),
+                    group = "Total Suspended Solids"
+  ) %>%
+  addLayersControl(baseGroups = c("Dissolved Oxygen", "Ecoli", "Enterococcus", "Temperature", "pH", 
+                                  "Total Phosphorus", "Total Suspended Solids"),
                    overlayGroups = c("NatGeo World Map", "Hydrography"), options = layersControlOptions(collapsed = FALSE)) %>%
   hideGroup(c("Hydrography", "NatGeo World Map")) %>% 
   addControl(position = "bottomleft", 
