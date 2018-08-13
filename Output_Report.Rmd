@@ -64,7 +64,7 @@ source("functions/funPlots.R")
 source('functions/TualatinR_Allocations.R')
 
 tbls  <- captioner(prefix="Table")
-figs <- captioner(prefix="Figure")
+figs <- captioner(prefix="  \nFigure")
 ```
 
 ```{r inputs}
@@ -427,9 +427,9 @@ BC_table<-data.frame(input$select, deq, oda)
 colnames(BC_table) <- c('AgWQ Management Area', 'DEQ Basin Coordinator', 'ODA AgWQ Specialist')
 
 knitr::kable(BC_table,
-             padding = 2, digits = 1, caption = 
+             padding = 2, digits = 1, row.names = FALSE, caption = 
                tbls(name = "basinContact", caption =
-                      "Oregon DEQ and ODA basin contacts")
+                      "Oregon DEQ and ODA basin contacts.")
 )
 
 ```
@@ -491,7 +491,7 @@ station_summary_tbl <- data.frame(Analyte=c("Ecoli","Enterococcus","Dissolved Ox
                                            ))
 colnames(station_summary_tbl) <- c("Analyte", "Number of stations w/ sufficient data for status analysis", "Number of stations w/ sufficient data for trend analysis")                                  
 
-knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name = "StnSumTable", caption = "Summary of stations with sufficient data for status or trend analysis"))                                 
+knitr::kable(station_summary_tbl, digits = 0, padding = 2, row.names = FALSE, caption = tbls(name = "StnSumTable", caption = "Summary of stations with sufficient data for status or trend analysis."))                                 
 
 ```
 
@@ -594,7 +594,7 @@ landuse <-landuse[, - 3]
 save(landuse, file=paste0(Rdata_dir,"/", landuse_file))
 
 knitr::kable(landuse, digits = 0, 
-             padding = 2, caption = tbls(name = "landUse", caption = "Summary table of watershed land use for stations with a status or trend result."))
+             padding = 2, caption = tbls(name = "landUse", row.names = FALSE, caption = "Summary table of watershed land use for stations with a status or trend result."))
 
 ```
 
@@ -627,7 +627,7 @@ wq_limited_df$`Listing Status` <- revalue(wq_limited_df$`Listing Status`,
                                             "TMDL approved" = "Cat 4A",
                                             "303(d)" = "Cat 5"))
 
-knitr::kable(wq_limited_df, padding = 2, caption = tbls(name = "wqLimited", caption = "Summary of Integrated Report listings for parameters included in this report. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA."))
+knitr::kable(wq_limited_df, padding = 2, row.names = FALSE, caption = tbls(name = "wqLimited", caption = "Summary of Integrated Report listings for parameters included in this report. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA."))
 
 ```
 
@@ -653,7 +653,7 @@ if(nrow(SK) > 0) {
 
   colnames(SK) <- c("Station ID", "Analyte", "Slope", "p value", "Median", "N", "Significance Result")
   
-  knitr::kable(SK, padding = 2, format.args = list(scientific = TRUE), caption = tbls(name = "seakenTable", caption = "Seasonal Kendall trend results for each analyte at each monitoring station with at least eight years of data."))
+  knitr::kable(SK, padding = 2, format.args = list(scientific = TRUE), row.names = FALSE, caption = tbls(name = "seakenTable", caption = "Seasonal Kendall trend results for each analyte at each monitoring station with at least eight years of data."))
 }
 
 
@@ -727,9 +727,10 @@ if(length(ecoli_stns) > 0) {
   
   knitr::kable(exc, padding = 2, digits = 1,
                caption = tbls(name = "ecoliExcTable", 
+                              row.names = FALSE,
                               caption = "_E. coli_ status. If sufficient data exists to calculate the geometric mean, it is included in the table."))
 }  else {
-  print("No monitoring stations have data to assess status and/or trend of _E. coli_") 
+  print("No monitoring stations have data to assess status and/or trend of _E. coli_.") 
 } 
 
 ```
@@ -810,10 +811,11 @@ if(length(entero_stns) > 0) {
   }
   
   knitr::kable(exc, padding = 2, digits = 1,
-               caption = tbls(name = "enterExcTable", 
+               caption = tbls(name = "enterExcTable",
+                              row.names = FALSE, 
                               caption = "_Enterococcus_ status. If sufficient data exists to calculate the geometric mean, it is included in this table."))
 }  else {
-  print("No monitoring stations have data to assess status and/or trend of Enterococcus") 
+  print("No monitoring stations have data to assess status and/or trend of Enterococcus.") 
 } 
 
 ```
@@ -926,10 +928,10 @@ for (i in 1:length(tp_stn)) {
 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
 exc <- exc[,c(1:5)]
-knitr::kable(exc,padding = 2, digits = 1, caption = tbls(name = "tpExcTable", caption = "Total Phosphorus observations"))
+knitr::kable(exc,padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "tpExcTable", caption = "Total Phosphorus observations."))
 
 # }else {
-#   print("No monitoring stations have sufficient data to assess status and/or trend of total phosphorus")
+#   print("No monitoring stations have sufficient data to assess status and/or trend of total phosphorus.")
 # }
 #} 
 
@@ -1046,7 +1048,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
   } 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
 # exc <- exc[,c(1:5)]
-  knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "tssExcTable", caption = "Total Suspended Solids observations."))
+  knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "tssExcTable", caption = "Total Suspended Solids observations."))
 
 # }else {
 #   "No monitoring stations have sufficient data to assess trends in total suspended solids concentration."
@@ -1188,10 +1190,10 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   }
   
   if(!is.null(ph_exc)) {
-    knitr::kable(ph_exc, padding = 2, digits = 1, caption = tbls(name = "phExcTable", caption = "pH status"))
+    knitr::kable(ph_exc, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "phExcTable", caption = "pH status."))
   }
   # } else {
-  #   print("No monitoring stations have sufficient data to assess pH")
+  #   print("No monitoring stations have sufficient data to assess pH.")
   # }
 }
 
@@ -1331,7 +1333,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
       
       if(!is.null(exc)){ #prints exceedance table, if temperature stns exist 
         #fix column names
-        knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "tempExcTable", caption = "Temperature status"))
+        knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "tempExcTable", caption = "Temperature status."))
       }
       
     }
@@ -1487,11 +1489,11 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
     
     colnames(exc) <- c("Station ID", "Station Description", "Obs", "Exceedances", "Meets b/c %Sat", "Min Date", "Max Date")
     if(!is.null(exc)){
-      knitr::kable(exc, padding = 2, digits = 1, caption = tbls(name = "doExcTable", caption = "Dissolved Oxygen status"))
+      knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "doExcTable", caption = "Dissolved Oxygen status."))
     }
     
   # } else {
-  #   print("No monitoring stations fit the criteria to assess Dissolved Oxygen")
+  #   print("No monitoring stations fit the criteria to assess Dissolved Oxygen.")
   # }
 }
 DO_exc <- exc
@@ -1605,7 +1607,8 @@ save(stns_param_summary, file=paste0(Rdata_dir,"/", stns_param_summary_file))
 
 knitr::kable(stns_param_summary_tbl, 
              # format = "markdown",  
-             padding = 2, digits = 3, 
+             padding = 2, digits = 3,
+             row.names = FALSE,
              caption = tbls(name = "parmSumTable", 
                             caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen."))
 
@@ -1806,13 +1809,13 @@ U.S. Geological Survey, 2016, National Water Information System data available o
 
 org_summary <- summarizeByOrg(df.all)
 
-knitr::kable(org_summary, padding = 2, digits = 1, caption = tbls(name = "AppendixorgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report."))
+knitr::kable(org_summary, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixorgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report."))
 
-knitr::kable(status, padding = 2, digits = 1, caption = tbls(name = "AppendixstatusTable", caption = "Monitoring stations that fit the criteria to assess status; note value represents the number of results for each monitoring station per year."))
+knitr::kable(status, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixstatusTable", caption = "Monitoring stations that fit the criteria to assess status; note value represents the number of results for each monitoring station per year."))
 
-knitr::kable(trend, padding = 1, digits = 1, caption = tbls(name = "AppendixtrendTable", caption = "Monitoring stations that fit the criteria to assess trends; note value represents the number of results for each monitoring station per year."))
+knitr::kable(trend, padding = 1, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixtrendTable", caption = "Monitoring stations that fit the criteria to assess trends; note value represents the number of results for each monitoring station per year."))
 
-knitr::kable(stns_by_year, padding = 1, digits = 1, caption = tbls(name = "AppendixstnByYrTable", caption = "All monitoring stations that were queried and the number of results per year during the query period."))
+knitr::kable(stns_by_year, padding = 1, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixstnByYrTable", caption = "All monitoring stations that were queried and the number of results per year during the query period."))
 
 ```
 
