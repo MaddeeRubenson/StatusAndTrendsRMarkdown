@@ -447,7 +447,7 @@ The data returned were evaluated for quality. Data retrieved from the DEQ's data
 
 The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids and total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters.
 
-Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A trend result was made at a site if there were a minimum of eight years of available data. A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p < 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median.
+Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A trend result was made at a site if there were a minimum of eight years of available data. A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p <= 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median.
 
 A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(round_date(ydm(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ydm(input$dates[2]), format="%B %d, %Y")`. A trend assessment was made if data were available in a minimum of eight different years for any year in the period from `r format(ydm(input$dates[1]), format="%B %d, %Y")` to `r format(ydm(input$dates[2]), format="%B %d, %Y")`. Stations that met at least one of those data requirements were assessed with the results presented in this report. In some cases a station had sufficient data for trend but not status because data were not available anytime in the last two years. In these cases the status was shown on the plot for the older data along with the trend result but the status was not recorded in the maps, summary tables, or conclusions.
 
@@ -631,12 +631,11 @@ knitr::kable(wq_limited_df, padding = 2, caption = tbls(name = "wqLimited", capt
 
 ```
 
+
 ## Seasonal Kendall Trend Analysis
 
-For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal Kendall trend analysis. Results are summarized in `r tbls(name = "seakenTable", display="cite")` below. If no table is visible, there were no monitoring stations with sufficient data to assess trends.
+For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal Kendall trend analysis. Results are summarized in `r tbls(name = "seakenTable", display="cite")` below. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p <= 0.20 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each analyte at each monitoring station. If no table is visible, there were no monitoring stations with sufficient data to assess trends.
 
-
-<!-- Output for the Seasonal Kendall analysis, which was performed on data that had at least 8 years of data between 2000 and 2017. Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station.   -->
 
 ```{r Seasonal-Kendall, results="asis"}
 
@@ -654,7 +653,7 @@ if(nrow(SK) > 0) {
 
   colnames(SK) <- c("Station ID", "Analyte", "Slope", "p value", "Median", "N", "Significance Result")
   
-  knitr::kable(SK, padding = 2, format.args = list(scientific = TRUE), caption = tbls(name = "seakenTable", caption = "Output for the Seasonal Kendall analysis, which was performed on stations with at least 8 years of data between year(query_dates[1]) and year(query_dates[2]). Only stations used in this analysis are included in this table. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p<0.8 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each station at each monitoring station."))
+  knitr::kable(SK, padding = 2, format.args = list(scientific = TRUE), caption = tbls(name = "seakenTable", caption = "Seasonal Kendall trend results for each analyte at each monitoring station with at least eight years of data."))
 }
 
 
