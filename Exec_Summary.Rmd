@@ -95,11 +95,10 @@ Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
 
 ## Purpose
 
-This report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Dependent on data availability, DEQ will use the available water quality data to answer the first three questions below. For the fourth bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources:
+This report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the Memorandum of Agreement between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Dependent on data availability, DEQ will use the available water quality data to answer the first two questions below. For the third bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources:
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
-*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 
@@ -107,7 +106,7 @@ This report presents data and analysis that will help DEQ fulfill its roles in t
 
 Water quality data were retrieved from DEQ, EPA and USGS databases. DEQ's volunteer monitoring database was not included, however some volunteer data is queried from EPA's database. Many organizations provided data used in this report (see Appendix). Data collected between `r format(ymd(query_dates[1]), format="%B %d, %Y")` to `r format(ymd(query_dates[2]), format="%B %d, %Y")` and only within the `r agwqma` agricultural water quality management area were included in this report. Parameters included in the data query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). 
 
-The data returned were evaluated for data qualit. Data included `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` data determined following the DEQ's Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Data was evaluated against the applicable Oregon water quality criterion. 
+The data returned were evaluated for quality. Data included `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` data determined following the DEQ's Laboratory Quality Manual. EPA and USGS data were included unless result comments indicated problems with the data. Data was evaluated against the applicable Oregon water quality criterion. 
 
 ## Land Use
 
@@ -235,9 +234,9 @@ conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Add_c
 
 **What are the overall status or trends?**
 
+* *Dissolved Oxygen*: `r conclusions.DO`
 * *E. coli*: `r conclusions.Ecoli`
 * *Enterococcus*: `r conclusions.Entero`
-* *Dissolved Oxygen*: `r conclusions.DO`
 * *pH*: `r conclusions.pH`
 * *Temperature*: `r conclusions.Temp`
 * *Total Phosphorus*: `r conclusions.TP`

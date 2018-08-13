@@ -23,6 +23,7 @@ Figures/Thumbs.db
 *RData*
 
 # Outputs
+*Documents
 *docx
 *html
 
@@ -33,3 +34,7 @@ Figures/Thumbs.db
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
+
+# Others
+*schema.ini
+*.txt.xml
