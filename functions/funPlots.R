@@ -1151,7 +1151,7 @@ plot.DO<-function(new_data,
     xlim(x.lim) +
     ylim(y.lim) +
     theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
-    ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
+    ggtitle(bquote(atop(.(title), atop(paste(.(sub.text), ", DO standard: ", .(d[,"y"][1])))))) +
     theme(legend.position = "top",
           legend.title = element_blank(),
           legend.direction = 'horizontal') +
@@ -1178,9 +1178,9 @@ plot.DO<-function(new_data,
                                       guide = guide_legend(override.aes = list(
                                         linetype = c("solid", "blank", 
                                                      "blank", 'blank', "solid"),
-                                        shape = c(NA, 19, 19, 18, NA)),
+                                        shape = c(NA, 19, 19, 17, NA)),
                                         nrow = 2))
-          g <- g + scale_shape_manual("", values = c(19, 19, 18),
+          g <- g + scale_shape_manual("", values = c(19, 19, 17),
                                       guide = FALSE)
         } else {
           g <- g + scale_color_manual("", values = c('black','red',
@@ -1276,9 +1276,9 @@ plot.DO<-function(new_data,
                                         linetype = c("solid", "blank", 
                                                      "blank", "blank", 'solid',
                                                      'dashed'),
-                                        shape = c(NA, 19, 19, 18, NA, NA)),
+                                        shape = c(NA, 19, 19, 17, NA, NA)),
                                         nrow = 2)) +
-            scale_shape_manual("", values = c(19, 19, 18),
+            scale_shape_manual("", values = c(19, 19, 17),
                                guide = FALSE)
         } else {
           g <- g + scale_color_manual("", values = c('black','red','black',
@@ -1345,9 +1345,9 @@ plot.DO<-function(new_data,
                                       guide = guide_legend(override.aes = list(
                                         linetype = c("solid", "blank", 
                                                      "blank", "blank"),
-                                        shape = c(NA, 19, 19, 18)),
+                                        shape = c(NA, 19, 19, 17)),
                                         nrow = 2)) +
-            scale_shape_manual("", values = c(19, 19, 18),
+            scale_shape_manual("", values = c(19, 19, 17),
                                guide = FALSE)
         } else {
           g <- g + scale_color_manual("", values = c('black','red',
@@ -1437,9 +1437,9 @@ plot.DO<-function(new_data,
                                         linetype = c("solid", "blank", 
                                                      "blank", "blank", 
                                                      'dashed'),
-                                        shape = c(NA, 19, 19, 18, NA)),
+                                        shape = c(NA, 19, 19, 17, NA)),
                                         nrow = 2)) +
-            scale_shape_manual("", values = c(19, 19, 18),
+            scale_shape_manual("", values = c(19, 19, 17),
                                guide = FALSE)
         } else {
           g <- g + scale_color_manual("", values = c('black','red','black',
@@ -1513,6 +1513,7 @@ plot.TSS<-function(new_data,
  
   new_data<-EvaluateTSSWQS(new_data = new_data, 
                            selectWQSTSS = selectWQSTSS)
+  new_data$exceed <- ifelse(new_data$exceed == 1, "Exceeds", "Meets")
   
   x.min <- min(new_data$Sampled) 
   x.max <- max(new_data$Sampled) 
@@ -1586,7 +1587,8 @@ plot.TSS<-function(new_data,
    ##PLOT THE TIMESERIES
 if(selectWQSTSS != 0){ #Allocation
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point(aes(color = exceed)) + theme_gdocs() + theme(axis.title = elem_text) +
+    geom_point(aes(color = exceed)) + 
+    theme_gdocs() + theme(axis.title = elem_text) +
     xlim(x.lim) +
     ylim(y.lim) +
     theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
@@ -1597,7 +1599,7 @@ if(selectWQSTSS != 0){ #Allocation
     xlab(x.lab) +
     ylab(y.lab) 
     
-  g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
+  g <- g + geom_line(aes(x = x, y = y, color = variable), linetype="dashed", data = d)
 } else { #no allocation 
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
     geom_point() + theme_gdocs() + theme(axis.title = elem_text) +
@@ -1620,7 +1622,7 @@ if(selectWQSTSS != 0){ #Allocation
   
   #allocation, trend line 
   if (plot_trend & !is.na(p.value)) {
-    if ('Exceeds' %in% unique(new_data$exceed)) { #with exceedances
+    if ("Meets" %in% unique(new_data$exceed)) { #with exceedances
       meet<-new_data %>% filter(exceed == 'Meets') 
       if (nrow(meet) < 1) {
         g <-g + scale_color_manual("", values = c('red','blue', 'black'),
@@ -1637,8 +1639,8 @@ if(selectWQSTSS != 0){ #Allocation
                                     linetype = c('solid'))))
     }
   } else {
-    if ('Exceeds' %in% unique(new_data$exceed)) {
-      meet<-new_data %>% filter(exceed == 'Meets')
+    if ("Exceeds" %in% unique(new_data$exceed)) {
+      meet<-new_data %>% filter(exceed == "Meets")
       if(nrow(meet) < 1) {
         g <-g + scale_color_manual("", values = c('red', 'black'),
                                    guide = guide_legend(override.aes = list(
@@ -1646,7 +1648,7 @@ if(selectWQSTSS != 0){ #Allocation
       } else {
         g <- g + scale_color_manual("", values = c('red', 'black', 'black', 'black'),
                                     guide = guide_legend(override.aes = list(
-                                      linetype = c('solid', 'solid', 'dashed'))))
+                                      linetype = c("blank", "blank", 'dashed'))))
       }
     } else {
       g <- g + scale_color_manual("", values = c('blue', 'black', 'black', 'black'),
