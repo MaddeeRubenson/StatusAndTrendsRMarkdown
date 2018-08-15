@@ -1,7 +1,7 @@
 ---
-title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Lower Deschutes Agricultural Water Quality Management Area Water Quality Status and Trends Report'
+title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Owyhee Agricultural Water Quality Management Area Water Quality Status and Trends Report'
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: July 2018
+date: August 2018
 output:
   word_document:
     fig_caption: yes
@@ -72,9 +72,9 @@ figs <- captioner(prefix="  \nFigure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_shp').
 
-agwqma <- "Lower Deschutes"
+agwqma <- "Owyhee"
 query_dates <- c("2000-01-01", "2018-07-01")
-project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Lower Deschutes/2018-Lower-Deschutes"
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Owyhee/2018-Owyhee"
 
 # Set to TRUE if knitting a word document
 word_output <- TRUE
@@ -261,21 +261,21 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
  
  
-  # Remove Enterococcus data from df.all where the Coastal Contact Recreation criterion doesn't apply
+  # Remove Enterococcus data from df.all where the Coastal Contact Recreation criterion doesn't apply     #BTD 8/15/18 Do not include the Entero Section, no entero data
   
   # Create a subset of data only including "Enterococcus"
-  df.temp.ent <- df.all[df.all$Analyte == 'Enterococcus',]
+  # df.temp.ent <- df.all[df.all$Analyte == 'Enterococcus',]                                              # BTD 8/15/18 Commented Out
   
   # Create a vector of stations where the Enterococcus criterion apply
-  df.temp.ent2 <- (Ben_use_LU[!is.na(Ben_use_LU$bacteria_use),]) 
-  df.temp.ent2 <- unique(df.temp.ent2[(df.temp.ent2$AgArea == agwqma &  grepl("Coastal Contact Recreation", df.temp.ent2$bacteria_use)), c("Station_ID")])    
+  # df.temp.ent2 <- (Ben_use_LU[!is.na(Ben_use_LU$bacteria_use),])                                        # BTD 8/15/18 Commented Out
+  # df.temp.ent2 <- unique(df.temp.ent2[(df.temp.ent2$AgArea == agwqma &  grepl("Coastal Contact Recreation", df.temp.ent2$bacteria_use)), c("Station_ID")])   # BTD 8/15/18                                                                                                                                                                Commented Out
   
-  # Create vector of stations inside bacteria_nonfreshwater polygon
-  df.temp.ent3 <- unique(c(Stations_in_poly(df.temp.ent, bacteria_nonfreshwater_shp, outside=FALSE), df.temp.ent2))
+  # Create vector of stations inside bacteria_nonfreshwater polygon                 
+  # df.temp.ent3 <- unique(c(Stations_in_poly(df.temp.ent, bacteria_nonfreshwater_shp, outside=FALSE), df.temp.ent2))     # BTD 8/15/18 Commented Out
  
   
   # Use logic to remove the stations 
-  df.all <- df.all[!(!(df.all$Station_ID %in% df.temp.ent3) & df.all$Analyte == 'Enterococcus'),]
+  # df.all <- df.all[!(!(df.all$Station_ID %in% df.temp.ent3) & df.all$Analyte == 'Enterococcus'),]                       # BTD 8/15/18 Commented Out
   
   
   df.all <- remove_QAfail(df.all)
@@ -361,9 +361,13 @@ if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen", 'Total Suspended 
                                                            'Total Phosphorus')))
 } else {seaken_other <- data.frame()}
 
-if(NROW(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass")) > 0) {
-  seaken_temp <- run_seaKen(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass"))
-} else {seaken_temp <- data.frame()}
+# BTD 8/15/18 Commented out this section due to Evaluation error: object 'monTest' not found 
+# if(NROW(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass")) > 0) {
+#   seaken_temp <- run_seaKen(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass"))
+# } else {seaken_temp <- data.frame()}
+
+# BTD 8/15/18 Added line below in conj. with commenting out above section
+seaken_temp <- data.frame()                     
 
 SeaKen <- rbind(seaken_other, seaken_temp)
 
@@ -390,6 +394,8 @@ all.sp <- generateStnLyrToPlot(df.stns, stn_totals) #changed lat and long names
 
 all_stn_sp <- all_stn_sp(df.all)
 stn_nlcd_df <- landUseAnalysis(all.sp, cats, NLCD2011)
+
+writeOGR(obj=all_stn_sp, dsn=GIS_dir, layer="stations_all", driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 save(stns, file = paste0(Rdata_dir,"/", stns_file))
 save(status, file = paste0(Rdata_dir,"/", status_file))
@@ -593,8 +599,8 @@ landuse <-landuse[, - 3]
 
 save(landuse, file=paste0(Rdata_dir,"/", landuse_file))
 
-knitr::kable(landuse, digits = 0, 
-             padding = 2, caption = tbls(name = "landUse", row.names = FALSE, caption = "Summary table of watershed land use for stations with a status or trend result."))
+knitr::kable(landuse, digits = 0, row.names = FALSE,  
+             padding = 2, caption = tbls(name = "landUse", caption = "Summary table of watershed land use for stations with a status or trend result."))                                                                          
 
 ```
 
@@ -725,9 +731,8 @@ if(length(ecoli_stns) > 0) {
   exc <- rbind.fill(exc_list[])
   exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
   
-  knitr::kable(exc, padding = 2, digits = 1,
-               caption = tbls(name = "ecoliExcTable", 
-                              row.names = FALSE,
+  knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE,
+               caption = tbls(name = "ecoliExcTable",
                               caption = "_E. coli_ status. If sufficient data exists to calculate the geometric mean, it is included in the table."))
 }  else {
   print("No monitoring stations have data to assess status and/or trend of _E. coli_.") 
