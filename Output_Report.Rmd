@@ -79,7 +79,7 @@ project_dir <- "N:/Agriculture/Status_and_Trend_Analysis/Curry County/2018-Curry
 word_output <- FALSE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
-split_param_summary <- FALSE
+split_param_summary <- TRUE
 
 # Everything below here should not change
 support_files_dir <- "N:/Agriculture/Status_and_Trend_Analysis/R_support_files"
@@ -89,7 +89,7 @@ GIS_dir <- paste0(project_dir,"/GIS")
 # Name of input map files
 landuse_map_file <- paste0(gsub(" ", "_", agwqma), "_landuse_map.png")
 station_map_file <- paste0(gsub(" ", "_", agwqma), "_station_map.png")
-station_summary_map_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map.png")
+
 station_summary_map_DO_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_DO.png")
 station_summary_map_pH_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_pH.png")
 station_summary_map_temp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_temp.png")
@@ -141,12 +141,13 @@ if (!file.exists(paste0(project_dir,"/Figures"))) {
 
 ```{r exec-summary-placeholder}
 
-if (!word_output) {
+if (word_output) {
   # Account for Executive Summary tables and figures in caption numbers
   tbls(name="tbl1_lu", display=FALSE)
   tbls(name="tbl2_results_summary", display=FALSE)
-  figs(name="fig1_result_map", display=FALSE)
-  figs(name="fig2_result_map", display=FALSE)
+  figs(name="fig1_result_map1", display=FALSE)
+  figs(name="fig2_result_map2", display=FALSE)
+  figs(name="fig3_result_map3", display=FALSE)
   tbls(name="tbl3_station_summary", display=FALSE)
 }
 
@@ -1511,18 +1512,12 @@ DO_exc <- exc
 
 # Summary 
 
-```{r Summary-map, results = 'asis', eval = word_output & !(split_param_summary), fig.cap=figs(name="Summary_map", caption="Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
-
-knitr::include_graphics(paste0("Figures/",station_summary_map_file))
-
-```
 
 ```{r DO-summary-map, results = 'asis', eval = word_output & split_param_summary, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
 knitr::include_graphics(paste0("Figures/",station_summary_map_DO_file))
 
 ```
-
 
 
 ```{r Ecoli-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for E. coli.")}
@@ -1537,6 +1532,7 @@ knitr::include_graphics(path = paste0("Figures/",station_summary_map_ecoli_file)
 knitr::include_graphics(path = paste0("Figures/",station_summary_map_entero_file))
 
 ```
+
 
 ```{r Temp-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Temperature_map", caption="Summary of stations that fit the criteria for status and trend analysis for temperature. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
