@@ -50,7 +50,10 @@ run_seaKen <- function (inputData) {
           !any(1:frequency(tmp.ts) %in% cycle(tmp.ts)) |
           frequency(tmp.ts) <= 1
           #| !all(1:12 %in% cycle(tmp.ts))
-          ) next
+      ) {
+        sea_ken_int$signif[ii] <- "Years<8"
+        next
+      } 
       tmp.result <- seaKenPlus(tmp.ts)
       sea_ken_int$pvalue[ii] <- tmp.result$p.value
       sea_ken_int$slope[ii] <- tmp.result$sen.slope
