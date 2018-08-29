@@ -41,7 +41,7 @@ Stations_in_poly <- function(df.all, poly_shp, outside=FALSE) {
   library(sp)
   
   # make a spatial object
-  df.shp <- df.all[,c("Station_ID", "DATUM", "DECIMAL_LAT", "DECIMAL_LONG")]
+  df.shp <- df.all[,c("Station_ID", "DATUM", "DECIMAL_LAT", "DECIMAL_LONG")]         
   coordinates(df.shp)=~DECIMAL_LONG+DECIMAL_LAT
   
   # Datums to search for
@@ -375,6 +375,11 @@ Stations_Trend<-function(df.all){
     stns<-c(as.character(unique(trend$Station_ID)))
     dta_stns<-sub_data%>%
       dplyr::filter(Station_ID %in% stns)
+    
+    #tx <- sub_data %>%
+      #group_by(Station_ID,year)%>%
+      #dplyr::summarise(n = n()) %>% spread(year, n) %>%
+      #dplyr::filter(Station_ID %in% unique(trend$Station_ID))
     
     if (nrow(trend) == 0) {
       lstoutput[[i]] <- NULL
@@ -1857,8 +1862,8 @@ parm_summary <- function(stns,
   e_status_stns  <- unique(e_status_stns$Station_ID)
   e_status <- ecoli %>% filter(Station_ID %in% e_status_stns) %>% filter(year %in% statyear)
   
-  if(any(trend != 'No Stations Meet Trend Criteria'))  {
-    e_trend_stns <- trend %>% filter(Analyte == 'E. Coli')
+  if(any(trend != 'No Stations Meet Trend Criteria') & any(SeaKen[SeaKen$analyte == 'E. Coli',]$signif != 'Need at least 8 years'))  {
+    e_trend_stns <- SeaKen %>% filter(analyte == 'E. Coli', signif != 'Need at least 8 years')
     e_trend_stns  <- unique(e_trend_stns$Station_ID)
   } else {
     e_trend_stns <- NULL
@@ -1876,10 +1881,11 @@ parm_summary <- function(stns,
     }
     
   }
-  
+  print("Summarizing trends for E. Coli")
   #trend Ecoli
   if(length(e_trend_stns) > 0) {
     for(j in 1:length(e_trend_stns)) {
+      print(e_trend_stns[j])
       e_seaken <- SeaKen %>% filter(analyte == 'E. Coli')
       e_seaken <- e_seaken[e_seaken$Station_ID == e_trend_stns[j],]
       
@@ -2134,8 +2140,8 @@ parm_summary <- function(stns,
     tp_status_stns  <- unique(tp_status_stns$Station_ID)
     tp_status <- tp %>% filter(Station_ID %in% tp_status_stns) %>% filter(year %in% statyear)
     
-    if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      tp_trend_stns <- trend %>% filter(Analyte == 'Total Phosphorus')
+    if(any(trend != 'No Stations Meet Trend Criteria') & any(SeaKen[SeaKen$analyte == 'Total Phosphorus',]$signif != 'Need at least 8 years'))  {
+      tp_trend_stns <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Need at least 8 years')
       tp_trend_stns  <- unique(tp_trend_stns$Station_ID)
     }else{
       tp_trend_stns <- NULL
@@ -2155,11 +2161,12 @@ parm_summary <- function(stns,
       }
       
     }
-    
+    print("Summarizing trends for Total Phosphorus")
     #trend tp
     if(length(tp_trend_stns) > 0 ) {
       for(j in 1:length(tp_trend_stns)) {
-        tp_seaken <- SeaKen %>% filter(analyte == 'Total Phosphorus')
+        print(tp_trend_stns[j])
+        tp_seaken <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Need at least 8 years')
         tp_seaken <- tp_seaken[tp_seaken$Station_ID == tp_trend_stns[j],]
         
         if(tp_seaken$signif != "Not Significant") {
@@ -2192,8 +2199,8 @@ parm_summary <- function(stns,
     tss_status_stns  <- unique(tss_status_stns$Station_ID)
     tss_status <- tss %>% filter(Station_ID %in% tss_status_stns) %>% filter(year %in% statyear)
     
-    if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      tss_trend_stns <- trend %>% filter(Analyte == 'Total Suspended Solids')
+    if(any(trend != 'No Stations Meet Trend Criteria') & any(SeaKen[SeaKen$analyte == 'Total Suspended Solids',]$signif != 'Need at least 8 years'))  {
+      tss_trend_stns <- SeaKen %>% filter(analyte == 'Total Suspended Solids', signif != 'Need at least 8 years')
       tss_trend_stns  <- unique(tss_trend_stns$Station_ID)
     }else{
       tss_trend_stns <- NULL
