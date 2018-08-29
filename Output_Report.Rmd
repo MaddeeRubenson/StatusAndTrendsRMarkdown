@@ -362,12 +362,12 @@ if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen", 'Total Suspended 
 } else {seaken_other <- data.frame()}
 
 # BTD 8/15/18 Commented out this section due to Evaluation error: object 'monTest' not found 
-# if(NROW(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass")) > 0) {
-#   seaken_temp <- run_seaKen(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass"))
-# } else {seaken_temp <- data.frame()}
+if(NROW(qc.3.pass) > 0) {
+  seaken_temp <- run_seaKen(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass"))
+  } else {seaken_temp <- data.frame()}
 
 # BTD 8/15/18 Added line below in conj. with commenting out above section
-seaken_temp <- data.frame()                     
+#seaken_temp <- data.frame()                     
 
 SeaKen <- rbind(seaken_other, seaken_temp)
 
@@ -1208,7 +1208,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
 
 ```{r Temperature, results = 'asis', fig.width = 6, fig.height = 6}
 
-if(any(!(trend == "No Stations Meet Trend Criteria"))) {
+if(any(trend$Analyte == 'Temperature') | any(status$Analyte == 'Temperature')) {
 
   temp_stn <- unique(filter(SeaKen, analyte == "Temperature")$Station_ID)
   
@@ -1344,6 +1344,7 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
     }
   }
 } else {
+  print("There are no stations with sufficient available data to assess status or trends for temperature")
   temp <- NULL
 }
 temp_exc <- exc
