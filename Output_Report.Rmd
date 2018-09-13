@@ -203,7 +203,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
   print("loading existing cleaned df.all")
   load(file=paste0(Rdata_dir,"/",df_all_clean_file))
-  
+  df.all <- filter(df.all, Station_ID != "USGS-14105700")
 } else {
   
   print("cleaning df.all")
@@ -594,7 +594,7 @@ landuse <-landuse[, - 3]
 save(landuse, file=paste0(Rdata_dir,"/", landuse_file))
 
 knitr::kable(landuse, digits = 0, 
-             padding = 2, caption = tbls(name = "landUse", row.names = FALSE, caption = "Summary table of watershed land use for stations with a status or trend result."))
+             padding = 2, row.names = FALSE, caption = tbls(name = "landUse", caption = "Summary table of watershed land use for stations with a status or trend result."))
 
 ```
 
@@ -725,9 +725,8 @@ if(length(ecoli_stns) > 0) {
   exc <- rbind.fill(exc_list[])
   exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
   
-  knitr::kable(exc, padding = 2, digits = 1,
+  knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE,
                caption = tbls(name = "ecoliExcTable", 
-                              row.names = FALSE,
                               caption = "_E. coli_ status. If sufficient data exists to calculate the geometric mean, it is included in the table."))
 }  else {
   print("No monitoring stations have data to assess status and/or trend of _E. coli_.") 
@@ -811,8 +810,7 @@ if(length(entero_stns) > 0) {
   }
   
   knitr::kable(exc, padding = 2, digits = 1,
-               caption = tbls(name = "enterExcTable",
-                              row.names = FALSE, 
+               caption = tbls(name = "enterExcTable", row.names = FALSE, 
                               caption = "_Enterococcus_ status. If sufficient data exists to calculate the geometric mean, it is included in this table."))
 }  else {
   print("No monitoring stations have data to assess status and/or trend of Enterococcus.") 
