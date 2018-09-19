@@ -203,7 +203,8 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
   print("loading existing cleaned df.all")
   load(file=paste0(Rdata_dir,"/",df_all_clean_file))
-  
+  df.all <- filter(df.all, Station_ID != "USGS-14105700")       #removes a station on the Columbia River outside the area
+  df.all <- df.all[!(df.all$Analyte=="pH" & df.all$Result==0),] #removes observations where pH = 0 
 } else {
   
   print("cleaning df.all")
@@ -449,7 +450,7 @@ The status of water quality standards attainment for dissolved oxygen, *E. coli*
 
 Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A trend result was made at a site if there were a minimum of eight years of available data. A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p <= 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median.
 
-A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(round_date(ydm(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ydm(input$dates[2]), format="%B %d, %Y")`. A trend assessment was made if data were available in a minimum of eight different years for any year in the period from `r format(ydm(input$dates[1]), format="%B %d, %Y")` to `r format(ydm(input$dates[2]), format="%B %d, %Y")`. Stations that met at least one of those data requirements were assessed with the results presented in this report. In some cases a station had sufficient data for trend but not status because data were not available anytime in the last two years. In these cases the status was shown on the plot for the older data along with the trend result but the status was not recorded in the maps, summary tables, or conclusions.
+A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(round_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. A trend assessment was made if data were available in a minimum of eight different years for any year in the period from `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. Stations that met at least one of those data requirements were assessed with the results presented in this report. In some cases a station had sufficient data for trend but not status because data were not available anytime in the last two years. In these cases the status was shown on the plot for the older data along with the trend result but the status was not recorded in the maps, summary tables, or conclusions.
 
 Results for pH from both grab and continuous sample data were compared to the applicable water quality criterion as found in [OAR 340-041-0021][2.1].
 
@@ -472,7 +473,7 @@ Within the `r input$select` AgWQ Management Area, data from `r length(unique(stn
 
 ```{r results-summary, results='asis'}
 
-station_summary_tbl <- data.frame(Analyte=c("Ecoli","Enterococcus","Dissolved Oxygen","pH","Temperature","Total Phosphorus","TSS"),
+station_summary_tbl <- data.frame(Analyte=c("_E. coli_","_Enterococcus_","Dissolved Oxygen","pH","Temperature","Total Phosphorus","TSS"),
                                   status=c(nrow(unique(status[status$Analyte == "E. Coli", ])),
                                            nrow(unique(status[status$Analyte == "Enterococcus", ])),
                                            nrow(unique(status[status$Analyte == "Dissolved Oxygen", ])),
@@ -577,7 +578,7 @@ map
 ```
 
 
-A summary table of watershed land use by station that met data requirements for status or trend is presented in `r tbls("landUse", display="cite")`. The table is sorted in descending order by percent agriculture ("% Ag"), so stations located in watersheds with the highest percent agricultural land uses are at the top of the table.
+A summary table of watershed land use by station that met data requirements for status or trend is presented in `r tbls("landUse", display="cite")`. The table is sorted in descending order by percent agriculture (% Ag), so stations located in watersheds with the highest percent agricultural land uses are at the top of the table.
 
 
 ```{r landuse-table, results="asis"}
@@ -594,13 +595,13 @@ landuse <-landuse[, - 3]
 save(landuse, file=paste0(Rdata_dir,"/", landuse_file))
 
 knitr::kable(landuse, digits = 0, 
-             padding = 2, caption = tbls(name = "landUse", row.names = FALSE, caption = "Summary table of watershed land use for stations with a status or trend result."))
+             padding = 2, row.names = FALSE, caption = tbls(name = "landUse", caption = "Summary table of watershed land use for stations with a status or trend result."))
 
 ```
 
 ## Water Quality Limited Stream Segments
 
-A summary of Oregon's 2012 Integrated Report Assessment database and 303(d) list for parameters included in this report are shown in `r tbls(name = "wqLimited", display="cite")`. The table summarizes waterbodies that do not attain the applicable water quality criteriaon at the time of the assessment. Note that pH exceedances are values higher or lower than the given range.
+A summary of Oregon's 2012 Integrated Report Assessment database and 303(d) list for parameters included in this report are shown in `r tbls(name = "wqLimited", display="cite")`. The table summarizes waterbodies that do not attain the applicable water quality criterion at the time of the assessment. Note that pH exceedances are values higher or lower than the given range.
 
 ```{r wq-limited, results="asis"}
 
@@ -626,6 +627,12 @@ wq_limited_df$`Listing Status` <- revalue(wq_limited_df$`Listing Status`,
                                             "Cat 5: Water quality limited, 303(d) list, TMDL needed" = "Cat 5",
                                             "TMDL approved" = "Cat 4A",
                                             "303(d)" = "Cat 5"))
+
+# fix names and add italics
+wq_limited_df$Pollutant <- gsub("[Ee]. [cC]oli", "_E. coli_", wq_limited_df$Pollutant)
+wq_limited_df$Pollutant <- gsub("[Ee]terococcus", "_Enterococcus_", wq_limited_df$Pollutant)
+wq_limited_df$Criteria <- gsub(".8 C", ".8 &deg;C", wq_limited_df$Criteria)
+wq_limited_df$Criteria <- gsub(".0 degrees Celsius", ".0 &deg;C", wq_limited_df$Criteria)
 
 knitr::kable(wq_limited_df, padding = 2, row.names = FALSE, caption = tbls(name = "wqLimited", caption = "Summary of Integrated Report listings for parameters included in this report. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA."))
 
@@ -653,13 +660,18 @@ if(nrow(SK) > 0) {
 
   colnames(SK) <- c("Station ID", "Analyte", "Slope", "p value", "Median", "N", "Significance Result")
   
+  # fix names and add italics
+SK$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", SK$Analyte)
+SK$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", SK$Analyte)
+
+  
   knitr::kable(SK, padding = 2, format.args = list(scientific = TRUE), row.names = FALSE, caption = tbls(name = "seakenTable", caption = "Seasonal Kendall trend results for each analyte at each monitoring station with at least eight years of data."))
 }
 
 
 ```
 
-## E.coli
+## _E. coli_
 
 ```{r Ecoli, fig.height=6, fig.width=6, results='asis'}
 
@@ -725,9 +737,8 @@ if(length(ecoli_stns) > 0) {
   exc <- rbind.fill(exc_list[])
   exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
   
-  knitr::kable(exc, padding = 2, digits = 1,
+  knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE,
                caption = tbls(name = "ecoliExcTable", 
-                              row.names = FALSE,
                               caption = "_E. coli_ status. If sufficient data exists to calculate the geometric mean, it is included in the table."))
 }  else {
   print("No monitoring stations have data to assess status and/or trend of _E. coli_.") 
@@ -735,7 +746,7 @@ if(length(ecoli_stns) > 0) {
 
 ```
 
-## Enterococcus 
+## _Enterococcus_ 
 
 ```{r Enterococcus, fig.height=6, fig.width=6, results='asis'}
 
@@ -811,11 +822,10 @@ if(length(entero_stns) > 0) {
   }
   
   knitr::kable(exc, padding = 2, digits = 1,
-               caption = tbls(name = "enterExcTable",
-                              row.names = FALSE, 
+               caption = tbls(name = "enterExcTable", row.names = FALSE, 
                               caption = "_Enterococcus_ status. If sufficient data exists to calculate the geometric mean, it is included in this table."))
 }  else {
-  print("No monitoring stations have data to assess status and/or trend of Enterococcus.") 
+  print("No monitoring stations have data to assess status and/or trend of _Enterococcus_.") 
 } 
 
 ```
@@ -1833,6 +1843,8 @@ U.S. Geological Survey, 2016, National Water Information System data available o
 ```{r appendix, results="asis"}
 
 org_summary <- summarizeByOrg(df.all)
+
+org_summary$'NA obs' <- NULL
 
 knitr::kable(org_summary, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixorgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report."))
 
