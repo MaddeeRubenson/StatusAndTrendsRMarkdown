@@ -1,18 +1,18 @@
 ---
 title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Owyhee Agricultural Water Quality Management Area Water Quality Status and Trends Report'
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: November 2018
+date: September 2018
 output:
-  word_document:
-    fig_caption: yes
-    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
-    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
+  word_document:
+    fig_caption: yes
+    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+    toc: yes
 always_allow_html: yes
 ---
 
@@ -20,7 +20,7 @@ always_allow_html: yes
 
 library(knitr)
 knitr::opts_chunk$set(echo = FALSE,
-                      message = FALSE, 
+                      message = FALSE,
                       warning=FALSE, 
                       error = FALSE,
                       cache = FALSE,
@@ -77,7 +77,7 @@ query_dates <- c("2000-01-01", "2018-07-01")
 project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Owyhee/2018-Owyhee"
 
 # Set to TRUE if knitting a word document
-word_output <- TRUE
+word_output <- FALSE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
 split_param_summary <- FALSE
@@ -90,7 +90,9 @@ GIS_dir <- paste0(project_dir,"/GIS")
 # Name of input map files
 landuse_map_file <- paste0(gsub(" ", "_", agwqma), "_landuse_map.png")
 station_map_file <- paste0(gsub(" ", "_", agwqma), "_station_map.png")
-station_summary_map_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map.png")
+station_summary_map1_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map1.png")
+station_summary_map2_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map2.png")
+
 station_summary_map_DO_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_DO.png")
 station_summary_map_pH_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_pH.png")
 station_summary_map_temp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_temp.png")
@@ -137,11 +139,6 @@ if (!file.exists(paste0(project_dir,"/Figures"))) {
     dir.create(paste0(project_dir,"/Figures"))
 }
 
-# Account for Executive Summary tables and figures in caption numbers
-tbls(name="placehold1", display=FALSE)
-tbls(name="placehold2", display=FALSE)
-tbls(name="placehold2", display=FALSE)
-figs(name="placeholdF1", display=FALSE)
 
 ```
 
@@ -186,11 +183,14 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
 } else {
   
-  df.all <- query(select =  input$select,
+  df.all <- query(select = input$select,
+                  HUClist = HUClist,
                   parms = input$parms,
-                  dates = input$dates,
-                  db = input$db)
-  
+                  dates = c("2000-01-01", "2018-08-15"),
+                  db = input$db,
+                  lu_parms=lu_parms,
+                  stations_huc=stations_huc)
+
   save(df.all, file=paste0(Rdata_dir,"/",df_all_raw_file))
 }
 
@@ -214,7 +214,6 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
   # remove stations outside the agwqma
   df.all <- clipToPlanArea(df.all, agwqma_shp, input$select)
-
   
   # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
   # The Station ID will be named the same as LASAR
@@ -226,7 +225,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   df.all <- remove_stn_dups(df.all)
   
   # Reconcile Stations with the same ID but have different Station Names.
-  # This works but should but the issue should be investigatged further to determine if
+  # This works but the issue should be investigatged further to determine if
   # the problem is coming from combining DEQ and WQP data.
   df <- df.all %>%
     dplyr::select(Station_ID, Station_Description) %>%
@@ -261,22 +260,23 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
  
  
-  # Remove Enterococcus data from df.all where the Coastal Contact Recreation criterion doesn't apply     #BTD 8/15/18 Do not include the Entero Section, no entero data
+  # Remove Enterococcus data from df.all where the Coastal Contact Recreation criterion doesn't apply
   
   # Create a subset of data only including "Enterococcus"
-  # df.temp.ent <- df.all[df.all$Analyte == 'Enterococcus',]                                              # BTD 8/15/18 Commented Out
+  df.temp.ent <- df.all[df.all$Analyte == 'Enterococcus',]
   
   # Create a vector of stations where the Enterococcus criterion apply
-  # df.temp.ent2 <- (Ben_use_LU[!is.na(Ben_use_LU$bacteria_use),])                                        # BTD 8/15/18 Commented Out
-  # df.temp.ent2 <- unique(df.temp.ent2[(df.temp.ent2$AgArea == agwqma &  grepl("Coastal Contact Recreation", df.temp.ent2$bacteria_use)), c("Station_ID")])   # BTD 8/15/18                                                                                                                                                                Commented Out
+  df.temp.ent2 <- (Ben_use_LU[!is.na(Ben_use_LU$bacteria_use),]) 
+  df.temp.ent2 <- unique(df.temp.ent2[(df.temp.ent2$AgArea == agwqma &  grepl("Coastal Contact Recreation",
+                                                                              df.temp.ent2$bacteria_use)), c("Station_ID")])    
+  if(!identical(df.temp.ent2, character(0))) {
+    
+    # Create vector of stations inside bacteria_nonfreshwater polygon
+    df.temp.ent3 <- unique(c(Stations_in_poly(df.temp.ent, bacteria_nonfreshwater_shp, outside=FALSE), df.temp.ent2))
   
-  # Create vector of stations inside bacteria_nonfreshwater polygon                 
-  # df.temp.ent3 <- unique(c(Stations_in_poly(df.temp.ent, bacteria_nonfreshwater_shp, outside=FALSE), df.temp.ent2))     # BTD 8/15/18 Commented Out
- 
-  
-  # Use logic to remove the stations 
-  # df.all <- df.all[!(!(df.all$Station_ID %in% df.temp.ent3) & df.all$Analyte == 'Enterococcus'),]                       # BTD 8/15/18 Commented Out
-  
+    # Use logic to remove the stations 
+    df.all <- df.all[!(!(df.all$Station_ID %in% df.temp.ent3) & df.all$Analyte == 'Enterococcus'),]
+  }
   
   df.all <- remove_QAfail(df.all)
   
@@ -340,6 +340,8 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
       qc.3.pass <- dplyr::rename(qc.3.pass, monTest = result)
       df.all <- merge(df.all, qc.3.pass[,c("Station_ID", "month", "monTest", "Analyte")], 
                       by=c("Station_ID", "Analyte", "month"), all.x = TRUE, all.y = FALSE)
+    } else {
+      df.all$monTest <- "NA"
     }
     
   }
@@ -352,27 +354,36 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
 
 ```{r Create-other-dataframes}
 
-if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen", 'Total Suspended Solids', 'Total Phosphorus') %in% df.all$Analyte)) {
+if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen", 'Total Phosphorus') %in% df.all$Analyte)) {
   seaken_other <- run_seaKen(filter(df.all, Analyte %in% c('pH', 
                                                            'E. Coli', 
                                                            "Enterococcus", 
                                                            "Dissolved Oxygen", 
-                                                           'Total Suspended Solids', 
                                                            'Total Phosphorus')))
 } else {seaken_other <- data.frame()}
 
-# BTD 8/15/18 Commented out this section due to Evaluation error: object 'monTest' not found 
-if(NROW(qc.3.pass) > 0) {
+if(NROW(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass")) > 0) {
   seaken_temp <- run_seaKen(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass"))
-  } else {seaken_temp <- data.frame()}
+} else {seaken_temp <- data.frame()}
 
-# BTD 8/15/18 Added line below in conj. with commenting out above section
-#seaken_temp <- data.frame()                     
 
-SeaKen <- rbind(seaken_other, seaken_temp)
+if(NROW(dplyr::filter(df.all, Analyte == "Total Suspended Solids")) > 0) {
+  seaken_tss_srhc <- df.all %>%
+    filter(Analyte == "Total Suspended Solids") %>%
+    filter(month(Sampled) %in% (5:9)) %>%
+    mutate(Sampled=floor_date(Sampled, "month")) %>%
+    group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled) %>%
+    summarize(Result=mean(Result)) %>%
+    run_seaKen()
+    
+} else {
+  seaken_tss_srhc <- data.frame()
+}
 
-status_years <- seq(year(floor_date(ydm(input$dates[2]) - years(2), unit="year")), 
-    year(ydm(input$dates[2])), by = 1)
+SeaKen <- rbind(seaken_other, seaken_tss_srhc, seaken_temp)
+
+status_years <- seq(year(floor_date(ymd(input$dates[2]) - years(2), unit="year")), 
+                    year(ymd(input$dates[2])), by = 1)
 
 status <- Stations_Status(df.all, status.years=status_years)
 trend <- Stations_Trend(df.all)
@@ -386,22 +397,41 @@ stns <- All_stns_fit_Criteria(trend = trend,
                              status = status,
                              df.all = df.all)
 
+
+
+
+
+
 #print(stns)
 
 df.stns <- df.all[df.all$Station_ID %in% unique(stns$Station_ID),]
 stn_totals <- summarizeByStation(df.stns)
 all.sp <- generateStnLyrToPlot(df.stns, stn_totals) #changed lat and long names
 
+writeOGR(obj=all.sp, dsn=GIS_dir, layer="stations_to_map", driver="ESRI Shapefile", overwrite_layer=TRUE)
+
 all_stn_sp <- all_stn_sp(df.all)
 stn_nlcd_df <- landUseAnalysis(all.sp, cats, NLCD2011)
-
-writeOGR(obj=all_stn_sp, dsn=GIS_dir, layer="stations_all", driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 save(stns, file = paste0(Rdata_dir,"/", stns_file))
 save(status, file = paste0(Rdata_dir,"/", status_file))
 save(trend, file = paste0(Rdata_dir,"/", trend_file))
 
 ```
+
+```{r exec-summary-placeholder}
+
+if (word_output) {
+  
+  tbls(name="tbl1_lu", display=FALSE)
+  tbls(name="tbl2_results_summary", display=FALSE)
+  figs(name="fig1_result_map1", display=FALSE)
+  figs(name="fig2_result_map2", display=FALSE)
+  tbls(name="tbl3_station_summary", display=FALSE)
+}
+
+```
+
 
 # Introduction
 
@@ -413,7 +443,7 @@ This report presents data and analysis that will help DEQ fulfill its roles in t
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
-*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
+*	Are the Snake River - Hells Canyon sediment and nutrients TMDL targets for total phosphorus and total suspended solids being acheived?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 DEQ basin coordinators review pertinent information including this report as part of ODA's biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL load allocations through ODA's survey. 
@@ -451,19 +481,23 @@ The data returned were evaluated for quality. Data retrieved from the DEQ's data
 
 ## Analysis
 
-The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids and total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters.
+The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. Status for total suspended solids and total phosphorus was based on a comparison to the instream TSS and total phosphorus concentration targets established in the Snake River - Hells Canyon Basin sediment, nutrients, nuisance alagae, and dissolved oxygen TMDLs.
 
-Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A trend result was made at a site if there were a minimum of eight years of available data. A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p <= 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median.
+Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A trend result was made at a site if there were a minimum of eight years of available data. A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p <= 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median. For Total Suspended Solids the monthly mean was calculated instead and observations taken outside the May througth September period were removed. This was done so trend results represent only the period when the Snake River - Hells Canyon sediment TMDL targets apply.
 
-A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(round_date(ydm(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ydm(input$dates[2]), format="%B %d, %Y")`. A trend assessment was made if data were available in a minimum of eight different years for any year in the period from `r format(ydm(input$dates[1]), format="%B %d, %Y")` to `r format(ydm(input$dates[2]), format="%B %d, %Y")`. Stations that met at least one of those data requirements were assessed with the results presented in this report. In some cases a station had sufficient data for trend but not status because data were not available anytime in the last two years. In these cases the status was shown on the plot for the older data along with the trend result but the status was not recorded in the maps, summary tables, or conclusions.
+A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(floor_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. A trend assessment was made if data were available in a minimum of eight different years for any year in the period from `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. Stations that met at least one of those data requirements were assessed with the results presented in this report. In some cases a station had sufficient data for trend but not status because data were not available anytime in the last two years. In these cases the status was shown on the plot for the older data along with the trend result but the status was not recorded in the maps, summary tables, or conclusions.
 
 Results for pH from both grab and continuous sample data were compared to the applicable water quality criterion as found in [OAR 340-041-0021][2.1].
 
-Results for bacteria samples were compared to the applicable bacteria criterion as found in [OAR 340-041-0009][2.2]. The bacteria standard for freshwater contact recreation is based on the presence of *E. coli* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The bacteria standard for coastal water contact recreation is based on the presence of *Enterococcus* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period.
+Results for bacteria samples were compared to the applicable bacteria criterion as found in [OAR 340-041-0009][2.2]. The bacteria standard for freshwater contact recreation is based on the presence of *E. coli* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. A status and trend assessment was not made for the _Enterococcus_ or fecal coliform indicators because the marine water contact recreation and shellfish harvesting use criteria do not apply in the `r agwqma`.
 
 Dissolved oxygen status was assessed by comparing the observed concentration values to the applicable daily minimum water quality criterion found in [OAR 340-041-0016][2.3]. If the dissolved oxygen concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality criterion. These points were noted in the plots using a different shape. Assessments were not made against the seven and 30-day mean minimum dissolved oxygen criteria due to the general lack of continuous dissolved oxygen data.
 
 Results for continuous temperature data were compared against the applicable temperature criteria found in [OAR 340-041-0028][2.4]. The applicable temperature criteria is based on the seven day average daily maximum (7DADM) stream temperature metric. In order to ensure there was sufficient continuous data to calculate 7DADM, at least one observation per hour from noon to midnight must have been recorded. In addition, each month can have no more than one day of missing observations to ensure that no more than 10% of the 7DADM results in that month were missing.
+
+Results for total suspended solids were compared against the 50 mg/L monthly average instream TSS concentration loading capacity targets established in the [Snake River - Hells Canyon Sediment TMDL][2.5].
+
+From May through September, results for total phosphorus were compared against the 0.07 mg/L instream total phosphorus concentration loading capacity targets established in the [Snake River - Hells Canyon Sediment TMDL][2.5]. For other months an assessment was not made against a target.
 
 A land use summary was developed for all monitoring stations that fit the criteria to assess water quality status and/or trends. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. A map was made showing station locations in relation to 2011 national land cover dataset (Homer et al. 2015).
 
@@ -471,6 +505,7 @@ A land use summary was developed for all monitoring stations that fit the criter
 [2.2]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68695
 [2.3]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68706
 [2.4]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=244176
+[2.5]: https://www.oregon.gov/deq/wq/tmdls/Pages/snakesubbasin.aspx
 
 # Results
 
@@ -478,7 +513,7 @@ Within the `r input$select` AgWQ Management Area, data from `r length(unique(stn
 
 ```{r results-summary, results='asis'}
 
-station_summary_tbl <- data.frame(Analyte=c("Ecoli","Enterococcus","Dissolved Oxygen","pH","Temperature","Total Phosphorus","TSS"),
+station_summary_tbl <- data.frame(Analyte=c("_E. coli_","_Enterococcus_","Dissolved Oxygen","pH","Temperature","Total Phosphorus","Total Suspended Solids"),
                                   status=c(nrow(unique(status[status$Analyte == "E. Coli", ])),
                                            nrow(unique(status[status$Analyte == "Enterococcus", ])),
                                            nrow(unique(status[status$Analyte == "Dissolved Oxygen", ])),
@@ -523,7 +558,7 @@ knitr::include_graphics(path = paste0("Figures/", landuse_map_file))
 ```
 
 
-```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=10, fig.height=8, fig.cap=figs(name="landusemap", caption="Land use and land cover within the Umpqua River AgWQ Management Area.")}
+```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=8, fig.height=8, fig.cap=figs(name="landusemap", caption="Land use and land cover within the Umpqua River AgWQ Management Area.")}
 
 agarea_shp <- agwqma_shp[agwqma_shp$PlanName == input$select,]
 agarea_shp <-spTransform(agarea_shp, CRS("+proj=longlat +datum=NAD83"))
@@ -599,8 +634,8 @@ landuse <-landuse[, - 3]
 
 save(landuse, file=paste0(Rdata_dir,"/", landuse_file))
 
-knitr::kable(landuse, digits = 0, row.names = FALSE,  
-             padding = 2, caption = tbls(name = "landUse", caption = "Summary table of watershed land use for stations with a status or trend result."))                                                                          
+knitr::kable(landuse, digits = 0, 
+             padding = 2, row.names = FALSE, caption = tbls(name = "landUse", caption = "Summary table of watershed land use for stations with a status or trend result."))
 
 ```
 
@@ -633,6 +668,10 @@ wq_limited_df$`Listing Status` <- revalue(wq_limited_df$`Listing Status`,
                                             "TMDL approved" = "Cat 4A",
                                             "303(d)" = "Cat 5"))
 
+# fix names and add italics
+wq_limited_df$Pollutant <- gsub("[Ee]. [cC]oli", "_E. coli_", wq_limited_df$Pollutant)
+wq_limited_df$Pollutant <- gsub("[Ee]terococcus", "_Enterococcus_", wq_limited_df$Pollutant)
+
 knitr::kable(wq_limited_df, padding = 2, row.names = FALSE, caption = tbls(name = "wqLimited", caption = "Summary of Integrated Report listings for parameters included in this report. Table based on the approved (and partially disapproved) 2012 Integrated Report Listings by the EPA."))
 
 ```
@@ -659,6 +698,10 @@ if(nrow(SK) > 0) {
 
   colnames(SK) <- c("Station ID", "Analyte", "Slope", "p value", "Median", "N", "Significance Result")
   
+  # fix names and add italics
+  SK$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", SK$Analyte)
+  SK$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", SK$Analyte)
+  
   knitr::kable(SK, padding = 2, format.args = list(scientific = TRUE), row.names = FALSE, caption = tbls(name = "seakenTable", caption = "Seasonal Kendall trend results for each analyte at each monitoring station with at least eight years of data."))
 }
 
@@ -667,7 +710,7 @@ if(nrow(SK) > 0) {
 
 ## E.coli
 
-```{r Ecoli, fig.height=6, fig.width=6, results='asis'}
+```{r Ecoli, fig.height=6, fig.width=7, results='asis'}
 
 exc <- NULL
 ecoli_stns <- NULL
@@ -732,7 +775,7 @@ if(length(ecoli_stns) > 0) {
   exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
   
   knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE,
-               caption = tbls(name = "ecoliExcTable",
+               caption = tbls(name = "ecoliExcTable", 
                               caption = "_E. coli_ status. If sufficient data exists to calculate the geometric mean, it is included in the table."))
 }  else {
   print("No monitoring stations have data to assess status and/or trend of _E. coli_.") 
@@ -742,7 +785,7 @@ if(length(ecoli_stns) > 0) {
 
 ## Enterococcus 
 
-```{r Enterococcus, fig.height=6, fig.width=6, results='asis'}
+```{r Enterococcus, fig.height=6, fig.width=7, results='asis'}
 
 exc <- NULL
 entero_stns <- NULL
@@ -815,22 +858,26 @@ if(length(entero_stns) > 0) {
              caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and/or trends.')))
   }
   
-  knitr::kable(exc, padding = 2, digits = 1,
+  knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, 
                caption = tbls(name = "enterExcTable",
-                              row.names = FALSE, 
                               caption = "_Enterococcus_ status. If sufficient data exists to calculate the geometric mean, it is included in this table."))
 }  else {
-  print("No monitoring stations have data to assess status and/or trend of Enterococcus.") 
+  print(paste0("A status and trend assessment was not made for the _Enterococcus_ indicator because the marine water contact recreation use criteria do not apply in the Owyhee."))
 } 
 
 ```
 
 ## Total Phosphorus
 
-```{r Total-Phosphorus, results = 'asis', fig.width = 6, fig.height = 6}
+```{r Total-Phosphorus, results = 'asis', fig.width = 7, fig.height = 6}
 
 exc <- NULL
 tp_stn <- NULL
+
+# Set TP instream target (0.07 mg/L May-Sept) from Snake River HC TMDL.
+tp_target = list("10729"=0.07,
+                 "1119USBR_WQX-OWY101"=0.07,
+                 "1119USBR_WQX-OWY110"=0.07)
 
 if(!(trend == "No Stations Meet Trend Criteria")) {
   tp_stn<-trend %>%
@@ -853,14 +900,6 @@ if(length(tp_stn) > 0) {
   TP_all <- df.all[df.all$Analyte == 'Total Phosphorus',]
   TP <- df.all[df.all$Analyte == 'Total Phosphorus',]
   
-  # if (input$select == 'Tualatin River Subbasin') {
-  #   
-  #   TP_alloc <- evaluate_tp_alloc(TP_all, tp_stn) ####TMDL load allocation
-  #   #trib <- tp_list[[1]]
-  #   #summer <- tp_list[[2]]
-  # }
-  #} else {
-    
     TP_list<- list()
     TP_exclist<- list()
     for(j in 1: length(tp_stn)) {
@@ -873,14 +912,12 @@ if(length(tp_stn) > 0) {
       tmp_df_MRL <- tmp_df[sub,]
       tmp_df <- remove.dups(tmp_df_MRL, max)
       
-      if(input$select == 'Powder-Brownlee'| input$select == 'Burnt River') { #Snake River Hells Canyon TMDL allocation 2004
-        TP_evaluate <- EvaluateTPWQS(tmp_df, 
-                                     selectWQSTP = 0.07)
-      } else {
-        
-        TP_evaluate <- EvaluateTPWQS(tmp_df, 
-                                     selectWQSTP = 0)
-      }
+      if(tp_stn[j] %in% names(tp_target)) { 
+        TP_evaluate <- EvaluateTPWQS(tmp_df, selectWQSTP = tp_target[[tp_stn[j]]])
+        } else {
+          # per instructions from John to have all plots with the target
+          TP_evaluate <- EvaluateTPWQS(tmp_df, selectWQSTP = 0.07)
+        }
       
       TP_eval <- attr(TP_evaluate, 'ex_df')
       TP_list[[j]] <- TP_evaluate
@@ -900,26 +937,22 @@ for (i in 1:length(tp_stn)) {
   mydata_sub <- TP_all[TP_all$Station_ID == tp_stn[i],]
   
   trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE,
-                      ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE, TRUE))
+                      ifelse(grepl("Need at least 8 years", 
+                                   results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE, TRUE))
   
-  if(input$select == 'Powder-Brownlee' | input$select == 'Burnt River') {
+  if(tp_stn[j] %in% names(tp_target)) { 
     b <- plot.TP(new_data=mydata_sub,
                  df.all = df.all,
                  sea_ken_table=results_seaken ,
                  plot_trend = trend_logic,
                  selectWQSTP = 0.07,
                  parm = unique(mydata_sub$Analyte))
-    # } else if (input$select == 'Tualatin River Subbasin') {
-    #   new_data <- TP_alloc[TP_alloc$Station_ID == unique(TP_alloc$Station_ID)[i],]
-    #   b <- tp_alloc_plot(TP_alloc = new_data,
-    #                      sea_ken_table = results_seaken,
-    #                      plot_trend = trend_logic)
   } else {
     b <- plot.TP(new_data=mydata_sub,
                  df.all = df.all,
                  sea_ken_table=results_seaken ,
                  plot_trend = trend_logic,
-                 selectWQSTP = 0,
+                 selectWQSTP = 0.07,
                  parm = unique(mydata_sub$Analyte))
   }
   
@@ -928,12 +961,14 @@ for (i in 1:length(tp_stn)) {
   tp_plots[[i]]<-b
   
   print(tp_plots[[i]])
-  cat(figs(name = paste0('TP_', tp_stn[i]), caption = paste0('Station ', tp_stn[i], ' Total Phosphorus water quality trends.')))
+  cat(figs(name = paste0('TP_', tp_stn[i]), 
+           caption = paste0('Station ', tp_stn[i], ' Total Phosphorus water quality trends.')))
 } 
 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
 exc <- exc[,c(1:5)]
-knitr::kable(exc,padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "tpExcTable", caption = "Total Phosphorus observations."))
+knitr::kable(exc,padding = 2, digits = 1, row.names = FALSE, 
+             caption = tbls(name = "tpExcTable", caption = "Total Phosphorus observations."))
 
 # }else {
 #   print("No monitoring stations have sufficient data to assess status and/or trend of total phosphorus.")
@@ -945,31 +980,17 @@ tp_exc <- exc
 
 ```
 
-<!-- Total Phosphorus TMDL Loading Capacity Evaluation -->
-<!-- The 2001/2012 Tualatin River Subbasin TMDL loading capacity values were applied to total phosphorus results within the Tualatin River Subbasin. The loading capacity (or TMDL target) defines the total amount of pollutant that a waterbody can receive and still meet water quality standards. This definition includes both natural and human sources. The loading capacity is defined as a summer (June - September) median. Boxplots are presented to show the summer distribution of total phosphorus as well as the median and how it compares to the loading capacity target ([Tualatin Total Maximum Daily Load (TMDL) and Water Quality Management Plan (WQMP)](http://www.oregon.gov/deq/FilterDocs/tmdlwqmp.pdf]) . -->
-
-<!-- ```{r TP loading capacity evaluation, echo = FALSE, message = FALSE, warning=FALSE, error = TRUE, fig.width = 8, fig.height = 8, fig.cap = "Median total phosphorus results relative to the applicable loading capacity (identified in the Tualatin River TMDL 2001/2012). The loading capacity is shown as the dark green dashed line. The median value of results for each summer is marked as a red dot and labeled numerically above. If the median is above the load capacity, it is in exceedance of the TMDL allotted loading capacity." } -->
-<!-- source('T:/AgWQM/DataAnalysis/StatusAndTrendsRMarkdown/functions/TualatinR_Allocations.R') -->
-
-<!-- plots<-list() -->
-<!-- for (i in 1:length(tp_stn)) { -->
-<!--   mydata_sub <- TP_all[TP_all$Station_ID == tp_stn[i],] -->
-
-<!--   b <- tp_alloc_boxplot(TP_alloc = mydata_sub) -->
-
-<!--   plots[[i]]<-b -->
-
-<!--   print(plots[[i]]) -->
-
-<!-- }  -->
-<!-- ``` -->
-
 ## Total Suspended Solids
 
-```{r TSS, results = 'asis', fig.width = 6, fig.height = 6}
+```{r TSS, results = 'asis', fig.width = 7, fig.height = 6}
 
 exc <- NULL
 tss_stn <- NULL
+
+# Set TSS instream targets (50 mg/L monthly mean) from Snake River HC TMDL. THese are only on stations near the mouth of the Oywhee River.
+tss_target = list("10729"=50,
+                  "1119USBR_WQX-OWY101"=50,
+                  "1119USBR_WQX-OWY110"=50)
 
 
 if(!(trend == "No Stations Meet Trend Criteria")) {
@@ -978,94 +999,104 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
   tss_stn<-c(unique(tss_stn$Station_ID))
 }
 
-  tss_stat<-status %>%
-    dplyr::filter(Analyte == "Total Suspended Solids")
-  tss_stat <- c(unique(tss_stat$Station_ID))
+tss_stat<-status %>%
+  dplyr::filter(Analyte == "Total Suspended Solids")
+tss_stat <- c(unique(tss_stat$Station_ID))
+
+if(!is.null(tss_stn)) {
+  tss_stn <- (unique(append(tss_stn, tss_stat)))
+} else {
+  tss_stn <- tss_stat
+}
+
+if(length(tss_stn) > 0){
   
-  if (!is.null(tss_stn)) {
-    tss_stn <- (unique(append(tss_stn, tss_stat)))
-  }else{
-    tss_stn <- tss_stat
-  }
-  if(length(tss_stn) > 0){
-    
   TSS_all <- df.all[df.all$Analyte == 'Total Suspended Solids',]
-  TSS <- df.all[df.all$Analyte == 'Total Suspended Solids',]
+  #TSS <- df.all[df.all$Analyte == 'Total Suspended Solids',]
+  results_seaken <- SeaKen %>% filter(analyte == 'Total Suspended Solids')
   
   TSS_list<- list()
   TSS_exclist<- list()
+  tss_plots<-list()
+  
+  
+  
   for(j in 1: length(tss_stn)) {
-    new_data <- TSS[TSS$Station_ID == tss_stn[j],]
+    new_data <- TSS_all[TSS_all$Station_ID == tss_stn[j],]
     
     tmp_df <- new_data
-      tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-      tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-      sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-      tmp_df_MRL <- tmp_df[sub,]
-      tmp_df <- remove.dups(tmp_df_MRL, max)
+    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+    tmp_df_MRL <- tmp_df[sub,]
+    tmp_df <- remove.dups(tmp_df_MRL, max)
     
-    if (input$select == 'Powder-Brownlee') {
-    TSS_evaluate <- EvaluateTSSWQS(tmp_df, 
-                                   selectWQSTSS = 50)
+    if(tss_stn[j] %in% names(tss_target)) {
+      TSS_evaluate <- EvaluateTSS_SNRHC(tmp_df, 
+                                     TSS_target= tss_target[[tss_stn[j]]])
     } else {
-      TSS_evaluate <- EvaluateTSSWQS(tmp_df, 
-                                   selectWQSTSS = 0)
+      # per instructions from John D. to include target on all graphs
+      TSS_evaluate <- EvaluateTSS_SNRHC(tmp_df, 
+                                     TSS_target = 50)
     }
+    
     TSS_eval <- attr(TSS_evaluate, 'ex_df')
     TSS_list[[j]] <- TSS_evaluate
     TSS_exclist[[j]] <- TSS_eval
+    
+    ####
+    trend_logic <-ifelse(grepl("Not Significant", 
+                                 results_seaken[results_seaken$Station_ID == tss_stn[j],'signif']), 
+                           FALSE,
+                           ifelse(grepl("Need at least 8 years", 
+                                        results_seaken[results_seaken$Station_ID == tss_stn[j],'signif']),
+                                  FALSE,
+                                  TRUE))
+    if (tss_stn[j] %in% names(tss_target)) {
+      b <- plot.TSS(new_data=TSS_evaluate,
+                    sea_ken_table=results_seaken,
+                    plot_trend = trend_logic,
+                    selectWQSTSS = 50,
+                    parm = paste0("Monthly Mean ",unique(TSS_evaluate$Analyte)))
+    } else {
+      # per instructions from John D. to include target on all graphs
+      b <- plot.TSS(new_data=TSS_evaluate,
+                    sea_ken_table=results_seaken,
+                    plot_trend = trend_logic,
+                    selectWQSTSS = 50,
+                    parm = paste0("Monthly Mean ",unique(TSS_evaluate$Analyte)))
+    }
+    
+    
+    tss_plots[[j]]<-b
+    
+    print(tss_plots[[j]])
+    cat(figs(name = paste0('TSS_', tss_stn[j]), 
+             caption = paste0('Station ', tss_stn[j], 
+                              ' Total Suspended Solids water quality status and trends.')))
+    
+    
   }
   
   TSS<-rbind.fill(TSS_list[])
   exc<-rbind.fill(TSS_exclist[])
   exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
-  
-  results_seaken<-SeaKen %>% filter(analyte == 'Total Suspended Solids')
-  
-  tss_plots<-list()
-  for (i in 1:length(tss_stn)) {
-    mydata_sub <- TSS_all[TSS_all$Station_ID == tss_stn[i],]
-    
-    
-    trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == tss_stn[i],'signif']), FALSE,
-                        ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == tss_stn[i],'signif']), FALSE, TRUE))
-    
-    if (input$select == 'Powder-Brownlee') {
-    b <- plot.TSS(new_data=mydata_sub,
-                  df.all = df.all,
-                  sea_ken_table=results_seaken ,
-                  plot_trend = trend_logic,
-                  selectWQSTSS = 50,
-                  parm = unique(mydata_sub$Analyte))
-    } else {
-      b <- plot.TSS(new_data=mydata_sub,
-                  df.all = df.all,
-                  sea_ken_table=results_seaken ,
-                  plot_trend = trend_logic,
-                  selectWQSTSS = 0,
-                  parm = unique(mydata_sub$Analyte))
-    }
-    
-    tss_plots[[i]]<-b
-    
-    print(tss_plots[[i]])
-    cat(figs(name = paste0('TSS_', tss_stn[i]), caption = paste0('Station ', tss_stn[i], ' Total Suspended Solids water quality trends.')))
-  } 
-colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
-# exc <- exc[,c(1:5)]
-  knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "tssExcTable", caption = "Total Suspended Solids observations."))
 
-# }else {
-#   "No monitoring stations have sufficient data to assess trends in total suspended solids concentration."
-# }
+  colnames(exc) <- c("Station ID","Station Description", "Min Year", "Max Year", 
+                     "Obs", "Monthly Exceedances", "% Exceedance")
+
+  knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, 
+               caption = tbls(name = "tssExcTable", caption = "Total Suspended Solids observations."))
+
 }
+
 tss_exc <- exc
 
 ```
 
 ## pH
 
-```{r pH, results = 'asis', fig.width = 6, fig.height = 6}
+```{r pH, results = 'asis', fig.width = 7, fig.height = 6}
 
 exc <- NULL
 pH_stn_table <- NULL
@@ -1075,18 +1106,19 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
     dplyr::filter(Analyte == "pH")
   pH_stn_table<-c(unique(pH_stn$Station_ID))
 }
-  
-  p_stat<-status %>%
-    dplyr::filter(Analyte == "pH")
-  p_stat <- c(unique(p_stat$Station_ID))
-  
-  if(!is.null(pH_stn_table)){
+
+p_stat<-status %>%
+  dplyr::filter(Analyte == "pH")
+p_stat <- c(unique(p_stat$Station_ID))
+
+if(!is.null(pH_stn_table)){
   pH_stn_table <- unique(append(pH_stn_table, p_stat))
-  }else{
-    pH_stn_table <- p_stat
-  }
-  if(length(pH_stn_table) > 0) {
-    
+}else{
+  pH_stn_table <- p_stat
+}
+
+if(length(pH_stn_table) > 0) {
+  
   pH_all <- df.all[df.all$Analyte == 'pH',]
   pH <- df.all[df.all$Analyte == 'pH',]
   
@@ -1147,7 +1179,8 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
       
       
       trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == pH_stn[i],'signif']), FALSE,
-                          ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == pH_stn[i],'signif']), FALSE, TRUE))
+                          ifelse(grepl("Need at least 8 years", 
+                                       results_seaken[results_seaken$Station_ID == pH_stn[i],'signif']), FALSE, TRUE))
       
       ph_crit_min <- as.numeric(Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'pH_low'])
       ph_crit_max <- as.numeric(Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'pH_high'])
@@ -1178,11 +1211,12 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
       
       print(pH_plots[[i]])
       
-      cat(figs(name = paste0('pH_', pH_stn[i]), caption = paste0('Station ', pH_stn[i], ' pH water quality status and/or trends.')))
+      cat(figs(name = paste0('pH_', pH_stn[i]), 
+               caption = paste0('Station ', pH_stn[i], ' pH water quality status and/or trends.')))
       
     } 
-    
   }
+  
   pH_table <- as.data.frame(pH_stn_table)
   if(length(pH_stn > 0)){
     pH_table <- pH_table %>% filter(!(pH_stn_table %in% pH_stn))
@@ -1195,11 +1229,13 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   }
   
   if(!is.null(ph_exc)) {
-    knitr::kable(ph_exc, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "phExcTable", caption = "pH status."))
+    knitr::kable(ph_exc, padding = 2, digits = 1, row.names = FALSE, 
+                 caption = tbls(name = "phExcTable", caption = "pH status."))
   }
-  # } else {
-  #   print("No monitoring stations have sufficient data to assess pH.")
-  # }
+  
+} else {
+  print("No monitoring stations have sufficient data to assess pH.")
+  ph <- NULL
 }
 
 ```
@@ -1208,8 +1244,8 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
 
 ```{r Temperature, results = 'asis', fig.width = 6, fig.height = 6}
 
-if(any(trend$Analyte == 'Temperature') | any(status$Analyte == 'Temperature')) {
-
+if(any(!(trend == "No Stations Meet Trend Criteria"))) {
+  
   temp_stn <- unique(filter(SeaKen, analyte == "Temperature")$Station_ID)
   
   t_stat <- unique(filter(status, Analyte == "Temperature")$Station_ID)
@@ -1313,7 +1349,8 @@ if(any(trend$Analyte == 'Temperature') | any(status$Analyte == 'Temperature')) {
             temp_plots[[i]]<-b
             
             print(temp_plots[[i]])
-            cat(figs(name = paste0('temp_', temp_stn[i]), caption = paste0('Station ', temp_stn[i], ' Temperature water quality status and/or trends.')))
+            cat(figs(name = paste0('temp_', temp_stn[i]), 
+                     caption = paste0('Station ', temp_stn[i], ' Temperature water quality status and/or trends.')))
             
           } else {
             print(paste("insufficient data to calculate sdadm at station:", temp_stn[i]))
@@ -1342,10 +1379,13 @@ if(any(trend$Analyte == 'Temperature') | any(status$Analyte == 'Temperature')) {
       }
       
     }
+  } else {
+    temp <- NULL
+    print(paste0("There was insufficient data to calculate the seven day average daily maximum stream temperatures and make status and/or trend assessments for stream temperature."))
   }
 } else {
-  print("There are no stations with sufficient available data to assess status or trends for temperature")
   temp <- NULL
+
 }
 temp_exc <- exc
 
@@ -1353,7 +1393,7 @@ temp_exc <- exc
 
 ## Dissolved Oxygen
 
-```{r Dissolved-Oxygen, results = 'asis', fig.width = 6, fig.height = 6}
+```{r Dissolved-Oxygen, results = 'asis', fig.width = 7, fig.height = 6}
 
 exc <- NULL
 DO_stn <- NULL
@@ -1508,11 +1548,18 @@ DO_exc <- exc
 
 # Summary 
 
-```{r Summary-map, results = 'asis', eval = word_output & !(split_param_summary), fig.cap=figs(name="Summary_map", caption="Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+```{r Summary-map1, results = 'asis', eval = word_output & !(split_param_summary), fig.cap=figs(name="Summary_map1", caption="Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the two whole years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
-knitr::include_graphics(paste0("Figures/",station_summary_map_file))
+knitr::include_graphics(paste0("Figures/",station_summary_map1_file))
 
 ```
+
+```{r Summary-map2, results = 'asis', eval = word_output & !(split_param_summary), fig.cap=figs(name="Summary_map2", caption="Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two whole years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+
+knitr::include_graphics(paste0("Figures/",station_summary_map2_file))
+
+```
+
 
 ```{r DO-summary-map, results = 'asis', eval = word_output & split_param_summary, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
@@ -1562,7 +1609,7 @@ knitr::include_graphics(path = paste0("Figures/",station_summary_map_tss_file))
 
 Summary of stations that fit the criteria for status and/or trend analysis. One or more exceedances within the last three years of available data defined whether a station was 'Meeting' or 'Not Meeting'. Trend was determined by significant trends associated with long-term datasets.
 
-```{r parm-summary-table, results = 'asis'}
+```{r parm-summary-table, include = FALSE, results = 'asis'}
 
 stns_param_summary <-  parm_summary(stns = stns[,c(1:4)],
                             ecoli = ecoli,
@@ -1580,7 +1627,6 @@ stns_param_summary <-  parm_summary(stns = stns[,c(1:4)],
 
 # create a shapefile
 stns_param_summary_shp <- stns_param_summary %>%
-                  dplyr::select(-c(TP_S, TSS_S)) %>%
                   dplyr::rename(Name=Station_Description, 
                                 Latitude=DECIMAL_LAT, 
                                 Longitude=DECIMAL_LONG)
@@ -1597,30 +1643,29 @@ stns_param_summary_shp <- stns_param_summary_shp[order(stns_param_summary_shp$St
 writeOGR(obj=stns_param_summary_shp, dsn=GIS_dir, layer="station_param_summary", driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 # format for table
-stns_param_summary_tbl <- dplyr::select(stns_param_summary, -c(DECIMAL_LAT,DECIMAL_LONG, TP_S, TSS_S))
+stns_param_summary_tbl <- dplyr::select(stns_param_summary, -c(DECIMAL_LAT,DECIMAL_LONG))
 
 colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
-                                  "E.coli Status", "E.coli Trend", 
-                                  "Enterococcus Status", "Enterococcus Trend",
+                                  "_E.coli_ Status", "_E.coli_ Trend", 
+                                  "_Enterococcus_ Status", "_Enterococcus_ Trend",
                                   "DO Status", "DO Trend",
                                   "pH Status", "pH Trend", 
                                   "Temperature Status", "Temperature Trend",
-                                  "TP Trend", 
-                                  "TSS Trend")
+                                  "TP Status","TP Trend", 
+                                  "TSS Status","TSS Trend")
 
-
-save(stns_param_summary, file=paste0(Rdata_dir,"/", stns_param_summary_file))
+save(stns_param_summary_tbl, file=paste0(Rdata_dir,"/", stns_param_summary_file))
 
 knitr::kable(stns_param_summary_tbl, 
              # format = "markdown",  
              padding = 2, digits = 3,
              row.names = FALSE,
              caption = tbls(name = "parmSumTable", 
-                            caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen."))
+                            caption = "Summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. Note: DO = dissolved oxygen, TP = Total Phosphorus, TSS = Total Suspended Solids."))
 
 ```
 
-```{r parm-summary-map-html, results = 'asis', eval = !(word_output), fig.width=10, fig.height=8}
+```{r parm-summary-map-html, results = 'asis', eval = !(word_output), fig.width=8, fig.height=8}
 
 library(base64enc)
  
@@ -1840,11 +1885,18 @@ U.S. Geological Survey, 2016, National Water Information System data available o
 
 org_summary <- summarizeByOrg(df.all)
 
+# clean up column names
+colnames(org_summary) <- c("Organization",	"Observations",	"Unique Stations",	"NA observations",	"Unique Comments")
+
+colnames(status)[1] <- "Station ID"
+colnames(trend)[1] <- "Station ID"
+colnames(stns_by_year)[1] <- "Station ID"
+
 knitr::kable(org_summary, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixorgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report."))
 
-knitr::kable(status, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixstatusTable", caption = "Monitoring stations that fit the criteria to assess status; note value represents the number of results for each monitoring station per year."))
+knitr::kable(status, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixstatusTable", caption = "Number of observations per year for monitoring stations that fit the criteria to assess status."))
 
-knitr::kable(trend, padding = 1, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixtrendTable", caption = "Monitoring stations that fit the criteria to assess trends; note value represents the number of results for each monitoring station per year."))
+knitr::kable(trend, padding = 1, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixtrendTable", caption = "Number of observations per year for monitoring stations that fit the criteria to assess trend."))
 
 knitr::kable(stns_by_year, padding = 1, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixstnByYrTable", caption = "All monitoring stations that were queried and the number of results per year during the query period."))
 
