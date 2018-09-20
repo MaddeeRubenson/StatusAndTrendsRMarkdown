@@ -1052,13 +1052,45 @@ EvaluateTSSWQS<-function(new_data,
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   if(selectWQSTSS != 0) {
-    new_data$exceed<- ifelse(new_data$Result > selectWQSTSS, 1, 0)
+    new_data$exceed<- ifelse(new_data$Result > selectWQSTSS,  'Exceeds', 'Meets')
   } else {
     new_data$exceed<-NA
   }
   
   exc<-new_data%>%
-    filter(exceed == 1)
+    filter(exceed == 'Exceeds')
+  
+  ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
+                      "Station_Description" = (unique(new_data$Station_Description)),
+                      "Min_Date" = min(new_data$year),
+                      "Max_Date" = max(new_data$year),
+                      "Obs" = c(nrow(new_data)),
+                      "Exceedances" = c(nrow(exc)))
+  
+  attr(new_data, "ex_df") <-ex_df
+  return(new_data)
+  
+}
+
+EvaluateTSS_SNRHC<-function(new_data, TSS_target=50) {
+  # function to evaluate monthly mean 50 mg/L TSS target in Snake River Hells Canyon Sediment TMDL
+  # applies during the growing season May - September
+  
+  new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
+  new_data$Sampled<-as.Date(new_data$Sampled)
+  new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
+  
+  new_data <- new_data %>%
+    mutate(Sampled=floor_date(Sampled, "month")) %>%
+    filter(month(Sampled) %in% (5:9)) %>%
+    group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled, year) %>%
+    summarize(Result=mean(Result)) %>%
+    as.data.frame()
+  
+  new_data$exceed<- ifelse(new_data$Result > TSS_target,  'Exceeds', 'Meets')
+  
+  exc<-new_data%>%
+    filter(exceed == 'Exceeds')
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1081,7 +1113,8 @@ EvaluateTPWQS<-function(new_data,
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   if(selectWQSTP != 0) {
-    new_data$exceed<- ifelse(new_data$Result > selectWQSTP, 1, 0)
+    # May - Sept TP target in Snake Hells Canyon TMDL
+    new_data$exceed<- ifelse(new_data$Result > selectWQSTP & month(new_data$Sampled) >= 5 & month(new_data$Sampled) <=9, 1, 0)
   } else {
     new_data$exceed<-NA
   }
@@ -2213,7 +2246,7 @@ parm_summary <- function(stns,
       
       if(is.na(tss_data$exceed)) {
         stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- '--'
-      } else if(sum(tss_data$exceed) > 0) {
+      } else if(any(tss_data$exceed == 'Exceeds')) {
         stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Exceeds'
       } else {
         stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Meets'
