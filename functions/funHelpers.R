@@ -41,7 +41,7 @@ Stations_in_poly <- function(df.all, poly_shp, outside=FALSE) {
   library(sp)
   
   # make a spatial object
-  df.shp <- df.all[,c("Station_ID", "DATUM", "DECIMAL_LAT", "DECIMAL_LONG")]
+  df.shp <- df.all[,c("Station_ID", "DATUM", "DECIMAL_LAT", "DECIMAL_LONG")]         
   coordinates(df.shp)=~DECIMAL_LONG+DECIMAL_LAT
   
   # Datums to search for
@@ -1047,13 +1047,45 @@ EvaluateTSSWQS<-function(new_data,
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   if(selectWQSTSS != 0) {
-    new_data$exceed<- ifelse(new_data$Result > selectWQSTSS, 1, 0)
+    new_data$exceed<- ifelse(new_data$Result > selectWQSTSS,  'Exceeds', 'Meets')
   } else {
     new_data$exceed<-NA
   }
   
   exc<-new_data%>%
-    filter(exceed == 1)
+    filter(exceed == 'Exceeds')
+  
+  ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
+                      "Station_Description" = (unique(new_data$Station_Description)),
+                      "Min_Date" = min(new_data$year),
+                      "Max_Date" = max(new_data$year),
+                      "Obs" = c(nrow(new_data)),
+                      "Exceedances" = c(nrow(exc)))
+  
+  attr(new_data, "ex_df") <-ex_df
+  return(new_data)
+  
+}
+
+EvaluateTSS_SRHC<-function(new_data, TSS_target=50) {
+  # function to evaluate monthly mean 50 mg/L TSS target in Snake River Hells Canyon Sediment TMDL
+  # applies during the growing season May - September
+  
+  new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
+  new_data$Sampled<-as.Date(new_data$Sampled)
+  new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
+  
+  new_data <- new_data %>%
+    mutate(Sampled=floor_date(Sampled, "month")) %>%
+    filter(month(Sampled) %in% (5:9)) %>%
+    group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled, year) %>%
+    summarize(Result=mean(Result)) %>%
+    as.data.frame()
+  
+  new_data$exceed<- ifelse(new_data$Result > TSS_target,  'Exceeds', 'Meets')
+  
+  exc<-new_data%>%
+    filter(exceed == 'Exceeds')
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1076,11 +1108,38 @@ EvaluateTPWQS<-function(new_data,
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   if(selectWQSTP != 0) {
-    new_data$exceed<- ifelse(new_data$Result > selectWQSTP, 1, 0)
+    new_data$exceed <- ifelse(new_data$Result > selectWQSTP, 1, 0)
   } else {
     new_data$exceed<-NA
   }
   
+  exc<-new_data%>%
+    filter(exceed == 1)
+  
+  ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
+                      "Station_Description" = (unique(new_data$Station_Description)),
+                      "Min_Date" = min(new_data$year),
+                      "Max_Date" = max(new_data$year),
+                      "Obs" = c(nrow(new_data)),
+                      "Exceedances" = c(nrow(exc)))
+  
+  attr(new_data, "ex_df") <-ex_df
+  return(new_data)
+  
+}
+
+EvaluateTP_SRHC<-function(new_data, selectWQSTP) {
+  
+  # function to evaluate May - Sept 0.07 mg/L TP target in Snake Hells Canyon Nutrient TMDL
+  # applies during the growing season May - September
+  
+  new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
+  new_data$Sampled<-as.Date(new_data$Sampled)
+  new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
+  
+  # May - Sept TP target in Snake Hells Canyon TMDL
+  new_data$exceed<- ifelse(new_data$Result > selectWQSTP & month(new_data$Sampled) >= 5 & month(new_data$Sampled) <=9, 1, 0)
+
   exc<-new_data%>%
     filter(exceed == 1)
   
@@ -1857,8 +1916,8 @@ parm_summary <- function(stns,
   e_status_stns  <- unique(e_status_stns$Station_ID)
   e_status <- ecoli %>% filter(Station_ID %in% e_status_stns) %>% filter(year %in% statyear)
   
-  if(any(trend != 'No Stations Meet Trend Criteria'))  {
-    e_trend_stns <- trend %>% filter(Analyte == 'E. Coli')
+  if(any(trend != 'No Stations Meet Trend Criteria') & any(SeaKen[SeaKen$analyte == 'E. Coli',]$signif != 'Need at least 8 years'))  {
+    e_trend_stns <- SeaKen %>% filter(analyte == 'E. Coli', signif != 'Need at least 8 years')
     e_trend_stns  <- unique(e_trend_stns$Station_ID)
   } else {
     e_trend_stns <- NULL
@@ -1876,10 +1935,11 @@ parm_summary <- function(stns,
     }
     
   }
-  
+
   #trend Ecoli
   if(length(e_trend_stns) > 0) {
     for(j in 1:length(e_trend_stns)) {
+      print(e_trend_stns[j])
       e_seaken <- SeaKen %>% filter(analyte == 'E. Coli')
       e_seaken <- e_seaken[e_seaken$Station_ID == e_trend_stns[j],]
       
@@ -2134,8 +2194,8 @@ parm_summary <- function(stns,
     tp_status_stns  <- unique(tp_status_stns$Station_ID)
     tp_status <- tp %>% filter(Station_ID %in% tp_status_stns) %>% filter(year %in% statyear)
     
-    if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      tp_trend_stns <- trend %>% filter(Analyte == 'Total Phosphorus')
+    if(any(trend != 'No Stations Meet Trend Criteria') & any(SeaKen[SeaKen$analyte == 'Total Phosphorus',]$signif != 'Need at least 8 years'))  {
+      tp_trend_stns <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Need at least 8 years')
       tp_trend_stns  <- unique(tp_trend_stns$Station_ID)
     }else{
       tp_trend_stns <- NULL
@@ -2155,11 +2215,12 @@ parm_summary <- function(stns,
       }
       
     }
-    
+
     #trend tp
     if(length(tp_trend_stns) > 0 ) {
       for(j in 1:length(tp_trend_stns)) {
-        tp_seaken <- SeaKen %>% filter(analyte == 'Total Phosphorus')
+        print(tp_trend_stns[j])
+        tp_seaken <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Need at least 8 years')
         tp_seaken <- tp_seaken[tp_seaken$Station_ID == tp_trend_stns[j],]
         
         if(tp_seaken$signif != "Not Significant") {
@@ -2192,8 +2253,8 @@ parm_summary <- function(stns,
     tss_status_stns  <- unique(tss_status_stns$Station_ID)
     tss_status <- tss %>% filter(Station_ID %in% tss_status_stns) %>% filter(year %in% statyear)
     
-    if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      tss_trend_stns <- trend %>% filter(Analyte == 'Total Suspended Solids')
+    if(any(trend != 'No Stations Meet Trend Criteria') & any(SeaKen[SeaKen$analyte == 'Total Suspended Solids',]$signif != 'Need at least 8 years'))  {
+      tss_trend_stns <- SeaKen %>% filter(analyte == 'Total Suspended Solids', signif != 'Need at least 8 years')
       tss_trend_stns  <- unique(tss_trend_stns$Station_ID)
     }else{
       tss_trend_stns <- NULL
@@ -2206,7 +2267,7 @@ parm_summary <- function(stns,
       
       if(is.na(tss_data$exceed)) {
         stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- '--'
-      } else if(sum(tss_data$exceed) > 0) {
+      } else if(any(tss_data$exceed == 'Exceeds')) {
         stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Exceeds'
       } else {
         stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Meets'
