@@ -9,12 +9,12 @@ plot.ph <- function(new_data,
                     plot_trend = FALSE,
                     ph_crit_min = NULL,
                     ph_crit_max = NULL)
-                     {
+{
   library(ggplot2)
   # new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column], 
   #                                         format = datetime_format))  
   new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column], 
-                                           format = '%Y-%m-%d'))  
+                                          format = '%Y-%m-%d'))  
   
   x.min <- min(new_data$Sampled)
   x.max <- max(new_data$Sampled)
@@ -36,16 +36,16 @@ plot.ph <- function(new_data,
                       unique(new_data[, station_id_column]) & 
                       sea_ken_table$analyte == 
                       unique(new_data[, analyte_column]), 'slope']
-      )
     )
+  )
   p.value <- suppressWarnings(
     as.numeric(
       sea_ken_table[sea_ken_table$Station_ID == 
                       unique(new_data[,station_id_column]) & 
                       sea_ken_table$analyte == 
                       unique(new_data[,analyte_column]),'pvalue']
-      )
     )
+  )
   p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
                                    unique(new_data[,station_id_column]) & 
                                    sea_ken_table$analyte == 
@@ -87,7 +87,7 @@ plot.ph <- function(new_data,
   #                             ph_crit$HUC8 == strsplit(plan_area, 
   #                                                      split = " - ")[[1]][1]), 
   #                        'ph_high']
-
+  
   df_ph_crit_max <- data.frame(x = c(x.min + 10000, x.max - 10000),
                                y = rep(ph_crit_max, 2),
                                variable = rep('pH Criteria', 2))
@@ -95,17 +95,24 @@ plot.ph <- function(new_data,
                                y = rep(ph_crit_min, 2),
                                variable = rep('pH Criteria', 2))
   
-    ####plot the timeseries
+  ####plot the timeseries
   elem_text <- element_text(face = "bold")
   
   g <- ggplot(data = new_data, aes_string(x = 'Sampled', y = result_column, colour = 'exceed')) + 
     geom_point() + 
-    theme_gdocs() + theme(axis.title = elem_text) +
     ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
-    theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
-    theme(legend.position = "top",
+    theme(axis.title = elem_text,
+          plot.title = element_text(vjust=1.5, face="bold", size = 10),
+          legend.position = "top",
           legend.title = element_blank(),
-          legend.direction = 'horizontal') +
+          legend.direction = 'horizontal',
+          legend.key = element_rect(color="white", fill = "white"),
+          panel.background = element_rect(fill = "white"),
+          panel.grid.major = element_line(color="grey"),
+          panel.border = element_rect(color="grey",fill=NA),
+          axis.line = element_line(size = 1, color = "black"),
+          axis.text = element_text(color = "black"),
+          axis.ticks=element_blank()) +
     xlab(x.lab) + 
     ylab(y.lab) + 
     xlim(x.lim) +
@@ -231,25 +238,44 @@ plot.Temperature <- function(new_data,
   
   if(selectSpawning == 'No spawning' & any(selectUse %in%  c('Cool water species', 'Oceans and Bays', 'No Salmonid Use/Out of State'))) {
     g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed, linetype=exceed)) + 
-      geom_point() +   theme_gdocs() + theme(axis.title = elem_text) +
+      geom_point() +
       xlab(x.lab) + 
       ylab(y.lab) + 
       xlim(x.lim) +
       ylim(y.lim) +
       ggtitle(title) + 
-      theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))
-    g <- g + theme(legend.position = "top",
-                   legend.title = element_blank(),
-                   legend.direction = 'horizontal')
+      theme(axis.title = elem_text,
+            plot.title = element_text(vjust=1.5, face="bold", size = 10),
+            legend.position = "top",
+            legend.title = element_blank(),
+            legend.direction = 'horizontal',
+            legend.key = element_rect(color="white", fill = "white"),
+            panel.background = element_rect(fill = "white"),
+            panel.grid.major = element_line(color="grey"),
+            panel.border = element_rect(color="grey",fill=NA),
+            axis.line = element_line(size = 1, color = "black"),
+            axis.text = element_text(color = "black"),
+            axis.ticks=element_blank())
   } else {
     g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed, linetype=exceed)) + 
-      geom_point() +   theme_gdocs() + theme(axis.title = elem_text) +
+      geom_point() +
       xlab(x.lab) + 
       ylab(y.lab) + 
       xlim(x.lim) +
       ylim(y.lim) +
       ggtitle(title) + 
-      theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))
+      theme(axis.title = elem_text,
+            plot.title = element_text(vjust=1.5, face="bold", size = 10),
+            legend.position = "top",
+            legend.title = element_blank(),
+            legend.direction = 'horizontal',
+            legend.key = element_rect(color="white", fill = "white"),
+            panel.background = element_rect(fill = "white"),
+            panel.grid.major = element_line(color="grey"),
+            panel.border = element_rect(color="grey",fill=NA),
+            axis.line = element_line(size = 1, color = "black"),
+            axis.text = element_text(color = "black"),
+            axis.ticks=element_blank())
     
     if (all(new_data$exceed == 'Meets', na.rm = TRUE)) {
       g <- g + scale_colour_manual("",
@@ -264,9 +290,6 @@ plot.Temperature <- function(new_data,
                                    values = c('red', 'black'), 
                                    labels = levels(new_data$exceed))
     }
-    g <- g + theme(legend.position = "top",
-                   legend.title = element_blank(),
-                   legend.direction = 'horizontal')
     
     ####Draw WQS 
     if (selectSpawning != 'No spawning' & any(selectUse %in% 
@@ -289,7 +312,7 @@ plot.Temperature <- function(new_data,
           g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
                                 data = df
                                 # , inherit.aes = FALSE
-                                )
+          )
         } 
       } else {
         spn_stop <- spn_index[which(spn_diff > 1)]
@@ -309,7 +332,7 @@ plot.Temperature <- function(new_data,
             g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
                                   data = df
                                   # , inherit.aes = FALSE
-                                  )
+            )
           } else {
             #Plot last spawn-time period
             df <- data.frame(x1 = new_data[spn_start[i], 'Sampled'],
@@ -321,7 +344,7 @@ plot.Temperature <- function(new_data,
             g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
                                   data = df
                                   # , inherit.aes = FALSE
-                                  )
+            )
           }
         }
       }
@@ -336,7 +359,7 @@ plot.Temperature <- function(new_data,
       g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
                             data = df
                             # , inherit.aes = FALSE
-                            )
+      )
     } else {
       spn_index <- which(new_data$criteria_value == 13)
       spn_diff <- diff(spn_index)
@@ -356,7 +379,7 @@ plot.Temperature <- function(new_data,
             g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Non-spawning', color = 'Non-spawning'),
                                   data = df
                                   # , inherit.aes = FALSE
-                                  )
+            )
           } else {
             #Plot non-spawn time-period
             df <- data.frame(x1 = new_data[spn_1 + 1, 'Sampled'],
@@ -368,7 +391,7 @@ plot.Temperature <- function(new_data,
             g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Non-spawning', color = 'Non-spawning'),
                                   data = df
                                   # , inherit.aes = FALSE
-                                  )
+            )
           }
           #Plot spawn time period
           df <- data.frame(x1 = new_data[spn_index[1],'Sampled'],
@@ -380,7 +403,7 @@ plot.Temperature <- function(new_data,
           g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
                                 data = df
                                 # , inherit.aes = FALSE
-                                )
+          )
         } else {
           df <- data.frame(x1 = new_data[1,'Sampled'],
                            x2 = new_data[nrow(new_data), 'Sampled'],
@@ -389,7 +412,7 @@ plot.Temperature <- function(new_data,
           g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = "Non-spawning", color = 'Non-spawning'),
                                 data = df
                                 # , inherit.aes = FALSE
-                                ) 
+          ) 
         }
       } else {
         spn_stop <- spn_index[which(spn_diff > 1)]
@@ -409,7 +432,7 @@ plot.Temperature <- function(new_data,
             g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
                                   data = df
                                   # , inherit.aes = FALSE
-                                  )
+            )
             #Plot non-spawn time period
             df <- data.frame(x1 = new_data[nspn_start[i], 'Sampled'],
                              x2 = new_data[nspn_stop[i], 'Sampled'],
@@ -420,7 +443,7 @@ plot.Temperature <- function(new_data,
             g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = 'Non-spawning', color = 'Non-spawning'),
                                   data = df
                                   # , inherit.aes = FALSE
-                                  )
+            )
           } else {
             #Plot last spawn-time period
             df <- data.frame(x1 = new_data[spn_start[i], 'Sampled'],
@@ -432,7 +455,7 @@ plot.Temperature <- function(new_data,
             g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
                                   data = df
                                   # , inherit.aes = FALSE
-                                  )
+            )
             #Plot non-spawn time period
             df <- data.frame(x1 = new_data[nspn_start[i], 'Sampled'],
                              x2 = new_data[nspn_stop[i], 'Sampled'],
@@ -443,7 +466,7 @@ plot.Temperature <- function(new_data,
             g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = 'Non-spawning', color = 'Non-spawning'),
                                   data = df
                                   # , inherit.aes = FALSE
-                                  )
+            )
             #Plot last non-spawn time period
             if (new_data[nrow(new_data),'criteria_value'] != 13) {
               df <- data.frame(x1 = new_data[max(spn_index) + 1, 'Sampled'],
@@ -455,7 +478,7 @@ plot.Temperature <- function(new_data,
               g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = 'Non-spawning', color = 'Non-spawning'),
                                     data = df
                                     # , inherit.aes = FALSE
-                                    )
+              )
             }
           }
         }
@@ -471,7 +494,7 @@ plot.Temperature <- function(new_data,
           g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = 'Non-spawning', color = 'Non-spawning'),
                                 data = df
                                 # , inherit.aes = FALSE
-                                )
+          )
         } 
         
         #Plot first spawn time period
@@ -484,17 +507,15 @@ plot.Temperature <- function(new_data,
         g <- g + geom_segment(aes(x = x1, xend = x2, y = y1, yend = y2, linetype = 'Spawning', color = 'Spawning'),
                               data = df
                               # , inherit.aes = FALSE
-                              )
+        )
       }
     }
     
     if (plot_trend & !is.na(p.value)) {
       g <- g + geom_line(aes(x = x, y = y, linetype = "Trend", color="Trend"), data = df_trend_line
                          # , inherit.aes = FALSE
-                         )
+      )
       
-      g <- g + ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
-        theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))
     }
     
     g <- g + scale_colour_manual(name = "Criteria, Status, and Trends",
@@ -505,7 +526,7 @@ plot.Temperature <- function(new_data,
                                             "Spawning" = 'black',
                                             "Non-spawning" = 'black',
                                             "Trend" = 'blue')
-                                 )
+    )
     
     g <- g + scale_linetype_manual(name = "Criteria, Status, and Trends",
                                    breaks = c('Meets', 'Exceeds', 'Spawning', 'Non-spawning', 'Trend'),
@@ -515,7 +536,7 @@ plot.Temperature <- function(new_data,
                                               'Non-spawning' = "dashed",
                                               'Spawning' = "dotted",
                                               'Trend' = "solid")
-                                   )
+    )
     if (plot_trend & !is.na(p.value)) {
       if(all(new_data$exceed=='Meets')){
         if(selectSpawning != 'No spawning'){
@@ -542,15 +563,12 @@ plot.Temperature <- function(new_data,
     #                                        'Trend' = NA))
     
     # g <- g + guides(colour='legend', linetype='none') + guides(colour=guide_legend("Legend"))
-
+    
     # g <- g + guides(linetype = guide_legend(override.aes = list(color = c('Meets' = 'black','Exceeds' = 'red','Non-spawning'='black','Spawning'='black','Trend'='blue'))))
     
     # g <- g + scale_linetype_manual(values = c('Non-spawning' = 5,
     #                                           'Spawning' = 2,
     #                                           'Trend' = 1))
-    g <- g + theme(legend.position = "top",
-                   legend.title = element_blank(),
-                   legend.direction = 'horizontal')
   }
   g
 }
@@ -591,17 +609,17 @@ plot.bacteria <- function(new_data,
                        new_data[,result_column] - y.median)),
                        datetime_column])[1])
   slope <- as.numeric(sea_ken_table[sea_ken_table$Station_ID == 
-                               unique(new_data[,station_id_column]) & 
-                               sea_ken_table$analyte == 
-                               unique(new_data[,analyte_column]),'slope'])
+                                      unique(new_data[,station_id_column]) & 
+                                      sea_ken_table$analyte == 
+                                      unique(new_data[,analyte_column]),'slope'])
   p.value <- as.numeric(sea_ken_table[sea_ken_table$Station_ID== 
-                                 unique(new_data[,station_id_column]) & 
-                                 sea_ken_table$analyte == 
-                                 unique(new_data[,analyte_column]),'pvalue'] )
+                                        unique(new_data[,station_id_column]) & 
+                                        sea_ken_table$analyte == 
+                                        unique(new_data[,analyte_column]),'pvalue'] )
   p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
-                            unique(new_data[,station_id_column]) & 
-                            sea_ken_table$analyte == 
-                            unique(new_data[,analyte_column]),'signif'] 
+                                   unique(new_data[,station_id_column]) & 
+                                   sea_ken_table$analyte == 
+                                   unique(new_data[,analyte_column]),'signif'] 
   x.delta <- as.numeric((x.max-x.min)/2)####average date
   SK.min <- y.median-x.delta*slope/365.25#minimum y value for line
   if (!is.na(SK.min)) {
@@ -666,7 +684,7 @@ plot.bacteria <- function(new_data,
   gm_table$Sampled <- as.POSIXct(strptime(gm_table$day, format = "%Y-%m-%d"))
   
   
-
+  
   ####plot the timeseries
   elem_text <- element_text(face = "bold")
   
@@ -684,18 +702,25 @@ plot.bacteria <- function(new_data,
   g <- ggplot(data = plot_data, aes_string(x = 'Sampled', y = result_column, 
                                            colour = 'exceed_type', 
                                            shape = 'exceed_type')) + 
-    geom_point() +   theme_gdocs() + theme(axis.title = elem_text) +
-
+    geom_point() +
     ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
-    theme(legend.position = "top",
+    theme(axis.title = elem_text,
+          plot.title = element_text(vjust=1.5, face="bold", size = 10),
+          legend.position = "top",
           legend.title = element_blank(),
-          legend.direction = 'horizontal') +
-    theme(plot.title = element_text(vjust=1.5, face="bold", size = 10)) +
+          legend.direction = 'horizontal',
+          legend.key = element_rect(color="white", fill = "white"),
+          panel.background = element_rect(fill = "white"),
+          panel.grid.major = element_line(color="grey"),
+          panel.border = element_rect(color="grey",fill=NA),
+          axis.line = element_line(size = 1, color = "black"),
+          axis.text = element_text(color = "black"),
+          axis.ticks=element_blank()) +
     xlab(x.lab) + 
     ylab(y.lab) + 
     xlim(x.lim) +
     ylim(y.lim) 
-    
+  
   
   if (plot_trend & !is.na(p.value)) {
     g <- g + geom_line(aes(x = x, y = y, color = variable, shape = '', group = variable), 
@@ -732,24 +757,24 @@ plot.bacteria <- function(new_data,
             g <- g + scale_shape_manual("", values = c(NA, 17, 19, 19),
                                         guide = FALSE)
           } else {
-          g <- g + scale_color_manual("", values = c('red', 'red', 'black', 
-                                                     'black', 'black', 
-                                                     'black', 'blue'),
-                                      labels = c('Exceeds Single Sample', 
-                                                 'Exceeds Geometric Mean', 
-                                                 'Geometric Mean WQS', 
-                                                 'Meets Geometric Mean', 
-                                                 'Meets Single Sample',
-                                                 'Single Sample WQS',
-                                                 'Trend line'),
-                                      guide = guide_legend(override.aes = list(
-                                        linetype = c("blank", "blank", "dotdash", 
-                                                     "blank","blank", 
-                                                     "dashed", "solid"),
-                                        shape = c(19, 17, NA, 17, 19, NA, NA)),
-                                        nrow = 2))
-          g <- g + scale_shape_manual("", values = c(NA, 17, 19, 17, 19),
-                                      guide = FALSE)
+            g <- g + scale_color_manual("", values = c('red', 'red', 'black', 
+                                                       'black', 'black', 
+                                                       'black', 'blue'),
+                                        labels = c('Exceeds Single Sample', 
+                                                   'Exceeds Geometric Mean', 
+                                                   'Geometric Mean WQS', 
+                                                   'Meets Geometric Mean', 
+                                                   'Meets Single Sample',
+                                                   'Single Sample WQS',
+                                                   'Trend line'),
+                                        guide = guide_legend(override.aes = list(
+                                          linetype = c("blank", "blank", "dotdash", 
+                                                       "blank","blank", 
+                                                       "dashed", "solid"),
+                                          shape = c(19, 17, NA, 17, 19, NA, NA)),
+                                          nrow = 2))
+            g <- g + scale_shape_manual("", values = c(NA, 17, 19, 17, 19),
+                                        guide = FALSE)
           }
         } else if (!'Exceeds Geometric mean' %in% unique(plot_data$exceed_type)) {
           g <- g + scale_color_manual("", values = c('red', 'black', 
@@ -812,7 +837,7 @@ plot.bacteria <- function(new_data,
                 unique(plot_data$exceed_type))) {
           if ((!"Meets Geometric mean" %in% unique(plot_data$exceed_type))) {
             g <- g + scale_color_manual("", values = c('red', 'red', 'black', 
-                                                        'black', 'black'),
+                                                       'black', 'black'),
                                         labels = c('Exceeds Single Sample', 
                                                    'Exceeds Geometric Mean', 
                                                    'Geometric Mean WQS', 
@@ -944,7 +969,7 @@ plot.bacteria <- function(new_data,
       }
     }
   }
-
+  
   g  
 }
 
@@ -1005,13 +1030,13 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL, title=NULL)
 }
 
 plot.DOsat<-function(new_data,
-                  analyte_column = 'Analyte',
-                  station_id_column = 'Station_ID',
-                  station_desc_column = 'Station_Description',
-                  datetime_column = 'Sampled',
-                  result_column = 'Result',
-                  datetime_format = '%Y-%m-%d %H:%M:%S',
-                  parm) {
+                     analyte_column = 'Analyte',
+                     station_id_column = 'Station_ID',
+                     station_desc_column = 'Station_Description',
+                     datetime_column = 'Sampled',
+                     result_column = 'Result',
+                     datetime_format = '%Y-%m-%d %H:%M:%S',
+                     parm) {
   library(ggplot2)
   
   
@@ -1030,16 +1055,25 @@ plot.DOsat<-function(new_data,
   
   ##Building the plot
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point() +theme_bw()+
+    geom_point() +
     ggtitle(bquote(atop(.(title)))) +
-    theme(legend.position = "top",
+    theme(axis.title = elem_text,
+          plot.title = element_text(vjust=1.5, face="bold", size = 10),
+          legend.position = "top",
           legend.title = element_blank(),
-          legend.direction = 'horizontal') +
+          legend.direction = 'horizontal',
+          legend.key = element_rect(color="white", fill = "white"),
+          panel.background = element_rect(fill = "white"),
+          panel.grid.major = element_line(color="grey"),
+          panel.border = element_rect(color="grey",fill=NA),
+          axis.line = element_line(size = 1, color = "black"),
+          axis.text = element_text(color = "black"),
+          axis.ticks=element_blank()) +
     xlab(x.lab) +
     ylab(y.lab) +
     xlim(x.lim) +
     ylim(y.lim) 
-    
+  
   g
 }
 
@@ -1062,7 +1096,7 @@ plot.DO<-function(new_data,
   library(chron)
   #dataframe that assigns WQS values to Aquatic Life Uses
   #new_data<-DO_evaluate
-
+  
   new_data <- EvaluateDOWQS(new_data = new_data,
                             df.all = df.all,
                             selectUseDO = selectUseDO,
@@ -1076,7 +1110,7 @@ plot.DO<-function(new_data,
                   min(new_data[, station_id_column]))
   x.lab <- "Date"
   y.lab <- "Dissolved Oxygen (mg/L)"
-
+  
   ##Building the plot##
   ##Generate WQS Lines##
   if (selectUseDO == 'Cold-Water Aquatic Life') {
@@ -1092,7 +1126,7 @@ plot.DO<-function(new_data,
     d<-data.frame(x = c(x.min, x.max), y = rep(6.5, 2),
                   variable = rep("Estuarine Waters", 2))
   }
- 
+  
   if(min(new_data$Result > 6.5)) {
     y.min <- 6
   }else{
@@ -1140,24 +1174,32 @@ plot.DO<-function(new_data,
   df_trend_line <- data.frame(x = c(x.min, x.max),
                               y = c(SK.min, SK.max),
                               variable = rep('Trend line', 2))
-
+  
   #BCsat_spwn$BCsat_spwn_exceed <- 'Meets b/c %Sat'
   
   elem_text <- element_text(face = 'bold') 
   
   ##PLOT THE TIMESERIES
   g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point(aes(color = exceed, shape = exceed)) + theme_gdocs() + theme(axis.title = elem_text) +
+    geom_point(aes(color = exceed, shape = exceed)) + 
     xlim(x.lim) +
     ylim(y.lim) +
-    theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
     ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
-    theme(legend.position = "top",
+    theme(axis.title = elem_text,
+          plot.title = element_text(vjust=1.5, face="bold", size = 10),
+          legend.position = "top",
           legend.title = element_blank(),
-          legend.direction = 'horizontal') +
+          legend.direction = 'horizontal',
+          legend.key = element_rect(color="white", fill = "white"),
+          panel.background = element_rect(fill = "white"),
+          panel.grid.major = element_line(color="grey"),
+          panel.border = element_rect(color="grey",fill=NA),
+          axis.line = element_line(size = 1, color = "black"),
+          axis.text = element_text(color = "black"),
+          axis.ticks=element_blank()) +
     xlab(x.lab) +
     ylab(y.lab) 
-   
+  
   
   #g <- g + geom_line(data = d, aes(x=x, y=y, linetype = selectUseDO))
   g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
@@ -1187,15 +1229,15 @@ plot.DO<-function(new_data,
                                                      'black', 'blue'),
                                       labels = c(unique(d$variable), 
                                                  'Exceeds',
-                                               'Meets',
-                                               'Trend Line'),
-                                    guide = guide_legend(override.aes = list(
-                                      linetype = c("solid", "blank", 
-                                                   "blank", 'solid'),
-                                      shape = c(NA, 19, 19, NA)),
-                                      nrow = 2))
-        g <- g + scale_shape_manual("", values = c(19, 19),
-                                    guide = FALSE)
+                                                 'Meets',
+                                                 'Trend Line'),
+                                      guide = guide_legend(override.aes = list(
+                                        linetype = c("solid", "blank", 
+                                                     "blank", 'solid'),
+                                        shape = c(NA, 19, 19, NA)),
+                                        nrow = 2))
+          g <- g + scale_shape_manual("", values = c(19, 19),
+                                      guide = FALSE)
         }
       } else {
         if (any('Meets b/c %Sat' %in% new_data$exceed)) {
@@ -1388,7 +1430,7 @@ plot.DO<-function(new_data,
                                         nrow = 2)) + 
             scale_shape_manual("", values = c(19), guide = FALSE)
         }
-        }      
+      }      
     } else {
       ####DRAW WQS SPAWNING LINES
       new_data <- new_data[order(new_data$Sampled),]
@@ -1496,23 +1538,32 @@ plot.DO<-function(new_data,
 #ggsave("g.png", height = 6, width = 6)
 
 plot.TSS<-function(new_data,
-                  df.all,
-                  selectWQSTSS = input$selectWQSTSS,
-                  sea_ken_table = SeaKen,
-                  plot_trend = input$plotTrend,
-                  analyte_column = 'Analyte',
-                  station_id_column = 'Station_ID',
-                  station_desc_column = 'Station_Description',
-                  datetime_column = 'Sampled',
-                  result_column = 'Result',
-                  datetime_format = '%Y-%m-%d %H:%M:%S',
-                  parm = 'Total Suspended Solids (mg/l)') {
+                   selectWQSTSS = input$selectWQSTSS,
+                   sea_ken_table = SeaKen,
+                   plot_trend = input$plotTrend,
+                   analyte_column = 'Analyte',
+                   station_id_column = 'Station_ID',
+                   station_desc_column = 'Station_Description',
+                   datetime_column = 'Sampled',
+                   result_column = 'Result',
+                   datetime_format = '%Y-%m-%d %H:%M:%S',
+                   parm = 'Total Suspended Solids (mg/l)') {
   library(ggplot2)
   library(chron)
   #dataframe that assigns WQS values to Aquatic Life Uses
- 
-  new_data<-EvaluateTSSWQS(new_data = new_data, 
-                           selectWQSTSS = selectWQSTSS)
+  
+  # testing
+  #new_data<-TSS_evaluate
+  #sea_ken_table<- results_seaken
+  #plot_trend <-trend_logic
+  #selectWQSTSS <-50
+  #parm <- unique(TSS_evaluate$Analyte)
+  #analyte_column <- 'Analyte'
+  #station_id_column <- 'Station_ID'
+  #station_desc_column <- 'Station_Description'
+  #datetime_column <- 'Sampled'
+  #result_column <- 'Result'
+  #datetime_format <- '%Y-%m-%d %H:%M:%S'
   
   x.min <- min(new_data$Sampled) 
   x.max <- max(new_data$Sampled) 
@@ -1521,7 +1572,7 @@ plot.TSS<-function(new_data,
                   min(new_data[, station_id_column]))
   x.lab <- "Date"
   y.lab <- paste(parm, '(mg/L)')
-
+  
   y.min <- floor(min(new_data[, result_column])) 
   
   if(selectWQSTSS != 0){
@@ -1546,9 +1597,9 @@ plot.TSS<-function(new_data,
     )
   )
   median <- sea_ken_table[sea_ken_table$Station_ID == 
-                                   unique(new_data[,station_id_column]) & 
-                                   sea_ken_table$analyte == 
-                                   unique(new_data[,analyte_column]),'median']
+                            unique(new_data[,station_id_column]) & 
+                            sea_ken_table$analyte == 
+                            unique(new_data[,analyte_column]),'median']
   p.value <- suppressWarnings(
     as.numeric(
       sea_ken_table[sea_ken_table$Station_ID == 
@@ -1579,106 +1630,181 @@ plot.TSS<-function(new_data,
                               y = c(SK.min, SK.max),
                               variable = rep('Trend line', 2))
   
-  d<-data.frame(x = c(x.min, x.max), y = rep(selectWQSTSS, 2),
-                variable = rep("TSS Allocation", 2))
+  d <-data.frame(x = c(x.min, x.max), y = rep(selectWQSTSS, 2),
+                 variable = rep("TSS TMDL Target", 2))
   
   elem_text <- element_text(face = 'bold')
-   ##PLOT THE TIMESERIES
-if(selectWQSTSS != 0){ #Allocation
-  g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point(aes(color = exceed)) + theme_gdocs() + theme(axis.title = elem_text) +
-    xlim(x.lim) +
-    ylim(y.lim) +
-    theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
-    ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
-    theme(legend.position = "top",
-          legend.title = element_blank(),
-          legend.direction = 'horizontal') +
-    xlab(x.lab) +
-    ylab(y.lab) 
+  ##PLOT THE TIMESERIES
+  if(selectWQSTSS != 0){ 
+    # TMDL Target
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) +
+      geom_point() + 
+      geom_line(aes(x = x, y = y, color = variable), linetype = 'dashed', data = d) +
+      xlim(x.lim) +
+      ylim(y.lim) +
+      theme(axis.title = elem_text,
+            plot.title = element_text(vjust=1.5, face="bold", size = 10),
+            legend.position = "top",
+            legend.title = element_blank(),
+            legend.direction = 'horizontal',
+            legend.key = element_rect(color="white", fill = "white"),
+            panel.background = element_rect(fill = "white"),
+            panel.grid.major = element_line(color="grey"),
+            panel.border = element_rect(color="grey",fill=NA),
+            axis.line = element_line(size = 1, color = "black"),
+            axis.text = element_text(color = "black"),
+            axis.ticks=element_blank()) +
+      ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
+      xlab(x.lab) +
+      ylab(y.lab) 
     
-  g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
-} else { #no allocation 
-  g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-    geom_point() + theme_gdocs() + theme(axis.title = elem_text) +
-    xlim(x.lim) +
-    ylim(y.lim) +
-    theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
-    ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
-    theme(legend.position = "top",
-          legend.title = element_blank(),
-          legend.direction = 'horizontal') +
-    xlab(x.lab) +
-    ylab(y.lab) 
+  } else { 
+    # No TMDL Target
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
+      geom_point() + 
+      xlim(x.lim) +
+      ylim(y.lim) +
+      ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
+      theme(axis.title = elem_text,
+            plot.title = element_text(vjust=1.5, face="bold", size = 10),
+            legend.position = "top",
+            legend.title = element_blank(),
+            legend.direction = 'horizontal',
+            legend.key = element_rect(color="white", fill = "white"),
+            panel.background = element_rect(fill = "white"),
+            panel.grid.major = element_line(color="grey"),
+            panel.border = element_rect(color="grey",fill=NA),
+            axis.line = element_line(size = 1, color = "black"),
+            axis.text = element_text(color = "black"),
+            axis.ticks=element_blank()) +
+      xlab(x.lab) +
+      ylab(y.lab) 
     
-}
+  }
   
-  #trend line 
+  # trend line 
   if (plot_trend & !is.na(p.value)) {
     g <- g + geom_line(aes(x = x, y = y, color = variable), data = df_trend_line)  
   }
   
-  #allocation, trend line 
   if (plot_trend & !is.na(p.value)) {
-    if ('Exceeds' %in% unique(new_data$exceed)) { #with exceedances
+    # trend line
+    if ('Exceeds' %in% unique(new_data$exceed)) { 
+      # with exceedances
       meet<-new_data %>% filter(exceed == 'Meets') 
       if (nrow(meet) < 1) {
+        # Trend + All Exceed
         g <-g + scale_color_manual("", values = c('red','blue', 'black'),
-                                     guide = guide_legend(override.aes = list(
-                                     linetype = c('solid')))) 
-       } else {
-         g <- g + scale_color_manual("", values = c('red', 'black', 'blue', 'black'),
-                                       guide = guide_legend(override.aes = list(
-                                       linetype = c('solid', 'solid', 'solid', 'solid'))))
-        }
-      } else { #without exceedances
-      g <- g + scale_color_manual("", values = c('blue', 'black', 'black'),
+                                   labels = c('Exceeds', 'Trend line', 
+                                              'TSS TMDL Target'),
+                                   guide = guide_legend(override.aes = list(
+                                     linetype = c('blank','solid','dashed'),
+                                     shape=c(16,NA,NA)))) 
+      } else {
+        # Trend + Exceeds + Meets
+        g <- g + scale_color_manual("", values = c('red', 'black', 'blue', 'black'),
+                                    labels = c('Exceeds', 'Meets', 'Trend line', 
+                                               'TSS TMDL Target'),
                                     guide = guide_legend(override.aes = list(
-                                    linetype = c('solid'))))
-    }
-  } else {
+                                      linetype = c('blank', 'blank', 'solid', 'dashed'),
+                                      shape=c(16,16,NA,NA))))
+      }
+    } else { 
+      if(selectWQSTSS == 0) {
+        # Trend, No TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'blue'),
+                                    labels = c('Meets', 'Trend line'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'solid'),
+                                      shape=c(16,NA))))
+
+      } else {
+        # Trend, TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'blue', 'black'),
+                                    labels = c('Meets', 'Trend line', 
+                                               'TSS TMDL Target'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'solid','dashed'),
+                                      shape=c(16,NA,NA))))
+      }
+      } 
+    } else {
+    # No Trend
     if ('Exceeds' %in% unique(new_data$exceed)) {
       meet<-new_data %>% filter(exceed == 'Meets')
       if(nrow(meet) < 1) {
+        # No Trend,  All Exceed
         g <-g + scale_color_manual("", values = c('red', 'black'),
+                                   labels = c('Exceeds',
+                                              'TSS TMDL Target'),
                                    guide = guide_legend(override.aes = list(
-                                     linetype = c('solid'))))
+                                     linetype = c('blank','dashed'),
+                                     shape=c(16,NA))))
       } else {
-        g <- g + scale_color_manual("", values = c('red', 'black', 'black', 'black'),
+        # No Trend, Meets + Exceeds
+        g <- g + scale_color_manual("", values = c('red', 'black', 'black'),
+                                    labels = c('Exceeds', 'Meets', 
+                                               'TSS TMDL Target'),
                                     guide = guide_legend(override.aes = list(
-                                      linetype = c('solid', 'solid', 'dashed'))))
+                                      linetype = c('blank', 'blank', 'dashed'),
+                                      shape=c(16,16,NA))))
       }
     } else {
-      g <- g + scale_color_manual("", values = c('blue', 'black', 'black', 'black'),
-                                  guide = guide_legend(override.aes = list(
-                                    linetype = c('solid'))))
+      
+      if(selectWQSTSS == 0) {
+        # No Trend, No TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black'),
+                                    labels = c('Meets'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank'),
+                                      shape=c(16))))
+
+      } else {
+        # No Trend, TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'black'),
+                                    labels = c('Meets', 
+                                               'TSS TMDL Target'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'dashed'),
+                                      shape=c(16,NA))))
+      }
     }
   } 
   g 
   
-  }
-    
+}
+
 
 plot.TP<-function(new_data,
-                   df.all,
-                   selectWQSTP = input$selectWQSTP,
-                   sea_ken_table = SeaKen,
-                   plot_trend = input$plotTrend,
-                   analyte_column = 'Analyte',
-                   station_id_column = 'Station_ID',
-                   station_desc_column = 'Station_Description',
-                   datetime_column = 'Sampled',
-                   result_column = 'Result',
-                   datetime_format = '%Y-%m-%d %H:%M:%S',
-                   parm = 'Total Phosphorus (mg/l)') {
+                  selectWQSTP = input$selectWQSTP,
+                  sea_ken_table = SeaKen,
+                  plot_trend = input$plotTrend,
+                  analyte_column = 'Analyte',
+                  station_id_column = 'Station_ID',
+                  station_desc_column = 'Station_Description',
+                  datetime_column = 'Sampled',
+                  result_column = 'Result',
+                  datetime_format = '%Y-%m-%d %H:%M:%S',
+                  parm = 'Total Phosphorus (mg/l)') {
   library(ggplot2)
   library(chron)
-  #dataframe that assigns WQS values to Aquatic Life Uses
+
+  # testing
+  #new_data <- TP_evaluate
+  #sea_ken_table <- results_seaken
+  #plot_trend <-trend_logic
+  #selectWQSTP <- 0.07
+  #parm <- unique(mydata_sub$Analyte)
+  #analyte_column <- 'Analyte'
+  #station_id_column <- 'Station_ID'
+  #station_desc_column <- 'Station_Description'
+  #datetime_column <- 'Sampled'
+  #result_column <- 'Result'
+  #datetime_format <- '%Y-%m-%d %H:%M:%S'
   
-  new_data<-EvaluateTPWQS(new_data = new_data,
-                           selectWQSTP = selectWQSTP)
+  new_data$exceed <- ifelse(new_data$exceed == 0, "Meets", "Exceeds")
   
-  x.min <- min(new_data$Sampled) 
+  x.min <- min(new_data$Sampled)
   x.max <- max(new_data$Sampled) 
   x.lim <- c(x.min, x.max)
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
@@ -1742,82 +1868,142 @@ plot.TP<-function(new_data,
                               y = c(SK.min, SK.max),
                               variable = rep('Trend line', 2))
   
+  
+  # Need to make a May - Sept TP target for Snake Hells Canyon and plot
   d<-data.frame(x = c(x.min, x.max), y = rep(selectWQSTP, 2),
-                variable = rep("Total Phosphorus Allocation", 2))
+                variable = rep("Total Phosphorus Target", 2))
   
   elem_text <- element_text(face = 'bold')
   
-  if(selectWQSTP != 0){ #Allocation
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-      geom_point(aes(color = exceed)) + theme_gdocs() + theme(axis.title = elem_text)+
+  if(selectWQSTP != 0){ 
+    # TMDL Target
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) +
+      geom_point() +
+      geom_line(aes(x = x, y = y, color = variable), linetype= 'dashed', data = d) +
       xlim(x.lim) +
       ylim(y.lim) +
-      theme(title = element_text(vjust=1.5, face=elem_text, size = 10))+
       ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
-      theme(legend.position = "top",
+      theme(axis.title = elem_text,
+            plot.title = element_text(vjust=1.5, face="bold", size = 10),
+            legend.position = "top",
             legend.title = element_blank(),
             legend.direction = 'horizontal',
-            title = elem_text) +
+            legend.key = element_rect(color="white", fill = "white"),
+            panel.background = element_rect(fill = "white"),
+            panel.grid.major = element_line(color="grey"),
+            panel.border = element_rect(color="grey",fill=NA),
+            axis.line = element_line(size = 1, color = "black"),
+            axis.text = element_text(color = "black"),
+            axis.ticks=element_blank()) +
       xlab(x.lab) +
       ylab(y.lab) 
-      
-    g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
-  } else { #no allocation 
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) + theme_gdocs() + theme(axis.title = elem_text) +
+    
+  } else {
+    # No TMDL Target
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) + 
       geom_point() +
       xlim(x.lim) +
       ylim(y.lim) +
-      theme(title = element_text(vjust=1.5, face=elem_text, size = 10))+
       ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
-      theme(legend.position = "top",
+      theme(axis.title = elem_text,
+            plot.title = element_text(vjust=1.5, face="bold", size = 10),
+            legend.position = "top",
             legend.title = element_blank(),
-            legend.direction = 'horizontal') +
+            legend.direction = 'horizontal',
+            legend.key = element_rect(color="white", fill = "white"),
+            panel.background = element_rect(fill = "white"),
+            panel.grid.major = element_line(color="grey"),
+            panel.border = element_rect(color="grey",fill=NA),
+            axis.line = element_line(size = 1, color = "black"),
+            axis.text = element_text(color = "black"),
+            axis.ticks=element_blank()) +
       xlab(x.lab) +
       ylab(y.lab) 
-      
+    
   }
   
-  #trend line 
+  # trend line 
   if (plot_trend & !is.na(p.value)) {
     g <- g + geom_line(aes(x = x, y = y, color = variable), data = df_trend_line)  
   }
   
   if (plot_trend & !is.na(p.value)) {
-    if ('Exceeds' %in% unique(new_data$exceed)) { #with exceedances
+    # trend line
+    if ('Exceeds' %in% unique(new_data$exceed)) { 
+      # with exceedances
       meet<-new_data %>% filter(exceed == 'Meets') 
       if (nrow(meet) < 1) {
-        g <-g + scale_color_manual("", values = c('red','blue', 'black'),
+        # Trend + All Exceed
+        g <-g + scale_color_manual("", values = c('red','black', 'blue'),
+                                   labels = c('Exceeds', 'Total Phosphorus TMDL Target', 'Trend line'),
                                    guide = guide_legend(override.aes = list(
-                                     linetype = c('solid')))) 
+                                     linetype = c('blank','dashed','solid'),
+                                     shape=c(16,NA,NA)))) 
       } else {
-        g <- g + scale_color_manual("", values = c('red', 'black', 'blue', 'black'),
+        # Trend + Exceeds + Meets
+        g <- g + scale_color_manual("", values = c('red', 'black', 'black', 'blue'),
+                                    labels = c('Exceeds', 'Meets', 'Total Phosphorus TMDL Target', 'Trend line'),
                                     guide = guide_legend(override.aes = list(
-                                      linetype = c('solid', 'solid', 'solid', 'solid'))))
+                                      linetype = c('blank', 'blank','dashed','solid'),
+                                      shape=c(16,16,NA,NA))))
       }
-    } else { #without exceedances
-      g <- g + scale_color_manual("", values = c('blue', 'black', 'black'),
-                                  guide = guide_legend(override.aes = list(
-                                    linetype = c('solid'))))
+    } else { 
+      
+      if(selectWQSTP == 0) {
+        # Trend, No TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'blue'),
+                                    labels = c('Meets', 'Trend line'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'solid'),
+                                      shape=c(16,NA))))
+        
+      } else {
+        # Trend, TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'blue', 'black'),
+                                    labels = c('Meets', 'Total Phosphorus TMDL Target', 'Trend line'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank','dashed', 'solid'),
+                                      shape=c(16,NA,NA))))
+      }
     }
   } else {
+    # No Trend
     if ('Exceeds' %in% unique(new_data$exceed)) {
       meet<-new_data %>% filter(exceed == 'Meets')
       if(nrow(meet) < 1) {
+        # No Trend,  All Exceed
         g <-g + scale_color_manual("", values = c('red', 'black'),
+                                   labels = c('Exceeds','Total Phosphorus TMDL Target'),
                                    guide = guide_legend(override.aes = list(
-                                     linetype = c('solid'))))
+                                     linetype = c('blank','dashed'),
+                                     shape=c(16,NA))))
       } else {
-        g <- g + scale_color_manual("", values = c('red', 'black', 'black', 'black'),
+        # No Trend, Meets + Exceeds
+        g <- g + scale_color_manual("", values = c('red', 'black', 'black'),
+                                    labels = c('Exceeds', 'Meets', 'Total Phosphorus TMDL Target'),
                                     guide = guide_legend(override.aes = list(
-                                      linetype = c('solid', 'solid', 'dashed'))))
+                                      linetype = c('blank', 'blank', 'dashed'),
+                                      shape=c(16,16,NA))))
       }
     } else {
-      g <- g + scale_color_manual("", values = c('black', 'black', 'black', 'black'),
-                                  guide = guide_legend(override.aes = list(
-                                    linetype = c('solid', 'solid'))))
+      if(selectWQSTP == 0) {
+        # No Trend, No TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black'),
+                                    labels = c('Meets'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank'),
+                                      shape=c(16))))
+        
+      } else {
+        # No Trend, TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'black'),
+                                    labels = c('Meets', 'Total Phosphorus TMDL Target'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'dashed'),
+                                      shape=c(16,NA))))
+      }
     }
-  } 
-  g 
-  
+  }
+  g
 }
-  
+
