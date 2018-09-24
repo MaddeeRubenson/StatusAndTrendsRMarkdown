@@ -1,7 +1,7 @@
 ---
-title: Lower Deschutes Agricultural Water Quality Management Area Water Quality Status and Trends Report
+title: Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: June 2018
+date: September 2018
 output: 
   word_document:
     reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
@@ -32,7 +32,7 @@ library(base)
 library(captioner)
 
 tbls  <- captioner(prefix="Table")
-figs <- captioner(prefix="Figure")
+figs <- captioner(prefix="  \nFigure")
 
 ```
 
@@ -40,11 +40,11 @@ figs <- captioner(prefix="Figure")
 ```{r inputs, include=FALSE}
 
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
-# how it is named in the agwqma shapefile ('agwqma_shp').
+# how it is named in the agwqma shapefile ('agwqma_all_shp').
 
-agwqma <- "Lower Deschutes"
+agwqma <- "Generic"
 query_dates <- c("2000-01-01", "2018-07-01")
-project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Lower Deschutes/2018-Lower-Deschutes"
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/2018-Generic"
 
 word_output <- TRUE
 split_param_summary <- FALSE
@@ -60,7 +60,10 @@ landuse_file <- paste0(gsub(" ", "_", agwqma), "_landuse.Rdata")
 stns_file <- paste0(gsub(" ", "_", agwqma), "_stns.Rdata")
 status_file <- paste0(gsub(" ", "_", agwqma), "_status.Rdata")
 trend_file <- paste0(gsub(" ", "_", agwqma), "_trend.Rdata")
-stns_param_summary_file <- paste0(gsub(" ", "_", agwqma), "_station_param_summary.Rdata")
+
+station_summary_map1_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map1.png")
+station_summary_map2_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map2.png")
+
 station_summary_map_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map.png")
 station_summary_map_DO_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_DO.png")
 station_summary_map_pH_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_pH.png")
@@ -99,7 +102,7 @@ This report presents data and analysis that will help DEQ fulfill its role in th
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
-*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
+*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being acheived?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 
@@ -127,11 +130,11 @@ knitr::kable(landuse, digits = 0, padding = 2, caption = tbls(name = "landUse", 
 
 ## Results Summary
 
-Within the `r input$select` AgWQ Management Area, data from `r length(unique(stns$Station_ID))` monitoring stations were sufficient to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations. 
+Within the `r input$select` Agricultural Water Quality Management Area, data from `r length(unique(stns$Station_ID))` monitoring stations were sufficient to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations. 
 
 ```{r results-summary}
 
-station_summary_tbl <- data.frame(Analyte=c("Ecoli","Enterococcus","Dissolved Oxygen","pH","Temperature","Total Phosphorus","TSS"),
+station_summary_tbl <- data.frame(Analyte=c("_Ecoli_","_Enterococcus_","Dissolved Oxygen","pH","Temperature","Total Phosphorus","Total Suspended Solids"),
                                   status=c(nrow(unique(status[status$Analyte == "E. Coli", ])),
                                            nrow(unique(status[status$Analyte == "Enterococcus", ])),
                                            nrow(unique(status[status$Analyte == "Dissolved Oxygen", ])),
@@ -148,29 +151,38 @@ station_summary_tbl <- data.frame(Analyte=c("Ecoli","Enterococcus","Dissolved Ox
                                            nrow(unique(trend[trend$Analyte == "Total Phosphorus", ])),
                                            nrow(unique(trend[trend$Analyte == "Total Suspended Solids", ]))
                                            ))
-colnames(station_summary_tbl) <- c("Analyte", "Number of stations w/ sufficent data for status analysis", "Number of stations w/ sufficent data for trend analysis")                                  
+colnames(station_summary_tbl) <- c("Analyte", "Number of stations w/ sufficient data for status analysis", "Number of stations w/ sufficient data for trend analysis")                                  
 
-knitr::kable(station_summary_tbl, digits = 0, padding = 2, caption = tbls(name = "StnSumTable", caption = "Summary of stations with suffcient data for status or trend analysis**"))                                 
+knitr::kable(station_summary_tbl, digits = 0, padding = 2,row.names = FALSE, 
+             caption = tbls(name = "StnSumTable", caption = "Summary of stations with suffcient data for status or trend analysis**"))                                 
 
 ```
 
 
 ```{r parm-summary-table}
 
-knitr::kable(stns_param_summary, 
-             # format = "markdown",  
-             padding = 2, digits = 3, 
+knitr::kable(stns_param_summary,
+             padding = 2, digits = 3,
+             row.names = FALSE,
              caption = tbls(name = "parmSumTable", 
-                            caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen."))
+                            caption = "Summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. Note: DO = dissolved oxygen, TP = total phosphorus, TSS = total suspended solids."))
 
 ```
 
 
-```{r Summary-map, results = 'asis', eval = word_output & !(split_param_summary), fig.cap=figs(name="Summary_map", caption="Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+```{r Summary-map1, results = 'asis', eval = word_output & !(split_param_summary), fig.cap=figs(name="Summary_map1", caption="Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two whole years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
-knitr::include_graphics(paste0("Figures/",station_summary_map_file))
+knitr::include_graphics(paste0("Figures/",station_summary_map1_file))
 
 ```
+
+
+```{r Summary-map2, results = 'asis', eval = word_output & !(split_param_summary), fig.cap=figs(name="Summary_map2", caption="Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two whole years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+
+knitr::include_graphics(paste0("Figures/",station_summary_map2_file))
+
+```
+
 
 ```{r DO-summary-map, results = 'asis', eval = word_output & split_param_summary, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
@@ -179,13 +191,13 @@ knitr::include_graphics(paste0("Figures/",station_summary_map_DO_file))
 ```
 
 
-```{r Ecoli-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+```{r Ecoli-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for _E coli_. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
 knitr::include_graphics(path = paste0("Figures/",station_summary_map_ecoli_file))
 
 ```
 
-```{r Entero-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Entero_map", caption="Summary of stations that fit the criteria for status and trend analysis for Enterococcus. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+```{r Entero-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Entero_map", caption="Summary of stations that fit the criteria for status and trend analysis for _Enterococcus_. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
 knitr::include_graphics(path = paste0("Figures/",station_summary_map_entero_file))
 
