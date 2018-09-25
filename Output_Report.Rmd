@@ -726,9 +726,8 @@ if(length(ecoli_stns) > 0) {
   exc <- rbind.fill(exc_list[])
   exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
   
-  knitr::kable(exc, padding = 2, digits = 1,
+  knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE,
                caption = tbls(name = "ecoliExcTable", 
-                              row.names = FALSE,
                               caption = "_E. coli_ status. If sufficient data exists to calculate the geometric mean, it is included in the table."))
 }  else {
   print("No monitoring stations have data to assess status and/or trend of _E. coli_.") 
