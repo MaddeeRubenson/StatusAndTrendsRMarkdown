@@ -1545,7 +1545,7 @@ knitr::include_graphics(path = paste0("Figures/",station_summary_map_pH_file))
 
 ```{r TP-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="TP_map", caption="Summary of stations that fit the criteria for trend analysis for Total Phosphorus.  Trend was determined by significant trends associated with long-term datasets.")}
 
-knitr::include_graphics(path = paste0("/Figures/",station_summary_map_tp_file))
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_tp_file))
 
 ```
 
