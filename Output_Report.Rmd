@@ -935,6 +935,15 @@ tp_plots<-list()
 for (i in 1:length(tp_stn)) {
   mydata_sub <- TP_all[TP_all$Station_ID == tp_stn[i],]
   
+  tmp_df <- mydata_sub
+  tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+  tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+  sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+  tmp_df_MRL <- tmp_df[sub,]
+  tmp_df <- remove.dups(tmp_df_MRL, max)
+  
+  mydata_sub <- tmp_df
+  
   trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE,
                       ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == tp_stn[i],'signif']), FALSE, TRUE))
   
@@ -969,7 +978,7 @@ for (i in 1:length(tp_stn)) {
 } 
 
 colnames(exc) <- c("Station ID","Station Description", "Min Date", "Max Date", "Obs", "Exceedances", "% Exceedance")
-exc <- exc[,c(1:5)]
+exc <- exc[,c(1:6)]
 knitr::kable(exc,padding = 2, digits = 1, caption = tbls(name = "tpExcTable", caption = "Total Phosphorus observations**"))
 
 # }else {

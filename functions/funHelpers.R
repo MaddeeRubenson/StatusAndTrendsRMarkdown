@@ -279,7 +279,7 @@ extract_303d <- function (df.all, wq_limited, selectedPlanArea) {
   #path_303d = relative path for shiny app to look for fname_303d
   #fname_303d = filename of 303d list shapefile
   
-  #Bring in the shpaefile of the wq limited waters from the IR
+  #Bring in the shapefile of the wq limited waters from the IR
   if (grepl("[0-9].", selectedPlanArea)) {
     wq_limited <- wq_limited[wq_limited$POLLUTANT %in% 
                                c(unique(df.all$Analyte), "DDD 4,4", "DDE 4,4", "DDT 4,4", "Dieldrin", "Aldrin") & 
