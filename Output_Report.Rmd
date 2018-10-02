@@ -1029,7 +1029,7 @@ if(length(tss_stn) > 0){
     } else {
       
       TSS_evaluate <- EvaluateTSSWQS(tmp_df, 
-                                     TSS_target = 0)
+                                     selectWQSTSS = 0)
     }
     
     TSS_eval <- attr(TSS_evaluate, 'ex_df')
