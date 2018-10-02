@@ -1049,7 +1049,7 @@ EvaluateTSSWQS<-function(new_data,
   if(selectWQSTSS != 0) {
     new_data$exceed<- ifelse(new_data$Result > selectWQSTSS,  'Exceeds', 'Meets')
   } else {
-    new_data$exceed<-NA
+    new_data$exceed<-'Meets'
   }
   
   exc<-new_data%>%

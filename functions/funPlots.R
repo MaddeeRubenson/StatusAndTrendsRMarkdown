@@ -1660,7 +1660,7 @@ plot.TSS<-function(new_data,
     
   } else { 
     # No TMDL Target
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) +
       geom_point() + 
       xlim(x.lim) +
       ylim(y.lim) +
@@ -1713,7 +1713,7 @@ plot.TSS<-function(new_data,
       if(selectWQSTSS == 0) {
         # Trend, No TMDL Target, All Meet
         g <- g + scale_color_manual("", values = c('black', 'blue'),
-                                    labels = c('Meets', 'Trend line'),
+                                    labels = c('Observation', 'Trend line'),
                                     guide = guide_legend(override.aes = list(
                                       linetype = c('blank', 'solid'),
                                       shape=c(16,NA))))
@@ -1754,7 +1754,7 @@ plot.TSS<-function(new_data,
       if(selectWQSTSS == 0) {
         # No Trend, No TMDL Target, All Meet
         g <- g + scale_color_manual("", values = c('black'),
-                                    labels = c('Meets'),
+                                    labels = c('Observation'),
                                     guide = guide_legend(override.aes = list(
                                       linetype = c('blank'),
                                       shape=c(16))))
@@ -1900,7 +1900,7 @@ plot.TP<-function(new_data,
     
   } else {
     # No TMDL Target
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) + 
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) + 
       geom_point() +
       xlim(x.lim) +
       ylim(y.lim) +
@@ -1952,7 +1952,7 @@ plot.TP<-function(new_data,
       if(selectWQSTP == 0) {
         # Trend, No TMDL Target, All Meet
         g <- g + scale_color_manual("", values = c('black', 'blue'),
-                                    labels = c('Meets', 'Trend line'),
+                                    labels = c('Observation', 'Trend line'),
                                     guide = guide_legend(override.aes = list(
                                       linetype = c('blank', 'solid'),
                                       shape=c(16,NA))))
@@ -1989,7 +1989,7 @@ plot.TP<-function(new_data,
       if(selectWQSTP == 0) {
         # No Trend, No TMDL Target, All Meet
         g <- g + scale_color_manual("", values = c('black'),
-                                    labels = c('Meets'),
+                                    labels = c('Observation'),
                                     guide = guide_legend(override.aes = list(
                                       linetype = c('blank'),
                                       shape=c(16))))
