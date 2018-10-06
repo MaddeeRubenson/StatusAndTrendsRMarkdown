@@ -1110,7 +1110,7 @@ EvaluateTPWQS<-function(new_data,
   if(selectWQSTP != 0) {
     new_data$exceed <- ifelse(new_data$Result > selectWQSTP, 1, 0)
   } else {
-    new_data$exceed<-NA
+    new_data$exceed<-0
   }
   
   exc<-new_data%>%
