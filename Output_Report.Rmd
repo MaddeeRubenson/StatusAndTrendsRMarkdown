@@ -481,7 +481,7 @@ Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total ph
 
 A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(floor_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. A trend assessment was made if data were available in a minimum of eight different years for any year in the period from `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. Stations that met at least one of those data requirements were assessed with the results presented in this report. In some cases a station had sufficient data for trend but not status because data were not available anytime in the last two years. In these cases the status was shown on the plot for the older data along with the trend result but the status was not recorded in the maps, summary tables, or conclusions.
 
-Results for pH from both grab and continuous sample data were compared to the applicable water quality criterion as found in [OAR 340-041-0021][2.1].
+Results for pH from both grab and continuous sample data were compared to the applicable water quality criterion as found in [OAR 340-041-0021][2.1] and [OAR 340-041-0315][2.1.1].
 
 Results for bacteria samples were compared to the applicable bacteria criterion as found in [OAR 340-041-0009][2.2]. The bacteria standard for freshwater contact recreation is based on the presence of *E. coli* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. A status and trend assessment was not made for the _Enterococcus_ or fecal coliform indicators because the marine water contact recreation and shellfish harvesting use criteria do not apply in the Umatilla Basin.
 
@@ -494,6 +494,7 @@ Results for total suspended solids were compared against the instream TSS concen
 A land use summary was developed for all monitoring stations that fit the criteria to assess water quality status and/or trends. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. A map was made showing station locations in relation to 2011 national land cover dataset (Homer et al. 2015).
 
 [2.1]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68713
+[2.1.1]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=kXxU6Bd8vPKFxF8omzLR9w4fSQQ1Fkv2NNyRYIdwJyJpjN3KNpXj!-609023700?ruleVrsnRsn=68934
 [2.2]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68695
 [2.3]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68706
 [2.4]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=244176
