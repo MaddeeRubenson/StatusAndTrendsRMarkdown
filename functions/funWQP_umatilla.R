@@ -1,10 +1,8 @@
 
 # Umatilla data from WQP is too large for memory so it was downloaded using this script.
-# The query dates are broken down into smaller ranges and the data for the entire period is 
+# The query dates are broken down into smaller ranges and some stations are removed prior to query. The data for the entire period is 
 # put back together at the end. The output is saved as an R dataframe and imported again when the 
 # wqpQuery function is called (within 01_DataQuery.R).
-
-
 
 library(dataRetrieval)
 library(rgdal)
