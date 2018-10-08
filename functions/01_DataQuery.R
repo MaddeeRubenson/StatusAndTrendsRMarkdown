@@ -355,124 +355,19 @@ qry <- paste0("SELECT r.RESULT_KEY,
 }
 
 wqpQuery <- function(planArea = NULL, HUClist, inParms, luParms, startDate, endDate) {
-  library(RCurl)
-  library(XML)
-  library(dataRetrieval)
-  library(plyr)
-  library(sp)
-  library(rgdal)
-  library(raster)
-  library(rgeos)
-  #library(RODBC)
-  
-  # planArea <- input$select
-  # inParms <- input$parms
-  # luParms <- parms
-  # startDate <- input$dates[1]
-  # endDate <- input$dates[2]
-  
-  
-  
+
+  # Umatilla data from WQP is too large for memory so it was downloaded using funWQP_umatilla.R
+  # This script just imports it and passes it on
   options(stringsAsFactors = FALSE)
   
-  #### Define Geographic Area using myArea from 01_DataQueryUI.R ####
-  if (is.null(planArea)) {
-    myHUCs <- URLencode.PTB(paste(HUClist, collapse = ";"))
-  } else if (grepl("[0-9].", planArea)) {
-    myHUCs <- strsplit(planArea, split = " - ")[[1]][1]
-  } else {
-    myHUCs <- paste(HUClist[HUClist$PlanName == planArea,'HUC8'],collapse=';')
-  }
+  project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Umatilla Basin/2018-Umatilla-Basin"
+  Rdata_dir <- paste0(project_dir,"/RData")
+  wqp_raw_file <- paste0(gsub(" ", "_", "Umatilla Basin"), "_wqp_raw_",paste(c(startDate,endDate), collapse = "."), ".Rdata")
   
-  #### Define site types to query ####
-  #Returns list of available domain values for site type
-  #wqp.siteTypes <- WQP.domain.get('Sitetype')
+  load(file=paste0(Rdata_dir,"/",wqp_raw_file))
   
-  #Using the wqp.siteTypes enter the values you want to query for in siteType.
-  #Separate each value with the URL encoded semi-colon '%3B'. For values with commas use the URL encoded value '%2C+'
-  siteType = 'Estuary;Ocean;Stream;Lake, Reservoir, Impoundment'
-  
-  #### Get characteristics ####
-  #The entire list of parameters that match to a criteria
-  #luParms<-read.csv('app/data/WQP_Table3040_Names.csv', stringsAsFactors = FALSE)
-  parms <- luParms
-  
-  #Take the inputs and write them to another vector for editing
-  myParms <- inParms
-  
-  #Expand bacteria to include fecal and enterococcus
-  if(any(inParms == 'Bacteria')) {
-    myParms <- c(myParms, c('E. coli','Fecal coliform','Enterococci'))
-    myParms <- myParms[-which(myParms == "Bacteria")] 
-  }
-  
-  
-  # #Expand DO to match database domain values
-  # if (any(inParms == 'Dissolved Oxygen')) {
-  #   myParms <-c(myParms, c('Dissolved oxygen', 'Dissolved oxygen (DO)'))
-  #   myParms <- myParms[-which(myParms == 'Dissolved Oxygen')]
-  # } 
-  
-  #grab just the parameters we want
-  #characteristics<- URLencode.PTB(paste(myParms))
-  #characteristics <- URLencode.PTB(paste(parms[parms$DEQ.Table.name %in% myParms,'WQP.Name'],collapse=';'))
-  characteristics <- paste(parms[parms$DEQ.Table.name %in% myParms,'WQP.Name'],collapse=';')
-  
-  #### Define sample media to query ####
-  #wqp.sampleMedia <- WQP.domain.get('Samplemedia')
-  
-  #Separate each value you want to query with the URL encoded semi-colon '%3B'.
-  sampleMedia <- 'Water'
-  
-  # if (any(myParms == "Total Suspended Solids")) {
-  #   sampleMedia <- 'Sediment'
-  # }
-  
-  #### Pass the query to WQP ####
-  wqp.data <- readWQPdata(#stateCode = myArea,
-    #countycode = myArea,
-    huc = myHUCs, 
-    characteristicName = characteristics, 
-    startDate = startDate, 
-    endDate = endDate,
-    sampleMedia = sampleMedia,
-    siteType = siteType)
-  
-  Wx <- attr(wqp.data, "siteInfo")
-  
-  # ##REMOVE dissolved P##
-  if(any('Total Phosphorus' %in% c(myParms))) {
-    wqp.data[c("ResultSampleFractionText")][is.na(wqp.data[c("ResultSampleFractionText")])] <- 'Total'
-    
-    wqp.data<- wqp.data[wqp.data$ResultSampleFractionText == 'Total' , ]
-    if(unique(wqp.data$ResultMeasure.MeasureUnitCode == 'ug/l' & !is.na(wqp.data$ResultMeasure.MeasureUnitCode))){
-      wqp.data[which(wqp.data$ResultMeasure.MeasureUnitCode == 'ug/l'), 'ResultMeasureValue'] <- 
-        (wqp.data[which(wqp.data$ResultMeasure.MeasureUnitCode == 'ug/l'), 'ResultMeasureValue'])/1000
-    }
-    
-    wqp.data[which(wqp.data$ResultMeasure.MeasureUnitCode == 'ug/l'), 'ResultMeasure.MeasureUnitCode'] <- 'mg/l'
-    wqp.data[which(wqp.data$ResultMeasure.MeasureUnitCode == 'mg/kg as P'), 'ResultMeasure.MeasureUnitCode'] <- 'mg/l'
-    wqp.data[which(wqp.data$ResultMeasure.MeasureUnitCode == 'mg/l as P'), 'ResultMeasure.MeasureUnitCode'] <- 'mg/l'
-    
-  }
-  
-  attr(wqp.data, "siteInfo") <- Wx
-  
-  #wqp.stations <- attr(wqp.data, 'siteInfo')
-  
-  # #Write query output to .csv
-  # timestamp <- format(Sys.time(), "%Y%m%d_%H%M")
-  # 
-  # wqp.data.filename <- paste('./Data/wqpData',timestamp,'.csv',sep='')
-  # write.csv(wqp.data,wqp.data.filename)
-  # 
-  # wqp.stations.filename <- paste('./Data/wqpStations',timestamp,'.csv',sep='')
-  # write.csv(wqp.stations,wqp.stations.filename)
-  
-  # if (is.null(wqp.data)) {
-  #   wqp.data <- "No data"
-  # }
-  
+  wqp.data <- wqp.data.f
+
   #### ####
   return(wqp.data)
 }

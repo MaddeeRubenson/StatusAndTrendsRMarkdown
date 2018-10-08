@@ -31,17 +31,24 @@ clipToPlanArea <- function (df.all, agwqma, selected_planArea) {
   return(df.all)
 }
 
-Stations_in_poly <- function(df.all, poly_shp, outside=FALSE) {
+Stations_in_poly <- function(df.all, poly_shp, station_id_col="Station_ID", datum_col="DATUM", lat_col="DECIMAL_LAT",long_col="DECIMAL_LONG", outside=FALSE) {
+  
   # Returns a vector of stations that fall within or outside a polygon boundary
   # Arguments:
-  # df.all = data frame of data with column names "Station_ID", "DATUM", "DECIMAL_LAT", "DECIMAL_LONG"
+  # df.all = data frame of data with column names specficed below
+  # station_id_col = name of station ID column, default is "Station_ID".
+  # datum_col = name of datum column, default is "DATUM".
+  # lat_col  = name of decimal degree latitude column, default is "DECIMAL_LAT".
+  # long_col = name of decimal degree longitude column, default is "DECIMAL_LONG.
   # poly = polygon shapefile
   # Outside = TRUE if the stations outside the polygon should be returned instead, default is FALSE
   
   library(sp)
   
   # make a spatial object
-  df.shp <- df.all[,c("Station_ID", "DATUM", "DECIMAL_LAT", "DECIMAL_LONG")]         
+
+  df.shp <- df.all[,c(station_id_col, datum_col, lat_col, long_col)]
+  colnames(df.shp) <- c("Station_ID", "DATUM", "DECIMAL_LAT", "DECIMAL_LONG")
   coordinates(df.shp)=~DECIMAL_LONG+DECIMAL_LAT
   
   # Datums to search for

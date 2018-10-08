@@ -1790,7 +1790,7 @@ plot.TP<-function(new_data,
   #datetime_format <- '%Y-%m-%d %H:%M:%S'
   
   new_data$exceed <- ifelse(new_data$exceed == 0, "Meets", "Exceeds")
-  
+
   x.min <- min(new_data$Sampled)
   x.max <- max(new_data$Sampled) 
   x.lim <- c(x.min, x.max)
