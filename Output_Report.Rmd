@@ -1029,7 +1029,7 @@ if(length(tss_stn) > 0){
     } else {
       
       TSS_evaluate <- EvaluateTSSWQS(tmp_df, 
-                                     TSS_target = 0)
+                                     selectWQSTSS = 0)
     }
     
     TSS_eval <- attr(TSS_evaluate, 'ex_df')
@@ -1644,8 +1644,10 @@ colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
                                   "DO Status", "DO Trend",
                                   "pH Status", "pH Trend", 
                                   "Temperature Status", "Temperature Trend",
-                                  "TP Status","TP Trend", 
-                                  "TSS Status","TSS Trend")
+                                  # "TP Status", 
+                                  "TP Trend", 
+                                  # "TSS Status",
+                                  "TSS Trend")
 
 save(stns_param_summary, file=paste0(Rdata_dir,"/", stns_param_summary_file))
 
@@ -1888,7 +1890,7 @@ knitr::kable(status, padding = 2, digits = 1, row.names = FALSE, caption = tbls(
 
 knitr::kable(trend, padding = 1, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixtrendTable", caption = "Number of observations per year for monitoring stations that fit the criteria to assess trend."))
 
-knitr::kable(stns_by_year, padding = 1, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixstnByYrTable", caption = "All monitoring stations that were queried and the number of results per year during the query period."))
+# knitr::kable(stns_by_year, padding = 1, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixstnByYrTable", caption = "All monitoring stations that were queried and the number of results per year during the query period."))
 
 ```
 

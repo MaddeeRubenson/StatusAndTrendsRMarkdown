@@ -1900,7 +1900,7 @@ plot.TP<-function(new_data,
     
   } else {
     # No TMDL Target
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) + 
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = "observations")) + 
       geom_point() +
       xlim(x.lim) +
       ylim(y.lim) +
