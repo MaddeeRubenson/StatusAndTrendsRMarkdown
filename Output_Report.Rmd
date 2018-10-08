@@ -553,7 +553,7 @@ knitr::include_graphics(path = paste0("Figures/", landuse_map_file))
 ```
 
 
-```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=8, fig.height=8, fig.cap=figs(name="landusemap", ccaption=paste0("Land use and land cover within the ", agwqma, " Agricultural Water Quality Management Area."))}
+```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=8, fig.height=8, fig.cap=figs(name="landusemap", caption=paste0("Land use and land cover within the ", agwqma, " Agricultural Water Quality Management Area."))}
 
 agwqma_shp <-spTransform(agwqma_shp, CRS("+proj=longlat +datum=NAD83"))
 
