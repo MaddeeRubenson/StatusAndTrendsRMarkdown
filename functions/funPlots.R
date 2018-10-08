@@ -150,11 +150,11 @@ plot.ph <- function(new_data,
   g  
 }
 
-plot.Temperature <- function(new_data, 
-                             all_data,
+plot.Temperature <- function(new_data,
                              selectUse,
                              sea_ken_table,
                              selectSpawning,
+                             analyte_column = 'Analyte',
                              station_id_column = 'Station_ID',
                              station_desc_column = 'Station_Description',
                              datetime_column = 'date', 
@@ -187,51 +187,53 @@ plot.Temperature <- function(new_data,
   }
   y.lim <- c(y.min,y.max)
   y.median <- median(new_data$Result)
-  p.value <- NA
-  if(plot_trend){
-    slope <- suppressWarnings(
-      as.numeric(
-        sea_ken_table[sea_ken_table$Station_ID == 
-                        unique(new_data[, station_id_column]) & 
-                        sea_ken_table$analyte == "Temperature", 'slope']
-      )
+  slope <- suppressWarnings(
+    as.numeric(
+      sea_ken_table[sea_ken_table$Station_ID == 
+                      unique(new_data[, station_id_column]) & 
+                      sea_ken_table$analyte == 
+                      unique(new_data[, analyte_column]), 'slope']
     )
-    p.value <- suppressWarnings(
-      as.numeric(
-        sea_ken_table[sea_ken_table$Station_ID == 
-                        unique(new_data[,station_id_column]) & 
-                        sea_ken_table$analyte == "Temperature",'pvalue']
-      )
+  )
+  median <- sea_ken_table[sea_ken_table$Station_ID == 
+                            unique(new_data[,station_id_column]) & 
+                            sea_ken_table$analyte == 
+                            unique(new_data[,analyte_column]),'median']
+  p.value <- suppressWarnings(
+    as.numeric(
+      sea_ken_table[sea_ken_table$Station_ID == 
+                      unique(new_data[,station_id_column]) & 
+                      sea_ken_table$analyte == 
+                      unique(new_data[,analyte_column]),'pvalue']
     )
-    p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
-                                     unique(new_data[,station_id_column]) & 
-                                     sea_ken_table$analyte == "Temperature",'signif']
-    x.delta <- as.numeric((x.max-x.min)/2)####average date
-    SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
-    SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
-    sub.text <- paste0("p value = " ,
-                       round(p.value, digits=3),
-                       ", ",  
-                       p.value.label, 
-                       ", slope = ", 
-                       round(slope, digits=2), 
-                       ", n = ", 
-                       nrow(new_data))
-    df_trend_line <- data.frame(x = c(x.min, x.max),
-                                y = c(SK.min, SK.max),
-                                variable = rep('Trend line', 2))
-  }
+  )
+  p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
+                                   unique(new_data[,station_id_column]) & 
+                                   sea_ken_table$analyte == 
+                                   unique(new_data[,analyte_column]),'signif']
+  x.delta <- as.numeric((x.max-x.min)/2)####average date
+  SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
+  SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
+  sub.text <- paste0("p value = " ,
+                     round(p.value, digits=3),
+                     ", ",  
+                     p.value.label, 
+                     ", slope = ", 
+                     round(slope, digits=2), 
+                     ", n = ", 
+                     nrow(new_data),
+                     ", median = ", 
+                     median)
   
-  title <- paste0(unique(all_data[all_data[,station_id_column] == 
-                                    new_data[1, station_id_column],station_desc_column]), 
-                  ", ID = ", 
-                  new_data[1, station_id_column])
+  df_trend_line <- data.frame(x = c(x.min, x.max),
+                              y = c(SK.min, SK.max),
+                              variable = rep('Trend line', 2))
+  
+  title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
+                  min(new_data[, station_id_column]))
+  
   x.lab <- "Date"
   y.lab <- "Temperature (7DADM)"
-  
-  # df_trend_line <- data.frame(x = c(x.min, x.max),
-  #                             y = c(SK.min, SK.max),
-  #                             variable = rep('Trend line', 2))
   
   ####plot the timeseries
   elem_text <- element_text(face = "bold")
@@ -243,7 +245,7 @@ plot.Temperature <- function(new_data,
       ylab(y.lab) + 
       xlim(x.lim) +
       ylim(y.lim) +
-      ggtitle(title) + 
+      ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) + 
       theme(axis.title = elem_text,
             plot.title = element_text(vjust=1.5, face="bold", size = 10),
             legend.position = "top",
@@ -263,7 +265,7 @@ plot.Temperature <- function(new_data,
       ylab(y.lab) + 
       xlim(x.lim) +
       ylim(y.lim) +
-      ggtitle(title) + 
+      ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
       theme(axis.title = elem_text,
             plot.title = element_text(vjust=1.5, face="bold", size = 10),
             legend.position = "top",
@@ -511,7 +513,7 @@ plot.Temperature <- function(new_data,
       }
     }
     
-    if (plot_trend & !is.na(p.value)) {
+    if (plot_trend) {
       g <- g + geom_line(aes(x = x, y = y, linetype = "Trend", color="Trend"), data = df_trend_line
                          # , inherit.aes = FALSE
       )
@@ -537,7 +539,7 @@ plot.Temperature <- function(new_data,
                                               'Spawning' = "dotted",
                                               'Trend' = "solid")
     )
-    if (plot_trend & !is.na(p.value)) {
+    if (plot_trend) {
       if(all(new_data$exceed=='Meets')){
         if(selectSpawning != 'No spawning'){
           g <- g + guides(color=guide_legend(override.aes = list(shape = c(16,NA,NA,NA))))
@@ -552,23 +554,6 @@ plot.Temperature <- function(new_data,
         }
       }
     }
-    
-    # g <- g + scale_shape_manual(name = "Criteria, Status, and Trends",
-    #                             breaks = c('Meets', 'Exceeds', 'Spawning', 'Non-spawning', 'Trend'),
-    #                             labels = c('Meets', 'Exceeds', 'Spawning', 'Non-spawning', 'Trend'),
-    #                             values = c('Meets' = 16,
-    #                                        'Exceeds' = 16,
-    #                                        'Non-spawning' = NA,
-    #                                        'Spawning' = NA,
-    #                                        'Trend' = NA))
-    
-    # g <- g + guides(colour='legend', linetype='none') + guides(colour=guide_legend("Legend"))
-    
-    # g <- g + guides(linetype = guide_legend(override.aes = list(color = c('Meets' = 'black','Exceeds' = 'red','Non-spawning'='black','Spawning'='black','Trend'='blue'))))
-    
-    # g <- g + scale_linetype_manual(values = c('Non-spawning' = 5,
-    #                                           'Spawning' = 2,
-    #                                           'Trend' = 1))
   }
   g
 }
@@ -1538,7 +1523,6 @@ plot.DO<-function(new_data,
 #ggsave("g.png", height = 6, width = 6)
 
 plot.TSS<-function(new_data,
-                   df.all,
                    selectWQSTSS = input$selectWQSTSS,
                    sea_ken_table = SeaKen,
                    plot_trend = input$plotTrend,
@@ -1554,22 +1538,19 @@ plot.TSS<-function(new_data,
   #dataframe that assigns WQS values to Aquatic Life Uses
   
   # testing
-  #new_data<-mydata_sub
-  #df.all <- df.all
+  #new_data<-TSS_evaluate
   #sea_ken_table<- results_seaken
   #plot_trend <-trend_logic
-  #selectWQSTSS <- tss_target[[tss_stn[i]]]
-  #parm <- unique(mydata_sub$Analyte)
+  #selectWQSTSS <-50
+  #parm <- unique(TSS_evaluate$Analyte)
   #analyte_column <- 'Analyte'
   #station_id_column <- 'Station_ID'
   #station_desc_column <- 'Station_Description'
   #datetime_column <- 'Sampled'
   #result_column <- 'Result'
   #datetime_format <- '%Y-%m-%d %H:%M:%S'
-  #parm <- 'Total Suspended Solids (mg/l)'
   
-  new_data<-EvaluateTSSWQS(new_data = new_data, 
-                           selectWQSTSS = selectWQSTSS)
+  new_data$exceed <- ifelse(new_data$exceed == 0, "Meets", "Exceeds")
   
   x.min <- min(new_data$Sampled) 
   x.max <- max(new_data$Sampled) 
@@ -1636,15 +1617,16 @@ plot.TSS<-function(new_data,
                               y = c(SK.min, SK.max),
                               variable = rep('Trend line', 2))
   
-  d<-data.frame(x = c(x.min, x.max), y = rep(selectWQSTSS, 2),
-                variable = rep("TSS TMDL Target", 2))
+  d <-data.frame(x = c(x.min, x.max), y = rep(selectWQSTSS, 2),
+                 variable = rep("TSS TMDL Target", 2))
   
   elem_text <- element_text(face = 'bold')
   ##PLOT THE TIMESERIES
-  if(selectWQSTSS != 0){ #Allocation
+  if(selectWQSTSS != 0){ 
+    # TMDL Target
     g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) +
       geom_point() + 
-      geom_line(aes(x = x, y = y, color = variable, shape=variable),data = d) +
+      geom_line(aes(x = x, y = y, color = variable), linetype = 'dashed', data = d) +
       xlim(x.lim) +
       ylim(y.lim) +
       theme(axis.title = elem_text,
@@ -1663,9 +1645,9 @@ plot.TSS<-function(new_data,
       xlab(x.lab) +
       ylab(y.lab) 
     
-    g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
-  } else { #no allocation 
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
+  } else { 
+    # No TMDL Target
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) +
       geom_point() + 
       xlim(x.lim) +
       ylim(y.lim) +
@@ -1687,51 +1669,92 @@ plot.TSS<-function(new_data,
     
   }
   
-  #trend line 
+  # trend line 
   if (plot_trend & !is.na(p.value)) {
     g <- g + geom_line(aes(x = x, y = y, color = variable), data = df_trend_line)  
   }
   
-  #allocation, trend line 
   if (plot_trend & !is.na(p.value)) {
-    if ('Exceeds' %in% unique(new_data$exceed)) { #with exceedances
+    # trend line
+    if ('Exceeds' %in% unique(new_data$exceed)) { 
+      # with exceedances
       meet<-new_data %>% filter(exceed == 'Meets') 
       if (nrow(meet) < 1) {
+        # Trend + All Exceed
         g <-g + scale_color_manual("", values = c('red','blue', 'black'),
+                                   labels = c('Exceeds', 'Trend line', 
+                                              'TSS TMDL Target'),
                                    guide = guide_legend(override.aes = list(
-                                     linetype = c('blank','solid','solid'),
+                                     linetype = c('blank','solid','dashed'),
                                      shape=c(16,NA,NA)))) 
       } else {
+        # Trend + Exceeds + Meets
         g <- g + scale_color_manual("", values = c('red', 'black', 'blue', 'black'),
+                                    labels = c('Exceeds', 'Meets', 'Trend line', 
+                                               'TSS TMDL Target'),
                                     guide = guide_legend(override.aes = list(
-                                      linetype = c('blank', 'blank', 'solid', 'solid'),
+                                      linetype = c('blank', 'blank', 'solid', 'dashed'),
                                       shape=c(16,16,NA,NA))))
       }
-    } else { #without exceedances
-      g <- g + scale_color_manual("", values = c('blue', 'black', 'black'),
-                                  guide = guide_legend(override.aes = list(
-                                    linetype = c('solid','blank','blank'),
-                                    shape=c(NA,16,16))))
-    }
-  } else {
+    } else { 
+      if(selectWQSTSS == 0) {
+        # Trend, No TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'blue'),
+                                    labels = c('Observation', 'Trend line'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'solid'),
+                                      shape=c(16,NA))))
+
+      } else {
+        # Trend, TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'blue', 'black'),
+                                    labels = c('Meets', 'Trend line', 
+                                               'TSS TMDL Target'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'solid','dashed'),
+                                      shape=c(16,NA,NA))))
+      }
+      } 
+    } else {
+    # No Trend
     if ('Exceeds' %in% unique(new_data$exceed)) {
       meet<-new_data %>% filter(exceed == 'Meets')
       if(nrow(meet) < 1) {
+        # No Trend,  All Exceed
         g <-g + scale_color_manual("", values = c('red', 'black'),
+                                   labels = c('Exceeds',
+                                              'TSS TMDL Target'),
                                    guide = guide_legend(override.aes = list(
-                                     linetype = c('blank','solid'),
-                                     shape=c(NA,16))))
+                                     linetype = c('blank','dashed'),
+                                     shape=c(16,NA))))
       } else {
-        g <- g + scale_color_manual("", values = c('red', 'black', 'black', 'black'),
+        # No Trend, Meets + Exceeds
+        g <- g + scale_color_manual("", values = c('red', 'black', 'black'),
+                                    labels = c('Exceeds', 'Meets', 
+                                               'TSS TMDL Target'),
                                     guide = guide_legend(override.aes = list(
-                                      linetype = c('blank', 'solid', 'solid', 'dashed'),
-                                      shape=c(16,NA,NA,NA))))
+                                      linetype = c('blank', 'blank', 'dashed'),
+                                      shape=c(16,16,NA))))
       }
     } else {
-      g <- g + scale_color_manual("", values = c('blue', 'black', 'black', 'black'),
-                                  guide = guide_legend(override.aes = list(
-                                    linetype = c('solid'),
-                                    shape=c(16))))
+      
+      if(selectWQSTSS == 0) {
+        # No Trend, No TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black'),
+                                    labels = c('Observation'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank'),
+                                      shape=c(16))))
+
+      } else {
+        # No Trend, TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'black'),
+                                    labels = c('Meets', 
+                                               'TSS TMDL Target'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'dashed'),
+                                      shape=c(16,NA))))
+      }
     }
   } 
   g 
@@ -1740,7 +1763,6 @@ plot.TSS<-function(new_data,
 
 
 plot.TP<-function(new_data,
-                  df.all,
                   selectWQSTP = input$selectWQSTP,
                   sea_ken_table = SeaKen,
                   plot_trend = input$plotTrend,
@@ -1753,15 +1775,12 @@ plot.TP<-function(new_data,
                   parm = 'Total Phosphorus (mg/l)') {
   library(ggplot2)
   library(chron)
-  #dataframe that assigns WQS values to Aquatic Life Uses
-  
-  
+
   # testing
-  #new_data<-mydata_sub
-  #df.all <- df.all
-  #sea_ken_table<- results_seaken
+  #new_data <- TP_evaluate
+  #sea_ken_table <- results_seaken
   #plot_trend <-trend_logic
-  #selectWQSTP <- 0
+  #selectWQSTP <- 0.07
   #parm <- unique(mydata_sub$Analyte)
   #analyte_column <- 'Analyte'
   #station_id_column <- 'Station_ID'
@@ -1769,12 +1788,10 @@ plot.TP<-function(new_data,
   #datetime_column <- 'Sampled'
   #result_column <- 'Result'
   #datetime_format <- '%Y-%m-%d %H:%M:%S'
-  #parm <- 'Total Phosphorus (mg/l)'
   
-  new_data<-EvaluateTPWQS(new_data = new_data,
-                          selectWQSTP = selectWQSTP)
-  
-  x.min <- min(new_data$Sampled) 
+  new_data$exceed <- ifelse(new_data$exceed == 0, "Meets", "Exceeds")
+
+  x.min <- min(new_data$Sampled)
   x.max <- max(new_data$Sampled) 
   x.lim <- c(x.min, x.max)
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
@@ -1838,14 +1855,18 @@ plot.TP<-function(new_data,
                               y = c(SK.min, SK.max),
                               variable = rep('Trend line', 2))
   
+  
+  # Need to make a May - Sept TP target for Snake Hells Canyon and plot
   d<-data.frame(x = c(x.min, x.max), y = rep(selectWQSTP, 2),
-                variable = rep("Total Phosphorus Allocation", 2))
+                variable = rep("Total Phosphorus Target", 2))
   
   elem_text <- element_text(face = 'bold')
   
-  if(selectWQSTP != 0){ #Allocation
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
-      geom_point(aes(color = exceed)) +
+  if(selectWQSTP != 0){ 
+    # TMDL Target
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) +
+      geom_point() +
+      geom_line(aes(x = x, y = y, color = variable), linetype= 'dashed', data = d) +
       xlim(x.lim) +
       ylim(y.lim) +
       ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
@@ -1864,9 +1885,9 @@ plot.TP<-function(new_data,
       xlab(x.lab) +
       ylab(y.lab) 
     
-    g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
-  } else { #no allocation 
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) + 
+  } else {
+    # No TMDL Target
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) + 
       geom_point() +
       xlim(x.lim) +
       ylim(y.lim) +
@@ -1888,47 +1909,88 @@ plot.TP<-function(new_data,
     
   }
   
-  #trend line 
+  # trend line 
   if (plot_trend & !is.na(p.value)) {
     g <- g + geom_line(aes(x = x, y = y, color = variable), data = df_trend_line)  
   }
   
   if (plot_trend & !is.na(p.value)) {
-    if ('Exceeds' %in% unique(new_data$exceed)) { #with exceedances
+    # trend line
+    if ('Exceeds' %in% unique(new_data$exceed)) { 
+      # with exceedances
       meet<-new_data %>% filter(exceed == 'Meets') 
       if (nrow(meet) < 1) {
-        g <-g + scale_color_manual("", values = c('red','blue', 'black'),
+        # Trend + All Exceed
+        g <-g + scale_color_manual("", values = c('red','black', 'blue'),
+                                   labels = c('Exceeds', 'Total Phosphorus TMDL Target', 'Trend line'),
                                    guide = guide_legend(override.aes = list(
-                                     linetype = c('solid')))) 
+                                     linetype = c('blank','dashed','solid'),
+                                     shape=c(16,NA,NA)))) 
       } else {
-        g <- g + scale_color_manual("", values = c('red', 'black', 'blue', 'black'),
+        # Trend + Exceeds + Meets
+        g <- g + scale_color_manual("", values = c('red', 'black', 'black', 'blue'),
+                                    labels = c('Exceeds', 'Meets', 'Total Phosphorus TMDL Target', 'Trend line'),
                                     guide = guide_legend(override.aes = list(
-                                      linetype = c('solid', 'solid', 'solid', 'solid'))))
+                                      linetype = c('blank', 'blank','dashed','solid'),
+                                      shape=c(16,16,NA,NA))))
       }
-    } else { #without exceedances
-      g <- g + scale_color_manual("", values = c('blue', 'black', 'black'),
-                                  guide = guide_legend(override.aes = list(
-                                    linetype = c('solid'))))
+    } else { 
+      
+      if(selectWQSTP == 0) {
+        # Trend, No TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'blue'),
+                                    labels = c('Observation', 'Trend line'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'solid'),
+                                      shape=c(16,NA))))
+        
+      } else {
+        # Trend, TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'blue', 'black'),
+                                    labels = c('Meets', 'Total Phosphorus TMDL Target', 'Trend line'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank','dashed', 'solid'),
+                                      shape=c(16,NA,NA))))
+      }
     }
   } else {
+    # No Trend
     if ('Exceeds' %in% unique(new_data$exceed)) {
       meet<-new_data %>% filter(exceed == 'Meets')
       if(nrow(meet) < 1) {
+        # No Trend,  All Exceed
         g <-g + scale_color_manual("", values = c('red', 'black'),
+                                   labels = c('Exceeds','Total Phosphorus TMDL Target'),
                                    guide = guide_legend(override.aes = list(
-                                     linetype = c('solid'))))
+                                     linetype = c('blank','dashed'),
+                                     shape=c(16,NA))))
       } else {
-        g <- g + scale_color_manual("", values = c('red', 'black', 'black', 'black'),
+        # No Trend, Meets + Exceeds
+        g <- g + scale_color_manual("", values = c('red', 'black', 'black'),
+                                    labels = c('Exceeds', 'Meets', 'Total Phosphorus TMDL Target'),
                                     guide = guide_legend(override.aes = list(
-                                      linetype = c('solid', 'solid', 'dashed'))))
+                                      linetype = c('blank', 'blank', 'dashed'),
+                                      shape=c(16,16,NA))))
       }
     } else {
-      g <- g + scale_color_manual("", values = c('black', 'black', 'black', 'black'),
-                                  guide = guide_legend(override.aes = list(
-                                    linetype = c('solid', 'solid'))))
+      if(selectWQSTP == 0) {
+        # No Trend, No TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black'),
+                                    labels = c('Observation'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank'),
+                                      shape=c(16))))
+        
+      } else {
+        # No Trend, TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'black'),
+                                    labels = c('Meets', 'Total Phosphorus TMDL Target'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'dashed'),
+                                      shape=c(16,NA))))
+      }
     }
-  } 
-  g 
-  
+  }
+  g
 }
 

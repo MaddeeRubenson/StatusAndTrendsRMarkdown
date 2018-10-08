@@ -32,7 +32,7 @@ library(base)
 library(captioner)
 
 tbls  <- captioner(prefix="Table")
-figs <- captioner(prefix="Figure")
+figs <- captioner(prefix="  \nFigure")
 
 ```
 
@@ -40,7 +40,7 @@ figs <- captioner(prefix="Figure")
 ```{r inputs, include=FALSE}
 
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
-# how it is named in the agwqma shapefile ('agwqma_shp').
+# how it is named in the agwqma shapefile ('agwqma_all_shp').
 
 agwqma <- "Umatilla Basin"
 query_dates <- c("2000-01-01", "2018-08-15")
@@ -165,27 +165,13 @@ knitr::kable(station_summary_tbl, digits = 0, padding = 2, row.names = FALSE,
 
 ```{r parm-summary-table}
 
-# format for table
-stns_param_summary_tbl <- dplyr::select(stns_param_summary, -c(DECIMAL_LAT,DECIMAL_LONG, TP_S))
-
-colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
-                                  "_E.coli_ Status", "_E.coli_ Trend", 
-                                  "_Enterococcus_ Status", "_Enterococcus_ Trend",
-                                  "DO Status", "DO Trend",
-                                  "pH Status", "pH Trend", 
-                                  "Temperature Status", "Temperature Trend",
-                                  "TP Trend", 
-                                  "TSS Status","TSS Trend")
-
-knitr::kable(stns_param_summary_tbl, 
-             # format = "markdown",  
+knitr::kable(stns_param_summary_tbl,
              padding = 2, digits = 3,
              row.names = FALSE,
              caption = tbls(name = "parmSumTable", 
-                            caption = "Summary of Monitoring Stations Status and Trend, where 'exceed' represents a single exceedance of the water quality standard within the last three years of available data. Note: DO = dissolved oxygen."))
+                            caption = "Summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. Note: DO = dissolved oxygen, TP = total phosphorus, TSS = total suspended solids."))
 
 ```
-
 
 ```{r Summary-map1, results = 'asis', eval = word_output & !(split_param_summary), fig.cap=figs(name="Summary_map1", caption="Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two whole years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
@@ -199,6 +185,7 @@ knitr::include_graphics(paste0("Figures/",station_summary_map2_file))
 
 ```
 
+
 ```{r DO-summary-map, results = 'asis', eval = word_output & split_param_summary, fig.cap=figs(name="DO_map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
 knitr::include_graphics(paste0("Figures/",station_summary_map_DO_file))
@@ -206,13 +193,13 @@ knitr::include_graphics(paste0("Figures/",station_summary_map_DO_file))
 ```
 
 
-```{r Ecoli-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+```{r Ecoli-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for _E coli_. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
 knitr::include_graphics(path = paste0("Figures/",station_summary_map_ecoli_file))
 
 ```
 
-```{r Entero-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Entero_map", caption="Summary of stations that fit the criteria for status and trend analysis for Enterococcus. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+```{r Entero-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Entero_map", caption="Summary of stations that fit the criteria for status and trend analysis for _Enterococcus_. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
 
 knitr::include_graphics(path = paste0("Figures/",station_summary_map_entero_file))
 
