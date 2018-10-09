@@ -1,7 +1,7 @@
 ---
 title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Umatilla Basin Agricultural Water Quality Management Area Water Quality Status and Trends Report'
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: September 2018
+date: October 2018
 output:
   html_document:
     mode: selfcontained
@@ -64,7 +64,8 @@ source("functions/funPlots.R")
 source('functions/TualatinR_Allocations.R')
 
 tbls  <- captioner(prefix="Table")
-figs <- captioner(prefix="  \nFigure")
+figs <- captioner(prefix="Figure")
+#figs <- captioner(prefix="  \nFigure")
 ```
 
 ```{r inputs}
@@ -483,11 +484,17 @@ knitr::kable(BC_table,
 
 ## Data Sources
 
-Water quality data were retrieved from [DEQ](http://www.oregon.gov/deq/wq/Pages/WQdata.aspx) (LASAR and ELEMENT), U.S. Environmental Protection Agency ([WQX/Storet](https://www.epa.gov/waterdata/water-quality-data-wqx)) U.S. Geological Survey [NWIS](https://qwwebservices.usgs.gov/) (USGS 2016), and [Water Quality Portal](https://www.waterqualitydata.us/)) databases. Many other organizations provided data that were queried and evaluated for use in this report (see Appendix for a complete list). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). Stations located within the Confederated Tribes of Umatilla Indian Reservation were not included in this report. The Confederated Tribes of Umatilla administer Clean Water Act programs on the reservation. 
+Water quality data were retrieved from [DEQ][2.1.1] (LASAR and ELEMENT), U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) U.S. Geological Survey [NWIS][2.1.3] (USGS 2016), and [Water Quality Portal][2.1.4]) databases. Many other organizations provided data that were queried and evaluated for use in this report (see Appendix for a complete list). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). Stations located within the Confederated Tribes of Umatilla Indian Reservation were not included in this report. The Confederated Tribes of Umatilla administer Clean Water Act programs on the reservation. 
 
-The data returned were evaluated for quality. Data retrieved from the DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf) (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data.
+The data returned were evaluated for quality. Data retrieved from DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual][2.1.5] (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data.
 
-Two stations located on the Umatilla River at Yoakum Bridge (Station IDs 10404 and CTUIR_WQX-9) are within 60 meters from each other. Becuase of the close distance the availiable data for these two stations were combined. Station ID 10404: Umatilla River at Yoakum Bridge was used in this report to identify the combined data and results.
+Two stations located on the Umatilla River at Yoakum Bridge (Station IDs 10404 and CTUIR_WQX-9) are within 60 meters from each other. Because of the close distance the available data for these two stations were combined. Station ID 10404: Umatilla River at Yoakum Bridge was used in this report to identify the combined data and results.
+
+[2.1.1]: http://www.oregon.gov/deq/wq/Pages/WQdata.aspx
+[2.1.2]: https://www.epa.gov/waterdata/water-quality-data-wqx
+[2.1.3]: https://qwwebservices.usgs.gov/
+[2.1.4]: https://www.waterqualitydata.us/
+[2.1.5]: http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf
 
 ## Analysis
 
@@ -497,24 +504,28 @@ Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total ph
 
 A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(floor_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. A trend assessment was made if data were available in a minimum of eight different years for any year in the period from `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. Stations that met at least one of those data requirements were assessed with the results presented in this report. In some cases a station had sufficient data for trend but not status because data were not available anytime in the last two years. In these cases the status was shown on the plot for the older data along with the trend result but the status was not recorded in the maps, summary tables, or conclusions.
 
-Results for pH from both grab and continuous sample data were compared to the applicable water quality criterion as found in [OAR 340-041-0021][2.1] and [OAR 340-041-0315][2.1.1].
+Results for pH from both grab and continuous sample data were compared to the applicable water quality criterion as found in [OAR 340-041-0021][2.2.1] and the basin specific rules found in [OAR 340-041-0315][2.2.2].
 
-Results for bacteria samples were compared to the applicable bacteria criterion as found in [OAR 340-041-0009][2.2]. The bacteria standard for freshwater contact recreation is based on the presence of *E. coli* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. A status and trend assessment was not made for the _Enterococcus_ or fecal coliform indicators because the marine water contact recreation and shellfish harvesting use criteria do not apply in the Umatilla Basin.
+Results for bacteria samples were compared to the applicable bacteria criterion as found in [OAR 340-041-0009][2.2.3]. The bacteria standard for freshwater contact recreation is based on the presence of *E. coli* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. A status and trend assessment was not made for the _Enterococcus_ or fecal coliform indicators because the marine water contact recreation and shellfish harvesting use criteria do not apply in the Umatilla Basin.
 
-Dissolved oxygen status was assessed by comparing the observed concentration values to the applicable daily minimum water quality criterion found in [OAR 340-041-0016][2.3]. If the dissolved oxygen concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality criterion. These points were noted in the plots using a different shape. Assessments were not made against the seven and 30-day mean minimum dissolved oxygen criteria due to the general lack of continuous dissolved oxygen data.
+Dissolved oxygen status was assessed by comparing the observed concentration values to the applicable daily minimum cold-water, cool-water, or spawning aquatic life use criterion found in [OAR 340-041-0016][2.2.4]. The fish use designations mapped in [OAR 340-041-0016 Figure 310A][2.2.5] and the salmon and steelhead spawning use designations mapped in [OAR 340-041-0016 Figure 310B][2.2.6] inform which dissolved oxygen aquatic life use apply. If the dissolved oxygen concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality criterion. These points were noted in the plots using a different shape. Assessments were not made against the seven and 30-day mean minimum dissolved oxygen criteria due to the general lack of continuous dissolved oxygen data.
 
-Results for continuous temperature data were compared against the applicable temperature criteria found in [OAR 340-041-0028][2.4]. The applicable temperature criteria is based on the seven day average daily maximum (7DADM) stream temperature metric. In order to ensure there was sufficient continuous data to calculate 7DADM, at least one observation per hour from noon to midnight must have been recorded. In addition, each month can have no more than one day of missing observations to ensure that no more than 10% of the 7DADM results in that month were missing.
+Results for continuous temperature data were compared against the applicable temperature criteria found in [OAR 340-041-0028][2.2.7]. The fish use designations mapped in [OAR 340-041-0016 Figure 310A][2.2.5] and the salmon and steelhead spawning use designations mapped in [OAR 340-041-0016 Figure 310B][2.2.6] specify where the applicable temperature criteria apply and at what times salmon and steelhead and spawning is a designated use. The temperature criteria is based on the seven day average daily maximum (7DADM) stream temperature metric. In order to ensure there was sufficient continuous data to calculate 7DADM, at least one observation per hour from noon to midnight must have been recorded. In addition, each month can have no more than one day of missing observations to ensure that no more than 10% of the 7DADM results in that month were missing.
 
-Results for total suspended solids were compared against the instream TSS concentration loading capacity targets established in the [Umatilla Basin Sediment TMDL][2.5]. The loading capacity targets range from 60-110 mg/L depending on location.
+Results for total suspended solids were compared against the instream TSS concentration loading capacity targets established in the [Umatilla Basin Sediment TMDL][2.2.8]. The loading capacity targets range from 60-110 mg/L depending on location.
 
 A land use summary was developed for all monitoring stations that fit the criteria to assess water quality status and/or trends. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. A map was made showing station locations in relation to 2011 national land cover dataset (Homer et al. 2015).
 
-[2.1]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68713
-[2.1.1]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=kXxU6Bd8vPKFxF8omzLR9w4fSQQ1Fkv2NNyRYIdwJyJpjN3KNpXj!-609023700?ruleVrsnRsn=68934
-[2.2]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68695
-[2.3]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68706
-[2.4]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=244176
-[2.5]: https://www.oregon.gov/deq/wq/tmdls/Pages/TMDLs-Umatilla-Basin.aspx
+[2.2.1]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68713
+[2.2.2]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=kXxU6Bd8vPKFxF8omzLR9w4fSQQ1Fkv2NNyRYIdwJyJpjN3KNpXj!-609023700?ruleVrsnRsn=68934
+[2.2.3]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68695
+[2.2.4]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68706
+[2.2.5]: https://www.oregon.gov/deq/Rulemaking%20Docs/figure310a.pdf
+[2.2.6]: https://www.oregon.gov/deq/Rulemaking%20Docs/figure310b.pdf
+[2.2.7]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=244176
+[2.2.8]: https://www.oregon.gov/deq/wq/tmdls/Pages/TMDLs-Umatilla-Basin.aspx
+
+
 
 # Results
 
@@ -567,12 +578,12 @@ knitr::include_graphics(path = paste0("Figures/", landuse_map_file))
 ```
 
 
-```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=8, fig.height=8, fig.cap=figs(name="landusemap", caption=paste0("Land use and land cover within the ", agwqma, " Agricultural Water Quality Management Area."))}
+```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=8.5, fig.height=7, fig.cap=figs(name="landusemap", caption=paste0("Land use and land cover within the ", agwqma, " Agricultural Water Quality Management Area."))}
 
 agwqma_shp <-spTransform(agwqma_shp, CRS("+proj=longlat +datum=NAD83"))
 
 map <- leaflet(agwqma_shp) %>%
-  addPolygons() %>%
+  addPolygons(fill=FALSE, group = "AgWQMA") %>%
   addTiles() %>%
   addMarkers(data = all.sp, 
              lng = all.sp@coords[,1], 
@@ -581,7 +592,7 @@ map <- leaflet(agwqma_shp) %>%
                            lapply(rownames(all.sp@data), 
                                   function(row) {
                                     htmlTable::htmlTable(all.sp@data[row,],
-                                                         header = c('Stn_ID', 'Stn_Name',
+                                                         header = c("Station ID", "Station Description",
                                                                     names(all.sp@data)[-c(1,2)]),
                                                          rnames = FALSE)
                                   })),
@@ -593,17 +604,18 @@ map <- leaflet(agwqma_shp) %>%
                            lapply(rownames(all_stn_sp@data),
                                   function(row) {
                                     htmlTable::htmlTable(all_stn_sp@data[row,],
-                                                         header = c('Stn_ID', 'Stn_Name',
+                                                         header = c("Station ID", "Station Description",
                                                                     names(all_stn_sp@data)[-c(1,2)]),
                                                          rnames = FALSE)
                                   })),
              group = 'All Stations Queried') %>%
   hideGroup('All Stations Queried') %>%
+  
   addWMSTiles('https://www.mrlc.gov/arcgis/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer/WMSServer?',
               group = "Land Use (NLCD 2011)",
               layers = '33',
               options = WMSTileOptions(format = 'image/png',
-                                       version = '1.3.0',
+                                       version = '1.1.3',
                                        transparent = TRUE)) %>% 
   addWMSTiles(GetURL("USGSTopo"), 
               attribution = paste0("<a href='https://www.usgs.gov/'>",
@@ -620,7 +632,13 @@ map <- leaflet(agwqma_shp) %>%
   addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
   addLayersControl(baseGroups = c('Land Use (NLCD 2011)', 'USGS Topo', 'ESRI NatGEO World Map'),
                    overlayGroups = c('Stations That Fit Criteria', 'All Stations Queried', 'Hydrography'),
-                   options = layersControlOptions(collapsed = FALSE))
+                   options = layersControlOptions(collapsed = FALSE)) %>%
+  addEasyButton(easyButton(
+    icon = "fa-globe",
+    onClick = JS("function(btn, map){
+                var groupLayer = map.layerManager.getLayerGroup('AgWQMA');
+                map.fitBounds(groupLayer.getBounds());
+                 }")))
 map
 
 ```
@@ -712,7 +730,7 @@ if(nrow(SK) > 0) {
   # fix names and add italics
   SK$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", SK$Analyte)
   SK$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", SK$Analyte)
-  knitr::kable(SK, padding = 2, format.args = list(scientific = TRUE), row.names = FALSE, caption = tbls(name = "seakenTable", caption = "Seasonal Kendall trend results for each analyte at each monitoring station with at least eight years of data."))
+  knitr::kable(SK, padding = 2, format.args = list(scientific = FALSE), digits=3, row.names = FALSE, caption = tbls(name = "seakenTable", caption = "Seasonal Kendall trend results for each analyte at each monitoring station with at least eight years of data."))
 }
 
 
@@ -874,7 +892,8 @@ if(length(entero_stns) > 0) {
                caption = tbls(name = "enterExcTable", 
                               caption = "_Enterococcus_ status. If sufficient data exists to calculate the geometric mean, it is included in this table."))
 }  else {
-  print(paste0("A status and trend assessment was not made for_Enterococcus_ because the marine water contact recreation use criteria do not apply in the ",agwqma,".")) 
+  
+  cat(paste0("A status and trend assessment was not made for Enterococcus because the marine water contact recreation use criteria do not apply in the ",agwqma,".")) 
 } 
 
 ```
@@ -971,7 +990,7 @@ if(length(tp_stn) > 0) {
     print(tp_plots[[j]])
     cat(figs(name = paste0('TP_', tp_stn[j]), 
              caption = paste0('Station ', tp_stn[j], 
-                              ' TTotal Phosphorus water quality status and/or trends.')))
+                              ' Total Phosphorus water quality status and/or trends.')))
     
   }
   
@@ -1024,7 +1043,6 @@ if(!is.null(tss_stn)) {
 if(length(tss_stn) > 0){
   
   TSS_all <- df.all[df.all$Analyte == 'Total Suspended Solids',]
-  #TSS <- df.all[df.all$Analyte == 'Total Suspended Solids',]
   results_seaken <- SeaKen %>% filter(analyte == 'Total Suspended Solids')
   
   TSS_list<- list()
@@ -1057,19 +1075,18 @@ if(length(tss_stn) > 0){
     ####
     
     trend_logic <-ifelse(grepl("Not Significant", 
-                                 results_seaken[results_seaken$Station_ID == tss_stn[j],'signif']), 
-                           FALSE,
-                           ifelse(grepl("Need at least 8 years", 
-                                        results_seaken[results_seaken$Station_ID == tss_stn[j],'signif']),
-                                  FALSE,
-                                  TRUE))
+                               results_seaken[results_seaken$Station_ID == tss_stn[j],'signif']), 
+                         FALSE,
+                         ifelse(grepl("Need at least 8 years", 
+                                      results_seaken[results_seaken$Station_ID == tss_stn[j],'signif']),
+                                FALSE,
+                                TRUE))
     
-    b <- plot.TSS(new_data=mydata_sub,
-                  df.all = df.all,
+    b <- plot.TSS(new_data=TSS_evaluate,
                   sea_ken_table=results_seaken ,
                   plot_trend = trend_logic,
-                  selectWQSTSS = tss_target[[tss_stn[i]]],
-                  parm = unique(mydata_sub$Analyte))
+                  selectWQSTSS = tss_target[[tss_stn[j]]],
+                  parm = unique(TSS_evaluate$Analyte))
     
     tss_plots[[j]]<-b
     
@@ -1348,7 +1365,8 @@ if(length(temp_stn) > 0) {
   
 } else {
     temp <- NULL
-    print(paste0("There was insufficient data to calculate the seven day average daily maximum stream temperatures and make status and/or trend assessments for stream temperature."))
+    
+    cat("There was insufficient data to calculate the seven day average daily maximum stream temperatures and make status and/or trend assessments for stream temperature.")
 
 }
 
@@ -1591,7 +1609,6 @@ stns_param_summary <-  parm_summary(stns = stns[,c(1:4)],
 
 # create a shapefile
 stns_param_summary_shp <- stns_param_summary %>%
-                  dplyr::select(-c(TP_S)) %>%
                   dplyr::rename(Name=Station_Description, 
                                 Latitude=DECIMAL_LAT, 
                                 Longitude=DECIMAL_LONG)
@@ -1608,15 +1625,14 @@ stns_param_summary_shp <- stns_param_summary_shp[order(stns_param_summary_shp$St
 writeOGR(obj=stns_param_summary_shp, dsn=GIS_dir, layer="station_param_summary", driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 # format for table
-stns_param_summary_tbl <- dplyr::select(stns_param_summary, -c(DECIMAL_LAT,DECIMAL_LONG, TP_S))
+stns_param_summary_tbl <- dplyr::select(stns_param_summary, -c(DECIMAL_LAT,DECIMAL_LONG, Entero_S, Entero_T, TP_S))
 
 colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
                                   "_E.coli_ Status", "_E.coli_ Trend", 
-                                  "_Enterococcus_ Status", "_Enterococcus_ Trend",
                                   "DO Status", "DO Trend",
                                   "pH Status", "pH Trend", 
                                   "Temperature Status", "Temperature Trend",
-                                  "TP Trend",
+                                  "Total Phosphorus Trend",
                                   "TSS Status","TSS Trend")
 
 save(stns_param_summary_tbl, file=paste0(Rdata_dir,"/", stns_param_summary_file))
@@ -1625,11 +1641,11 @@ knitr::kable(stns_param_summary_tbl,
              padding = 2, digits = 3,
              row.names = FALSE,
              caption = tbls(name = "parmSumTable", 
-                            caption = "Summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. Note: DO = dissolved oxygen, TP = total phosphorus, TSS = total suspended solids."))
+                            caption = "Summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. Note: DO = dissolved oxygen, TSS = total suspended solids."))
 
 ```
 
-```{r parm-summary-map-html, results = 'asis', eval = !(word_output), fig.width=8, fig.height=8}
+```{r parm-summary-map-html, results = 'asis', eval = !(word_output), fig.width=8.5, fig.height=7}
 
 library(base64enc)
  
@@ -1665,7 +1681,7 @@ popupTable <- function(param){
                            function(row) {
                              htmlTable::htmlTable(stns_param_summary[row,c("Station_ID", "Station_Description",
                                                                            paste0(param, "_S"), paste0(param, "_T"))],
-                                                  header = c("Station_ID", "Station_Description",
+                                                  header = c("Station ID", "Station Description",
                                                              paste0(param, " Status"), paste0(param, " Trend")),
                                                   rnames = FALSE)
                            }))
