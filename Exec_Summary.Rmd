@@ -1,10 +1,14 @@
 ---
-title: Umatilla Basin Agricultural Water Quality Management Area Water Quality Status and Trends Report
-subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: September 2018
-output: 
+title: Umatilla Basin Agricultural Water Quality Management Area Water Quality Status
+  and Trends Report
+output:
+  html_document:
+    df_print: paged
   word_document:
     reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+date: "October 2018"
+subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department
+  of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
 ---
 
 
