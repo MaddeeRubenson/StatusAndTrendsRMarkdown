@@ -1059,13 +1059,13 @@ EvaluateTSSWQS<-function(new_data,
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   if(selectWQSTSS != 0) {
-    new_data$exceed<- ifelse(new_data$Result > selectWQSTSS,  'Exceeds', 'Meets')
+    new_data$exceed <- ifelse(new_data$Result > selectWQSTP, "Meets", "Exceeds")
   } else {
-    new_data$exceed<-'Meets'
+    new_data$exceed <- "No Status"
   }
   
-  exc<-new_data%>%
-    filter(exceed == 'Exceeds')
+  exc <-new_data %>%
+    filter(exceed ==  "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1112,7 +1112,7 @@ EvaluateTSS_SRHC<-function(new_data, TSS_target=50) {
 }
 
 EvaluateTPWQS<-function(new_data, 
-                         selectWQSTP) {
+                        selectWQSTP) {
   
   
   new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
@@ -1120,13 +1120,13 @@ EvaluateTPWQS<-function(new_data,
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   if(selectWQSTP != 0) {
-    new_data$exceed <- ifelse(new_data$Result > selectWQSTP, 1, 0)
+    new_data$exceed <- ifelse(new_data$Result > selectWQSTP, "Meets", "Exceeds")
   } else {
-    new_data$exceed<-0
+    new_data$exceed <- "No Status"
   }
   
-  exc<-new_data%>%
-    filter(exceed == 1)
+  exc <-new_data %>%
+    filter(exceed ==  "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1150,10 +1150,10 @@ EvaluateTP_SRHC<-function(new_data, selectWQSTP) {
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   # May - Sept TP target in Snake Hells Canyon TMDL
-  new_data$exceed<- ifelse(new_data$Result > selectWQSTP & month(new_data$Sampled) >= 5 & month(new_data$Sampled) <=9, 1, 0)
-
+  new_data$exceed<- ifelse(new_data$Result > selectWQSTP & month(new_data$Sampled) >= 5 & month(new_data$Sampled) <=9, "Exceeds", "Meets")
+  
   exc<-new_data%>%
-    filter(exceed == 1)
+    filter(exceed == "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -2113,7 +2113,6 @@ parm_summary <- function(stns,
   # trend DO
   if(length(DO_trend_stns) > 0){
     for(j in 1:length(DO_trend_stns)) {
-      # print(j)
       DO_seaken <- SeaKen %>% filter(analyte == 'Dissolved Oxygen')
       DO_seaken <- DO_seaken[DO_seaken$Station_ID == DO_trend_stns[j],]
       
@@ -2152,11 +2151,7 @@ parm_summary <- function(stns,
       for(i in 1:length(temp_status_stns)) {
         # status  
         temp_data <- temp[temp$Station_ID == temp_status_stns[i],]
-        # 
-        # 
-        # maxyear <- max(temp_data$year)
-        # statyear<-seq(maxyear-3, maxyear, by = 1)
-        
+
         temp_status <- temp_data %>% filter(Station_ID %in% temp_status_stns[i]) %>% filter(year %in% statyear)
         
         if(any(!is.na(temp_status$exceed))) {
@@ -2218,20 +2213,19 @@ parm_summary <- function(stns,
       #status  
       tp_data <- tp_status[tp_status$Station_ID == tp_status_stns[i],]
       
-      if(is.na(tp_data$exceed)) {
-        stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- '--'
-      } else if(sum(tp_data$exceed, na.rm = TRUE) > 0) {
+      if(any(tp_data$exceed == 'Exceeds')) {
         stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- 'Exceeds'
-      } else {
+      } else if(any(tp_data$exceed == 'Meets')) {
         stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- 'Meets'
+      } else {
+        stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- '--'
       }
       
     }
-
+    
     #trend tp
     if(length(tp_trend_stns) > 0 ) {
       for(j in 1:length(tp_trend_stns)) {
-        print(tp_trend_stns[j])
         tp_seaken <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Need at least 8 years')
         tp_seaken <- tp_seaken[tp_seaken$Station_ID == tp_trend_stns[j],]
         
@@ -2277,12 +2271,12 @@ parm_summary <- function(stns,
       #status  
       tss_data <- tss_status[tss_status$Station_ID == tss_status_stns[i],]
       
-      if(is.na(tss_data$exceed)) {
-        stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- '--'
-      } else if(any(tss_data$exceed == 'Exceeds')) {
+      if(any(tss_data$exceed == 'Exceeds')) {
         stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Exceeds'
-      } else {
+      } else if(any(tss_data$exceed == 'Meets')) {
         stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Meets'
+      } else {
+        stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- '--'
       }
       
     }
