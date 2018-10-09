@@ -1549,9 +1549,7 @@ plot.TSS<-function(new_data,
   #datetime_column <- 'Sampled'
   #result_column <- 'Result'
   #datetime_format <- '%Y-%m-%d %H:%M:%S'
-  
-  new_data$exceed <- ifelse(new_data$exceed == 0, "Meets", "Exceeds")
-  
+
   x.min <- min(new_data$Sampled) 
   x.max <- max(new_data$Sampled) 
   x.lim <- c(x.min, x.max)
@@ -1698,7 +1696,7 @@ plot.TSS<-function(new_data,
       }
     } else { 
       if(selectWQSTSS == 0) {
-        # Trend, No TMDL Target, All Meet
+        # Trend, No TMDL Target, No Status
         g <- g + scale_color_manual("", values = c('black', 'blue'),
                                     labels = c('Observation', 'Trend line'),
                                     guide = guide_legend(override.aes = list(
@@ -1739,7 +1737,7 @@ plot.TSS<-function(new_data,
     } else {
       
       if(selectWQSTSS == 0) {
-        # No Trend, No TMDL Target, All Meet
+        # No Trend, No TMDL Target, No Status
         g <- g + scale_color_manual("", values = c('black'),
                                     labels = c('Observation'),
                                     guide = guide_legend(override.aes = list(
@@ -1788,8 +1786,6 @@ plot.TP<-function(new_data,
   #datetime_column <- 'Sampled'
   #result_column <- 'Result'
   #datetime_format <- '%Y-%m-%d %H:%M:%S'
-  
-  new_data$exceed <- ifelse(new_data$exceed == 0, "Meets", "Exceeds")
   
   x.min <- min(new_data$Sampled)
   x.max <- max(new_data$Sampled) 
@@ -1937,7 +1933,7 @@ plot.TP<-function(new_data,
     } else { 
       
       if(selectWQSTP == 0) {
-        # Trend, No TMDL Target, All Meet
+        # Trend, No TMDL Target, No Status
         g <- g + scale_color_manual("", values = c('black', 'blue'),
                                     labels = c('Observation', 'Trend line'),
                                     guide = guide_legend(override.aes = list(
@@ -1974,7 +1970,7 @@ plot.TP<-function(new_data,
       }
     } else {
       if(selectWQSTP == 0) {
-        # No Trend, No TMDL Target, All Meet
+        # No Trend, No TMDL Target, No Status
         g <- g + scale_color_manual("", values = c('black'),
                                     labels = c('Observation'),
                                     guide = guide_legend(override.aes = list(
