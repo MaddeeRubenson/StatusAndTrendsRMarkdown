@@ -155,7 +155,7 @@ station_summary_tbl <- data.frame(Analyte=c("_Ecoli_","_Enterococcus_","Dissolve
 colnames(station_summary_tbl) <- c("Analyte", "Number of stations w/ sufficient data for status analysis", "Number of stations w/ sufficient data for trend analysis")                                  
 
 knitr::kable(station_summary_tbl, digits = 0, padding = 2,row.names = FALSE, 
-             caption = tbls(name = "StnSumTable", caption = "Summary of stations with suffcient data for status or trend analysis**"))                                 
+             caption = tbls(name = "StnSumTable", caption = "Summary of stations with sufficient data for status or trend analysis**"))                                 
 
 ```
 
