@@ -1028,7 +1028,7 @@ if(length(tss_stn) > 0){
     } else {
       
       TSS_evaluate <- EvaluateTSSWQS(tmp_df, 
-                                     TSS_target = 0)
+                                     selectWQSTSS = 0)
     }
     
     TSS_eval <- attr(TSS_evaluate, 'ex_df')
@@ -1397,70 +1397,70 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
   DO_stn_table<-c(unique(DO_stn$Station_ID))
   DO_stn <- c(unique(DO_stn$Station_ID))
 }
-  
-  DO_stat<-status %>%
-    dplyr::filter(Analyte == "Dissolved Oxygen")
-  DO_stat <- c(unique(DO_stat$Station_ID))
-  
-  
-  if(!is.null(DO_stn)) {
+
+DO_stat<-status %>%
+  dplyr::filter(Analyte == "Dissolved Oxygen")
+DO_stat <- c(unique(DO_stat$Station_ID))
+
+
+if(!is.null(DO_stn)) {
   DO_stn <- unique(append(DO_stn, DO_stat))
-  }else{
-    DO_stn <- DO_stat
-  }
+}else{
+  DO_stn <- DO_stat
+}
+
+if(length(DO_stn) > 0) {
   
-  if(length(DO_stn) > 0) {
+  DO_all <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
+  DO <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
+  
+  #(Ben_use_LU[Ben_use_LU$Station_ID %in% pH_stn_table, 'pH_benuse'])
+  in_bentable<-(Ben_use_LU[Ben_use_LU$Station_ID %in% DO_stn, 'DO_use'])
+  
+  dta <- merge(DO, Ben_use_LU, by.x = "Station_ID", by.y = "Station_ID")
+  DO_stn <- dta %>% filter(!is.na(DO_use))
+  DO_stn <- c(unique(DO_stn$Station_ID))
+  
+  #DO<-NULL
+  #exc<-NULL
+  DO_list<- list()
+  DO_exclist<- list()
+  if(any(!is.na(in_bentable))) {
     
-    DO_all <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
-    DO <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
-    
-    #(Ben_use_LU[Ben_use_LU$Station_ID %in% pH_stn_table, 'pH_benuse'])
-    in_bentable<-(Ben_use_LU[Ben_use_LU$Station_ID %in% DO_stn, 'DO_use'])
-    
-    dta <- merge(DO, Ben_use_LU, by.x = "Station_ID", by.y = "Station_ID")
-    DO_stn <- dta %>% filter(!is.na(DO_use))
-    DO_stn <- c(unique(DO_stn$Station_ID))
-    
-    #DO<-NULL
-    #exc<-NULL
-    DO_list<- list()
-    DO_exclist<- list()
-    if(any(!is.na(in_bentable))) {
+    #DO <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
+    for(j in 1: length(DO_stn)) {
       
-      #DO <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
-      for(j in 1: length(DO_stn)) {
-        
-        new_data <- DO_all[DO_all$Station_ID == DO_stn[j],]
-        
-          tmp_df <- new_data
-          tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-          tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-          sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-          tmp_df_MRL <- tmp_df[sub,]
-          tmp_df <- remove.dups(tmp_df, min)
-          
-        #if(!is.na(any(new_data$sdadm))) {
-        
-        DO_Benuse <- (Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[j] & Ben_use_LU$AgArea == agwqma, 'DO_use'])
-        spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[j], 'spwn_time'])
-        
-        
-        DO_evaluate <- EvaluateDOWQS(new_data = tmp_df,
-                                     selectUseDO = DO_Benuse,
-                                     df.all = df.all, 
-                                     selectSpawning = spwn_time,
-                                     analyte_column = 'Analyte',
-                                     station_id_column = 'Station_ID',
-                                     station_desc_column = 'Station_Description',
-                                     datetime_column = 'Sampled',
-                                     result_column = 'Result',
-                                     datetime_format = '%Y-%m-%d %H:%M:%S')
-        
-        DO_eval <- attr(DO_evaluate, 'ex_df')
-        DO_list[[j]] <- DO_evaluate
-        DO_exclist[[j]] <- DO_eval
-        
-      }
+      new_data <- DO_all[DO_all$Station_ID == DO_stn[j],]
+      
+      tmp_df <- new_data
+      tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+      tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+      sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+      tmp_df_MRL <- tmp_df[sub,]
+      tmp_df <- remove.dups(tmp_df, min)
+      
+      #if(!is.na(any(new_data$sdadm))) {
+      
+      DO_Benuse <- (Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[j] & Ben_use_LU$AgArea == agwqma, 'DO_use'])
+      spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[j], 'spwn_time'])
+      
+      
+      DO_evaluate <- EvaluateDOWQS(new_data = tmp_df,
+                                   selectUseDO = DO_Benuse,
+                                   df.all = df.all, 
+                                   selectSpawning = spwn_time,
+                                   analyte_column = 'Analyte',
+                                   station_id_column = 'Station_ID',
+                                   station_desc_column = 'Station_Description',
+                                   datetime_column = 'Sampled',
+                                   result_column = 'Result',
+                                   datetime_format = '%Y-%m-%d %H:%M:%S')
+      
+      DO_eval <- attr(DO_evaluate, 'ex_df')
+      DO_list[[j]] <- DO_evaluate
+      DO_exclist[[j]] <- DO_eval
+      
+    }
     
     
     DO_eval<-rbind.fill(DO_list[])
@@ -1470,66 +1470,66 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
     
     #results_seaken<-SeaKen %>% filter(analyte == 'Dissolved Oxygen')
     #if(length(DO_stn) > 0) {
-      DO_plots<-list()
+    DO_plots<-list()
+    
+    results_seaken<-SeaKen %>% filter(analyte == 'Dissolved Oxygen')
+    
+    for (i in 1:length(DO_stn)) {
       
-      results_seaken<-SeaKen %>% filter(analyte == 'Dissolved Oxygen')
+      new_data <- DO_all[DO_all$Station_ID == DO_stn[i],]
       
-      for (i in 1:length(DO_stn)) {
-        
-        new_data <- DO_all[DO_all$Station_ID == DO_stn[i],]
-        
-        trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == DO_stn[i],'signif']), FALSE,
-                            ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == DO_stn[i],'signif']), FALSE, TRUE))
-        
-        DO_Benuse <- (Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[i], 'DO_use'])
-        spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[i], 'spwn_time'])
-        
-        contstns <- c('USGS-14202980', 'USGS-14206694', 'USGS-453004122510301', 'USGS-453030122560101', 'USGS-453040123065201')
-
-       if(DO_stn[i] %in% contstns) {
-         trend_logic <- FALSE
-       }
-        
-        b <- plot.DO(new_data = new_data,
-                     df.all = df.all,
-                     selectUseDO = DO_Benuse[1],
-                     sea_ken_table = results_seaken,
-                     plot_trend = trend_logic,
-                     selectSpawning = spwn_time[1],
-                     analyte_column = 'Analyte',
-                     station_id_column = 'Station_ID',
-                     station_desc_column = 'Station_Description',
-                     datetime_column = 'Sampled',
-                     result_column = 'Result',
-                     datetime_format = '%Y-%m-%d %H:%M:%S',
-                     parm = 'Dissolved Oxygen')
-        
-        DO_plots[[i]]<-b
-        
-        print(DO_plots[[i]])
-        cat(figs(name = paste0('DO_', DO_stn[i]), caption = paste0('Station ', DO_stn[i], ' Dissolved Oxygen water quality status and/or trends.')))
+      trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == DO_stn[i],'signif']), FALSE,
+                          ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == DO_stn[i],'signif']), FALSE, TRUE))
+      
+      DO_Benuse <- (Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[i], 'DO_use'])
+      spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[i], 'spwn_time'])
+      
+      contstns <- c('USGS-14202980', 'USGS-14206694', 'USGS-453004122510301', 'USGS-453030122560101', 'USGS-453040123065201')
+      
+      if(DO_stn[i] %in% contstns) {
+        trend_logic <- FALSE
       }
-    }
-    
-    DO_table <- as.data.frame(DO_stn_table)
-    if(length(DO_stn) > 0){
-     # DO_table <- DO_table %>% dplyr::filter(DO_stn %in% DO_stn_table)
       
-      DO_table <- DO_table %>% dplyr::filter(!(DO_stn_table %in% DO_stn))
+      b <- plot.DO(new_data = new_data,
+                   df.all = df.all,
+                   selectUseDO = DO_Benuse[1],
+                   sea_ken_table = results_seaken,
+                   plot_trend = trend_logic,
+                   selectSpawning = spwn_time[1],
+                   analyte_column = 'Analyte',
+                   station_id_column = 'Station_ID',
+                   station_desc_column = 'Station_Description',
+                   datetime_column = 'Sampled',
+                   result_column = 'Result',
+                   datetime_format = '%Y-%m-%d %H:%M:%S',
+                   parm = 'Dissolved Oxygen')
+      
+      DO_plots[[i]]<-b
+      
+      print(DO_plots[[i]])
+      cat(figs(name = paste0('DO_', DO_stn[i]), caption = paste0('Station ', DO_stn[i], ' Dissolved Oxygen water quality status and/or trends.')))
     }
-    if (nrow(DO_table) > 0) {
-      colnames(DO_table) <- c("Station ID")
-      if (!is.null(DO_table)) {
-        print("In order to assess against water quality standard, need to add Dissolved Oxygen beneficial uses and spawning time periods to stations.csv for stations:")
-        print(DO_table)
-      }
-    }
+  }
+  
+  DO_table <- as.data.frame(DO_stn_table)
+  if(length(DO_stn) > 0){
+    # DO_table <- DO_table %>% dplyr::filter(DO_stn %in% DO_stn_table)
     
-    colnames(exc) <- c("Station ID", "Station Description", "Obs", "Exceedances", "Meets b/c %Sat", "Min Date", "Max Date")
-    if(!is.null(exc)){
-      knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "doExcTable", caption = "Dissolved Oxygen status."))
+    DO_table <- DO_table %>% dplyr::filter(!(DO_stn_table %in% DO_stn))
+  }
+  if (nrow(DO_table) > 0) {
+    colnames(DO_table) <- c("Station ID")
+    if (!is.null(DO_table)) {
+      print("In order to assess against water quality standard, need to add Dissolved Oxygen beneficial uses and spawning time periods to stations.csv for stations:")
+      print(DO_table)
     }
-    
+  }
+  
+  colnames(exc) <- c("Station ID", "Station Description", "Obs", "Exceedances", "Meets b/c %Sat", "Min Date", "Max Date")
+  if(!is.null(exc)){
+    knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "doExcTable", caption = "Dissolved Oxygen status."))
+  }
+  
   # } else {
   #   print("No monitoring stations fit the criteria to assess Dissolved Oxygen.")
   # }
