@@ -541,14 +541,14 @@ convert_temp_F_C <- function(df, result_column_name="Result", unit_column_name="
   return(df$result_celsius)
 }
 
-Calculate.sdadm <- function(df, result_column_name, station_column_name, datetime_column_name, datetime_format) {
+Calculate.sdadm <- function(df, result_column_name, station_id_column, datetime_column_name, datetime_format) {
   # Description:
   # Calculates seven day average daily maximum
   #
   # This function takes 4 arguments:
   #  df                   = A data frame containing at minimum the columns representing a Station Identifier, Numeric results and a datetime
   #  result_column_name   = A character string specifying the name of the result column in df
-  #  station_column_name  = A character string specifying the name of the station column in df
+  #  station_id_column  = A character string specifying the name of the station column in df
   #  datetime_column_name = A character string specifying the name of the datetime column in df. datetime column should be in format "%m/%d/%Y %H:%M:%S"
   #  datetime_format      = A character string specifying the format of the datetime column. See the format argument of strptime for details
   #
@@ -564,14 +564,14 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
   # Value: 
   # An object of class data frame with columns:
   # date: class Date in format %Y-%m-%d
-  # station_column_name: in same format and name as provided
+  # station_id_column: in same format and name as provided
   # SDADM: class numeric representing the calculated seven day average
   
   library(chron)
   library(reshape)
   library(zoo)
   
-  tdata <- df[,c(station_column_name, datetime_column_name, result_column_name)]
+  tdata <- df[,c(station_id_column, datetime_column_name, result_column_name)]
   
   ## RENAME
   colnames(tdata)[1] <- "id"
@@ -638,13 +638,19 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
     colnames(sdadm.melt)[3] <- "sdadm"
     sdadm.melt$id <- gsub("X","",sdadm.melt$id,fixed=TRUE)
     sdadm.melt$id <- gsub(".","-",sdadm.melt$id,fixed=TRUE)
-    colnames(sdadm.melt)[2] <- station_column_name
+    colnames(sdadm.melt)[2] <- station_id_column
     sdadm.melt$date <- as.Date(sdadm.melt$date)
     return(sdadm.melt)
   }
 }
 
-EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_name) {
+EvaluateTempWQS <- function(sdadm_df,
+                            selectUse,
+                            selectSpawning,
+                            station_id_column = 'Station_ID',
+                            station_desc_column = 'Station_Description',
+                            date_column = 'date',
+                            result_column = 'Result') {
   # Description:
   # Evaluates temperature seven day average daily max values against Oregon's Water Quality Standards for Temperature
   #
@@ -656,9 +662,10 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
   #  Requires plyr and chron
   #
   #  sdadm_df must have columns with name and format as specified:
-  #   station_column_name = Class character representing the station ID
-  #   date        = Class Date representing date of seven day average daily maximum
-  #   Result      = Class numeric representing the values of the seven day average daily maximum
+  #   station_id_column = Class character representing the station ID col
+  #   station_desc_column = Class character representing the station name col 
+  #   date_column        = Class Date representing date of seven day average daily maximum
+  #   result_column      = Class numeric representing the values of the seven day average daily maximum
   #   spwn_dates  = Class character with the start and end dates of the 
   #                           applicable spawning time period. Requires the format 
   #                           "StartMonth Day-EndMonth Day" e.g. ("January 1-May 15") OR
@@ -689,7 +696,7 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
   ## Build the spawning reference data frame based on the spawning dates and benefiicial use specified
   sdadm_df$spwn_dates <- selectSpawning
   sdadm_df$ben_use_des <- selectUse
-  stations <- unique(sdadm_df[,station_column_name])
+  stations <- unique(sdadm_df[,station_id_column])
   spd <- unique(sdadm_df[,c('Station_ID','spwn_dates','ben_use_des')])
   spd_list <- strsplit(spd$spwn_dates, split = "-")
   spd_chron <- lapply(spd_list, function(x) {as.chron(x, format = "%B %d")})
@@ -717,12 +724,12 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
      SSTART_DAY,SEND_MONTH,SEND_DAY)
   
   ## Grab numeric spawning values
-  sdadm_df$sdata <- match(sdadm_df[, station_column_name], 
-                          sdata[, station_column_name])
+  sdadm_df$sdata <- match(sdadm_df[, station_id_column], 
+                          sdata[, station_id_column])
   
   ## finds the current date, and spawning start/end date and formats as a numeric in the form mm.dd
-  sdadm_df$cdate <- as.numeric(months(as.chron(sdadm_df$date))) + 
-    (as.numeric(chron::days(as.chron(sdadm_df$date))) * .01)
+  sdadm_df$cdate <- as.numeric(months(as.chron(sdadm_df[,date_column]))) + 
+    (as.numeric(chron::days(as.chron(sdadm_df[,date_column]))) * .01)
   sdadm_df$sstr <- as.numeric(sdata$SSTART_MONTH[sdadm_df$sdata]) + 
     (as.numeric(sdata$SSTART_DAY[sdadm_df$sdata]) *.01)
   sdadm_df$send <- as.numeric(sdata$SEND_MONTH[sdadm_df$sdata]) + 
@@ -745,38 +752,43 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
   
   ## Calculate total 7DADM obersvations and # of 7DADM observations that exceed the summer spawning critera in those time periods; and 
   ## number of 7DADM observations that exceed 16 and 18 over the whole time period (not just in the stated periods)
-  sdadm_df$exceedsummer <- ifelse(sdadm_df$Result >= sdadm_df$bioc & 
+  sdadm_df$exceedsummer <- ifelse(sdadm_df[,result_column] >= sdadm_df$bioc & 
                                     sdadm_df$summer == TRUE, 1, 0)
-  sdadm_df$exceedspawn <- ifelse(sdadm_df$Result >= sdadm_df$bioc & 
+  sdadm_df$exceedspawn <- ifelse(sdadm_df[,result_column] >= sdadm_df$bioc & 
                                    sdadm_df$spawn == TRUE, 1, 0)
-  sdadm_df$daystot <-ifelse(!is.na(sdadm_df$Result), 1, 0)
+  sdadm_df$daystot <-ifelse(!is.na(sdadm_df[,result_column]), 1, 0)
   
   ## TABULUAR RESULTS
-  # daystot <- tapply(sdadm_df$daystot,list(sdadm_df[, station_column_name],
+  # daystot <- tapply(sdadm_df$daystot,list(sdadm_df[, station_id_column],
   #                                         sdadm_df$daystot), length)
   # exceedsummer <- tapply(sdadm_df$exceedsummer,
-  #                        list(sdadm_df[, station_column_name],
+  #                        list(sdadm_df[, station_id_column],
   #                             sdadm_df$exceedsummer), length)
   # exceedspawn <- tapply(sdadm_df$exceedspawn,
-  #                       list(sdadm_df[, station_column_name],
+  #                       list(sdadm_df[, station_id_column],
   #                            sdadm_df$exceedspawn), length)
-  #sdadm_df <- sdadm_df[!is.na(sdadm_df$Result),]
+  #sdadm_df <- sdadm_df[!is.na(sdadm_df[,result_column]),]
   
-  sdadm_df$Time_Period <- ifelse(sdadm_df$summer, "Summer", "Spawning")
-  sdadm_df$Time_Period <- factor(sdadm_df$Time_Period, levels = c('Summer', 'Spawning', 'Total'))
+  sdadm_df$Time_Period <- ifelse(sdadm_df$summer, "Non-Spawning", "Spawning")
+  sdadm_df$Time_Period <- factor(sdadm_df$Time_Period, levels = c('Non-Spawning', 'Spawning', 'Total'))
   sdadm_df$exceed <- sdadm_df$exceedspawn | sdadm_df$exceedsummer
-  sdadm_df_noNA <- sdadm_df[!is.na(sdadm_df$Result),]
+  sdadm_df_noNA <- sdadm_df[!is.na(sdadm_df[,result_column]),]
   sdadm_df_noNA[is.na(sdadm_df_noNA$Time_Period), 'exceed'] <- FALSE
-  sdadm_df_noNA[is.na(sdadm_df_noNA$Time_Period), 'Time_Period'] <- 'Summer'
-  result_summary <- ddply(sdadm_df_noNA, .(sdadm_df_noNA[, station_column_name], Time_Period), 
-                          summarise, 
-                          Exceedances = sum(exceed),                  
-                          #exceedspawn = sum(exceedspawn),
-                          #exceedsummer = sum(exceedsummer),
-                          Obs = sum(daystot), .drop = FALSE)
-  result_summary <- plyr::rename(result_summary, 
-                                 c('sdadm_df_noNA[, station_column_name]' = 
-                                     station_column_name))
+  sdadm_df_noNA[is.na(sdadm_df_noNA$Time_Period), 'Time_Period'] <- 'Non-Spawning'
+  
+  
+  #Min_Date = min(year(new_data$Sampled)),
+  #Max_Date = min(year(new_data$Sampled)),
+  
+  result_summary <- ddply(sdadm_df_noNA, .(sdadm_df_noNA[, station_id_column],
+                                           sdadm_df_noNA[, station_desc_column], 
+                                           Time_Period), 
+                          summarise,
+                          Obs = sum(daystot),
+                          Exceedances = sum(exceed),
+                          .drop = FALSE)
+  result_summary <- plyr::rename(result_summary, c('sdadm_df_noNA[, station_id_column]' = station_id_column,
+                                                   'sdadm_df_noNA[, station_desc_column]'= station_desc_column))
   
   if (any(is.na(result_summary$Time_Period))) {
     result_summary[which(result_summary$Time_Period == 'Total'), 
@@ -1047,13 +1059,13 @@ EvaluateTSSWQS<-function(new_data,
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   if(selectWQSTSS != 0) {
-    new_data$exceed<- ifelse(new_data$Result > selectWQSTSS,  'Exceeds', 'Meets')
+    new_data$exceed <- ifelse(new_data$Result > selectWQSTP, "Meets", "Exceeds")
   } else {
-    new_data$exceed<-'Meets'
+    new_data$exceed <- "No Status"
   }
   
-  exc<-new_data%>%
-    filter(exceed == 'Exceeds')
+  exc <-new_data %>%
+    filter(exceed ==  "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1100,7 +1112,7 @@ EvaluateTSS_SRHC<-function(new_data, TSS_target=50) {
 }
 
 EvaluateTPWQS<-function(new_data, 
-                         selectWQSTP) {
+                        selectWQSTP) {
   
   
   new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
@@ -1108,13 +1120,13 @@ EvaluateTPWQS<-function(new_data,
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   if(selectWQSTP != 0) {
-    new_data$exceed <- ifelse(new_data$Result > selectWQSTP, 1, 0)
+    new_data$exceed <- ifelse(new_data$Result > selectWQSTP, "Meets", "Exceeds")
   } else {
-    new_data$exceed<-0
+    new_data$exceed <- "No Status"
   }
   
-  exc<-new_data%>%
-    filter(exceed == 1)
+  exc <-new_data %>%
+    filter(exceed ==  "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1138,10 +1150,10 @@ EvaluateTP_SRHC<-function(new_data, selectWQSTP) {
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   # May - Sept TP target in Snake Hells Canyon TMDL
-  new_data$exceed<- ifelse(new_data$Result > selectWQSTP & month(new_data$Sampled) >= 5 & month(new_data$Sampled) <=9, 1, 0)
-
+  new_data$exceed<- ifelse(new_data$Result > selectWQSTP & month(new_data$Sampled) >= 5 & month(new_data$Sampled) <=9, "Exceeds", "Meets")
+  
   exc<-new_data%>%
-    filter(exceed == 1)
+    filter(exceed == "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1167,7 +1179,7 @@ generate_exceed_df <- function(new_data,
                                selectUse, 
                                selectSpawning, 
                                selectUseDO,
-                               station_column_name = 'Station_ID') {
+                               station_id_column = 'Station_ID') {
   exceed_df <- switch(
     parm,
     "pH" = ({
@@ -2101,7 +2113,6 @@ parm_summary <- function(stns,
   # trend DO
   if(length(DO_trend_stns) > 0){
     for(j in 1:length(DO_trend_stns)) {
-      # print(j)
       DO_seaken <- SeaKen %>% filter(analyte == 'Dissolved Oxygen')
       DO_seaken <- DO_seaken[DO_seaken$Station_ID == DO_trend_stns[j],]
       
@@ -2140,11 +2151,7 @@ parm_summary <- function(stns,
       for(i in 1:length(temp_status_stns)) {
         # status  
         temp_data <- temp[temp$Station_ID == temp_status_stns[i],]
-        # 
-        # 
-        # maxyear <- max(temp_data$year)
-        # statyear<-seq(maxyear-3, maxyear, by = 1)
-        
+
         temp_status <- temp_data %>% filter(Station_ID %in% temp_status_stns[i]) %>% filter(year %in% statyear)
         
         if(any(!is.na(temp_status$exceed))) {
@@ -2206,20 +2213,19 @@ parm_summary <- function(stns,
       #status  
       tp_data <- tp_status[tp_status$Station_ID == tp_status_stns[i],]
       
-      if(is.na(tp_data$exceed)) {
-        stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- '--'
-      } else if(sum(tp_data$exceed, na.rm = TRUE) > 0) {
+      if(any(tp_data$exceed == 'Exceeds')) {
         stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- 'Exceeds'
-      } else {
+      } else if(any(tp_data$exceed == 'Meets')) {
         stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- 'Meets'
+      } else {
+        stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- '--'
       }
       
     }
-
+    
     #trend tp
     if(length(tp_trend_stns) > 0 ) {
       for(j in 1:length(tp_trend_stns)) {
-        print(tp_trend_stns[j])
         tp_seaken <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Need at least 8 years')
         tp_seaken <- tp_seaken[tp_seaken$Station_ID == tp_trend_stns[j],]
         
@@ -2265,12 +2271,12 @@ parm_summary <- function(stns,
       #status  
       tss_data <- tss_status[tss_status$Station_ID == tss_status_stns[i],]
       
-      if(is.na(tss_data$exceed)) {
-        stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- '--'
-      } else if(any(tss_data$exceed == 'Exceeds')) {
+      if(any(tss_data$exceed == 'Exceeds')) {
         stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Exceeds'
-      } else {
+      } else if(any(tss_data$exceed == 'Meets')) {
         stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Meets'
+      } else {
+        stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- '--'
       }
       
     }
