@@ -1943,14 +1943,14 @@ plot.TP<-function(new_data,
       if (nrow(meet) < 1) {
         # Trend + All Exceed
         g <-g + scale_color_manual("", values = c('red','black', 'blue'),
-                                   labels = c('Exceeds', 'Total Phosphorus TMDL Target', 'Trend line'),
+                                   labels = c('Exceeds', 'Total Phosphorus TMDL Target (May-Sept)', 'Trend line'),
                                    guide = guide_legend(override.aes = list(
                                      linetype = c('blank','dashed','solid'),
                                      shape=c(16,NA,NA)))) 
       } else {
         # Trend + Exceeds + Meets
         g <- g + scale_color_manual("", values = c('red', 'black', 'black', 'blue'),
-                                    labels = c('Exceeds', 'Meets', 'Total Phosphorus TMDL Target', 'Trend line'),
+                                    labels = c('Exceeds', 'Meets', 'Total Phosphorus TMDL Target (May-Sept)', 'Trend line'),
                                     guide = guide_legend(override.aes = list(
                                       linetype = c('blank', 'blank','dashed','solid'),
                                       shape=c(16,16,NA,NA))))
@@ -1968,7 +1968,7 @@ plot.TP<-function(new_data,
       } else {
         # Trend, TMDL Target, All Meet
         g <- g + scale_color_manual("", values = c('black', 'blue', 'black'),
-                                    labels = c('Meets', 'Total Phosphorus TMDL Target', 'Trend line'),
+                                    labels = c('Meets', 'Total Phosphorus TMDL Target (May-Sept)', 'Trend line'),
                                     guide = guide_legend(override.aes = list(
                                       linetype = c('blank','dashed', 'solid'),
                                       shape=c(16,NA,NA))))
@@ -1981,14 +1981,14 @@ plot.TP<-function(new_data,
       if(nrow(meet) < 1) {
         # No Trend,  All Exceed
         g <-g + scale_color_manual("", values = c('red', 'black'),
-                                   labels = c('Exceeds','Total Phosphorus TMDL Target'),
+                                   labels = c('Exceeds','Total Phosphorus TMDL Target (May-Sept)'),
                                    guide = guide_legend(override.aes = list(
                                      linetype = c('blank','dashed'),
                                      shape=c(16,NA))))
       } else {
         # No Trend, Meets + Exceeds
         g <- g + scale_color_manual("", values = c('red', 'black', 'black'),
-                                    labels = c('Exceeds', 'Meets', 'Total Phosphorus TMDL Target'),
+                                    labels = c('Exceeds', 'Meets', 'Total Phosphorus TMDL Target (May-Sept)'),
                                     guide = guide_legend(override.aes = list(
                                       linetype = c('blank', 'blank', 'dashed'),
                                       shape=c(16,16,NA))))
@@ -2005,7 +2005,7 @@ plot.TP<-function(new_data,
       } else {
         # No Trend, TMDL Target, All Meet
         g <- g + scale_color_manual("", values = c('black', 'black'),
-                                    labels = c('Meets', 'Total Phosphorus TMDL Target'),
+                                    labels = c('Meets', 'Total Phosphorus TMDL Target (May-Sept)'),
                                     guide = guide_legend(override.aes = list(
                                       linetype = c('blank', 'dashed'),
                                       shape=c(16,NA))))
