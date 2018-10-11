@@ -880,7 +880,7 @@ EvaluateEnteroWQS <- function(new_data) {
 }
 
 EvaluateDOWQS<-function(new_data, 
-                        df.all, 
+                        DOsat_data, 
                         selectUseDO,
                         selectSpawning,
                         analyte_column = 'Analyte',
@@ -890,14 +890,13 @@ EvaluateDOWQS<-function(new_data,
                         result_column = 'Result',
                         datetime_format = '%Y-%m-%d %H:%M:%S'){
   
-  #datetime_format = '%Y-%m-%d %H:%M:%S'
   library(dplyr)
  
-  new_data$Result <- as.numeric(new_data$Result)
-  new_data$Sampled <- as.POSIXct(new_data$Sampled,
+  new_data[, result_column] <- as.numeric(new_data[, result_column])
+  new_data[, datetime_column] <- as.POSIXct(new_data[, datetime_column],
                                           format = datetime_format)
-  #new_data$Sampled<-as.Date(new_data$Sampled)
-  new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
+  
+  new_data$year<-as.numeric(format(new_data[, datetime_column], format="%Y"))
   
   
   ##Generate Exceedances of WQS##
@@ -914,7 +913,7 @@ EvaluateDOWQS<-function(new_data,
   SEND_DAY <- unlist(lapply(spd_days_num, function(x) x[2]))
   sdata <- as.data.frame(cbind(SSTART_MONTH, SSTART_DAY, SEND_MONTH, SEND_DAY))
   
-  sdata$Station_ID <- unique(new_data$Station_ID)
+  sdata$Station_ID <- unique(new_data[, station_id_column])
   sdata$aqu_use_des <- selectUseDO
   sdata$numcrit<- if(selectUseDO == 'Cold-Water Aquatic Life') {
     8
@@ -928,7 +927,7 @@ EvaluateDOWQS<-function(new_data,
   
   new_data$sdata <- match(new_data[, 'Station_ID'],
                           sdata[, 'Station_ID'])
-  new_data$cdate <- lubridate::month(new_data$Sampled) + lubridate::day(new_data$Sampled)*.01
+  new_data$cdate <- lubridate::month(new_data[, datetime_column]) + lubridate::day(new_data[, datetime_column])*.01
   new_data$sstr <- as.numeric(sdata$SSTART_MONTH[new_data$sdata]) +
     (as.numeric(sdata$SSTART_DAY[new_data$sdata]) *.01)
   new_data$send <- as.numeric(sdata$SEND_MONTH[new_data$sdata]) +
@@ -943,26 +942,24 @@ EvaluateDOWQS<-function(new_data,
            11, new_data$bioc),
     ifelse(new_data$sstr <= new_data$cdate & new_data$send >= new_data$cdate,
            11, new_data$bioc)))
-  #Merge %DO with [DO]##
-  DOsat<-df.all%>%
-    dplyr::filter(Analyte == 'Dissolved oxygen saturation') %>%
-    dplyr::filter(Station_ID == unique(new_data$Station_ID))
-  DOsat$Result <- as.numeric(DOsat$Result)
-  DOsat$Sampled<-as.POSIXct(strptime(DOsat[, datetime_column],
+
+    #Merge %DO with [DO]##
+  DOsat_data[, result_column] <- as.numeric(DOsat_data[, result_column])
+  DOsat_data[, datetime_column]<-as.POSIXct(strptime(DOsat_data[, datetime_column],
                                      format = datetime_format))
-  DOsat$id<-paste(DOsat$Station_ID, DOsat$Sampled, sep=" ")
-  new_data$id<-paste(new_data$Station_ID, new_data$Sampled, sep=" ")
+  DOsat_data$id<-paste(DOsat_data[, station_id_column], DOsat_data[, datetime_column], sep=" ")
+  new_data$id<-paste(new_data[, station_id_column], new_data[, datetime_column], sep=" ")
   #Result.y = results from %DO; Result.x = [DO]
-  new_data_DOsat<-merge(new_data, DOsat[,c('id','Result')], by="id")
+  new_data_DOsat<-merge(new_data, DOsat_data[,c('id','Result')], by="id")
   new_data_DOsat<-plyr::rename(new_data_DOsat, c("Result.y" = "Result_DOsat", "Result.x" = "Result_DOconc"))
   #merge new_data with new_data_DOsat
   new_data_all<-dplyr::full_join(new_data, new_data_DOsat[,c('id', 'Result_DOsat')], by="id")
   #Add columns to identify exceedances of WQS for [DO] and %DO
-  new_data_all$Result<-as.numeric(new_data_all$Result)
-  new_data_all$Result_DOsat<-as.numeric(new_data_all$Result_DOsat)
+  new_data_all[, result_column]<-as.numeric(new_data_all[, result_column])
+  new_data_all$Result_DOsat <-as.numeric(new_data_all$Result_DOsat)
   
-  new_data_all$Cexceed<- ifelse(new_data_all$Result > new_data_all$bioc, 'Meets', 'Exceeds')
-  new_data_all$Cexceed<-as.factor(new_data_all$Cexceed)
+  new_data_all$Cexceed <- ifelse(new_data_all[, result_column] > new_data_all$bioc, 'Meets', 'Exceeds')
+  new_data_all$Cexceed <-as.factor(new_data_all$Cexceed)
   new_data_all$Sat_Exceed<-if (selectSpawning != 'No spawning') {
     ifelse(new_data_all$Result_DOsat < 95, 'Exceeds', 'Meets')
   } else if (selectUseDO == 'Cold-Water Aquatic Life') {
@@ -977,57 +974,6 @@ EvaluateDOWQS<-function(new_data,
                                            ifelse(new_data_all$Sat_Exceed == 'Meets', "Meets b/c %Sat",
                                                   as.character(new_data_all$Cexceed))))
   new_data_all$exceed <- as.factor(new_data_all$BCsat_Exceed)
-  
-  # ##IF no spawning##
-  # new_data_all$numcrit<-sdata$numcrit
-  # new_data_all$numcrit<-as.numeric(new_data_all$numcrit)
-  # new_data_all$Cexceed_nspwn<-ifelse(new_data_all$Result > new_data_all$numcrit, 'Meets', 'Exceeds')
-  # new_data_all$Cexceed_nspwn<-as.factor(new_data_all$Cexceed_nspwn)
-  # 
-  # ##filter points that meet because of the dissolved oxygen saturation##
-  # BCsat<-new_data_all%>%
-  #   filter(BCsat_Exceed == "Meets", Cexceed_nspwn == "Exceeds")
-  # 
-  # if (selectSpawning == 'No spawning'){
-  #   BCsat_spwn_exceed<-c("BCsat_spwn_exceed")
-  #   new_data_all[,BCsat_spwn_exceed] <- NA 
-  #   if (is.data.frame(BCsat) && nrow(BCsat)>0) {
-  #     BCsat$BCsat_spwn_exceed<-ifelse((length(BCsat$BCsat_Exceed) > 0), 'Meets b/c %Sat', NA)
-  #     BCsat_spwn_exceed<-c("BCsat_spwn_exceed")
-  #     new_data_all[,BCsat_spwn_exceed] <- NA 
-  #   }
-  # } else {
-  #   BCsat_spwn<-new_data_all%>%
-  #     filter(BCsat_Exceed == "Meets")
-  #   if (nrow(BCsat_spwn) > 0){
-  #     BCsat_spwn$BCsat_spwn_exceed<- ifelse(length(BCsat_spwn$BCsat_Exceed) > 0, 'Meets b/c %Sat', NA)
-  #     BCsat_spwn_exceed<-c("BCsat_spwn_exceed")
-  #     new_data_all[,BCsat_spwn_exceed] <- NA
-  #     new_data_all$BCsat_spwn_exceed <- NA
-  #     new_data_all<-rbind(new_data_all, BCsat_spwn) 
-  #   } else{
-  #     BCsat_spwn_exceed<-c("BCsat_spwn_exceed")
-  #     new_data_all[,BCsat_spwn_exceed] <- NA
-  #     new_data_all$BCsat_spwn_exceed <- NA
-  #     new_data_all<-rbind(new_data_all, BCsat_spwn)
-  #   }
-  # } 
-  # 
-  # if (selectSpawning == 'No spawning') {
-  #   new_data_all<-rbind(new_data_all, BCsat)
-  #   new_data_all$exceed<-ifelse(new_data_all$Cexceed_nspwn == 'Meets', 
-  #                               'Meets', 
-  #                               ifelse(!is.na(new_data_all$BCsat_spwn_exceed), 
-  #                                      "Meets b/c %Sat", 
-  #                                      'Exceeds'))
-  # } else {
-  #   new_data_all$exceed<-ifelse(new_data_all$Cexceed == 'Meets', 
-  #                               'Meets', 
-  #                               ifelse(!is.na(new_data_all$BCsat_spwn_exceed), 
-  #                                      "Meets b/c %Sat", 
-  #                                      'Exceeds'))
-  # }
-  # 
   
   exc<-new_data_all%>%
     filter(exceed == 'Exceeds' & BCsat_Exceed != 'Meets')
