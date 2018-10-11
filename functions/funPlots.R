@@ -1024,7 +1024,6 @@ plot.DOsat<-function(new_data,
                      parm) {
   library(ggplot2)
   
-  
   new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column],
                                           format = datetime_format))
   x.min <- min(new_data$Sampled)
@@ -1062,14 +1061,11 @@ plot.DOsat<-function(new_data,
   g
 }
 
-
-
 plot.DO<-function(new_data,
-                  df.all,
-                  selectUseDO = input$selectUseDO,
-                  sea_ken_table = SeaKen,
-                  plot_trend = input$plotTrend,
-                  selectSpawning = input$selectSpawning,
+                  selectUseDO,
+                  sea_ken_table,
+                  plot_trend,
+                  selectSpawning,
                   analyte_column = 'Analyte',
                   station_id_column = 'Station_ID',
                   station_desc_column = 'Station_Description',
@@ -1079,15 +1075,7 @@ plot.DO<-function(new_data,
                   parm = 'Dissolved Oxygen') {
   library(ggplot2)
   library(chron)
-  #dataframe that assigns WQS values to Aquatic Life Uses
-  #new_data<-DO_evaluate
-  
-  new_data <- EvaluateDOWQS(new_data = new_data,
-                            df.all = df.all,
-                            selectUseDO = selectUseDO,
-                            selectSpawning = selectSpawning,
-                            datetime_format = '%Y-%m-%d %H:%M:%S')
-  
+
   x.min <- min(as.POSIXct(new_data$Sampled)) 
   x.max <- max(new_data$Sampled) 
   x.lim <- c(x.min, x.max)
@@ -1185,8 +1173,6 @@ plot.DO<-function(new_data,
     xlab(x.lab) +
     ylab(y.lab) 
   
-  
-  #g <- g + geom_line(data = d, aes(x=x, y=y, linetype = selectUseDO))
   g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
   
   if (plot_trend & !is.na(p.value)) {
@@ -1520,8 +1506,6 @@ plot.DO<-function(new_data,
   g
 }
 
-#ggsave("g.png", height = 6, width = 6)
-
 plot.TSS<-function(new_data,
                    selectWQSTSS = input$selectWQSTSS,
                    sea_ken_table = SeaKen,
@@ -1761,9 +1745,9 @@ plot.TSS<-function(new_data,
 
 
 plot.TP<-function(new_data,
-                  selectWQSTP = input$selectWQSTP,
-                  sea_ken_table = SeaKen,
-                  plot_trend = input$plotTrend,
+                  selectWQSTP,
+                  sea_ken_table,
+                  plot_trend,
                   analyte_column = 'Analyte',
                   station_id_column = 'Station_ID',
                   station_desc_column = 'Station_Description',
