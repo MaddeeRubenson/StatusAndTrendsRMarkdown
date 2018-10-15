@@ -833,8 +833,8 @@ EvaluatepHWQS <- function(new_data,
   
   ex_df <- data.frame("Station_ID" = (unique(new_data[,station_id_column])),
                       "Station_Description" = (unique(new_data[,station_desc_column])),
-                      "Min_Date" = as.charater(min(new_data[, datetime_column])),
-                      "Max_Date" = as.charater(max(new_data[, datetime_column])),
+                      "Min_Date" = format(min(new_data[, datetime_column]), "%m/%d/%Y"),
+                      "Max_Date" = format(max(new_data[, datetime_column]), "%m/%d/%Y"),
                       "Obs" = c(nrow(new_data)),
                       "Exceedances" = c(nrow(exc)))
   
