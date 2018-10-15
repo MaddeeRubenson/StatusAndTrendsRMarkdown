@@ -845,7 +845,7 @@ if(length(entero_stns) > 0) {
   entero_plots <-list()
   
   for (i in 1:length(entero_stns)) {
-    new_data <- entero_all[entero_all$Station_ID == entero_stns[i],]
+    new_data <- df.entero[df.entero$Station_ID == entero_stns[i],]
     
     trend_logic <- ifelse(grepl("Not Significant", 
                                 results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
@@ -1158,8 +1158,8 @@ if(length(pH_stns) > 0) {
     tmp_df <- remove.dups(tmp_df_MRL, max)
 
     pH_evaluate <- EvaluatepHWQS(new_data = tmp_df,
-                                 ph_crit_min = unique(pH_evaluate$pH_low),
-                                 ph_crit_max = unique(pH_evaluate$pH_high),
+                                 ph_crit_min = unique(tmp_df$pH_low),
+                                 ph_crit_max = unique(tmp_df$pH_high),
                                  analyte_column = 'Analyte',
                                  station_id_column = 'Station_ID',
                                  station_desc_column = 'Station_Description',
@@ -1184,7 +1184,7 @@ if(length(pH_stns) > 0) {
       
       trend_logic <- FALSE }
     
-    b <- plot.pH(new_data = pH_evaluate,
+    b <- plot.ph(new_data = pH_evaluate,
                  sea_ken_table = results_seaken,
                  plot_trend = trend_logic,
                  analyte_column = 'Analyte',
