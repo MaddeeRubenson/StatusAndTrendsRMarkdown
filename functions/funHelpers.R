@@ -812,29 +812,34 @@ EvaluateTempWQS <- function(sdadm_df,
   return(sdadm_df)
 }
 
-EvaluatepHWQS <- function(new_data) {
-    
-    ph_crit_min <- Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'pH_low']
-    ph_crit_max <- Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'pH_high']
-    crit_selected <- Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'pH_benuse']
-    
-    #OWRD_basin <- strsplit(selectpHCrit, " - ")[[1]][1]
-    #crit_selected <- strsplit(selectpHCrit, " - ")[[1]][2]
-    # ph_crit_min <- unique(ph_crit[ph_crit$ph_standard == crit_selected & 
-    #                                 ph_crit$OWRD_basin == OWRD_basin & 
-    #                                 (ph_crit$plan_name == PlanName | ph_crit$HUC8 == 
-    #                                    strsplit(PlanName, split = " - ")[[1]][1]), 
-    #                               'ph_low'])
-    # ph_crit_max <- unique(ph_crit[ph_crit$ph_standard == crit_selected &
-    #                                 ph_crit$OWRD_basin == OWRD_basin & 
-    #                                 (ph_crit$plan_name == PlanName | ph_crit$HUC8 == 
-    #                                    strsplit(PlanName, split = " - ")[[1]][1]), 
-    #                               'ph_high'])
-    new_data$exceed <- ifelse(new_data[, 'Result'] < ph_crit_min |
-                                new_data[, 'Result'] > ph_crit_max, 
-                              1, 0)
-    new_data$Year <- as.character(chron::years(new_data$Sampled))
-    return(new_data)
+EvaluatepHWQS <- function(new_data,
+                          ph_crit_min,
+                          ph_crit_max,
+                          analyte_column = 'Analyte',
+                          station_id_column = 'Station_ID',
+                          station_desc_column = 'Station_Description',
+                          datetime_column = 'Sampled',
+                          result_column = 'Result',
+                          datetime_format = '%Y-%m-%d %H:%M:%S') {
+  
+  new_data[, datetime_column] <- as.POSIXct(new_data[, datetime_column],
+                                            format = datetime_format)
+  
+  new_data$exceed <- ifelse((new_data[, result_column] < ph_crit_min | new_data[, result_column] > ph_crit_max), 
+                            1, 0)
+
+  exc <- new_data %>% 
+    filter(exceed == 1)
+  
+  ex_df <- data.frame("Station_ID" = (unique(new_data[,station_id_column])),
+                      "Station_Description" = (unique(new_data[,station_desc_column])),
+                      "Min_Date" = as.charater(min(new_data[, datetime_column])),
+                      "Max_Date" = as.charater(max(new_data[, datetime_column])),
+                      "Obs" = c(nrow(new_data)),
+                      "Exceedances" = c(nrow(exc)))
+  
+  attr(new_data, "ex_df") <- ex_df
+  return(new_data)
   
 }
 
@@ -891,11 +896,11 @@ EvaluateDOWQS<-function(new_data,
                         datetime_format = '%Y-%m-%d %H:%M:%S'){
   
   library(dplyr)
- 
+  
   new_data[, result_column] <- as.numeric(new_data[, result_column])
   new_data[, datetime_column] <- as.POSIXct(new_data[, datetime_column],
-                                          format = datetime_format)
-  
+                                            format = datetime_format)
+
   new_data$year<-as.numeric(format(new_data[, datetime_column], format="%Y"))
   
   
@@ -942,11 +947,11 @@ EvaluateDOWQS<-function(new_data,
            11, new_data$bioc),
     ifelse(new_data$sstr <= new_data$cdate & new_data$send >= new_data$cdate,
            11, new_data$bioc)))
-
-    #Merge %DO with [DO]##
+  
+  #Merge %DO with [DO]##
   DOsat_data[, result_column] <- as.numeric(DOsat_data[, result_column])
   DOsat_data[, datetime_column]<-as.POSIXct(strptime(DOsat_data[, datetime_column],
-                                     format = datetime_format))
+                                                     format = datetime_format))
   DOsat_data$id<-paste(DOsat_data[, station_id_column], DOsat_data[, datetime_column], sep=" ")
   new_data$id<-paste(new_data[, station_id_column], new_data[, datetime_column], sep=" ")
   #Result.y = results from %DO; Result.x = [DO]
@@ -2028,7 +2033,7 @@ parm_summary <- function(stns,
   #-- Dissolved Oxygen --------------------------------------------------------------------------
   
   if(!is.null(DO)){
-    
+
     #filter out stations that meet status and stations that meet trend
     DO_status_stns <- status %>% filter(Analyte == 'Dissolved Oxygen')
     DO_status_stns  <- unique(DO_status_stns$Station_ID)

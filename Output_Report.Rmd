@@ -738,8 +738,7 @@ ecoli_stns <- unique(append(ecoli_trend, ecoli_stat))
 
 if(length(ecoli_stns) > 0) {
   
-  ecoli_all <- df.all[df.all$Analyte == 'E. Coli',]
-  ecoli <- df.all[df.all$Analyte == 'E. Coli',]
+  df.ecoli <- df.all[df.all$Analyte == 'E. Coli',]
   
   ecoli_list<- list()
   exc_list<- list()
@@ -747,7 +746,7 @@ if(length(ecoli_stns) > 0) {
   results_seaken <-SeaKen %>% filter(analyte == 'E. Coli')
   
   for(j in 1: length(ecoli_stns)) {
-    new_data <- ecoli[ecoli$Station_ID == ecoli_stns[j],]
+    new_data <- df.ecoli[df.ecoli$Station_ID == ecoli_stns[j],]
     tmp_df <- new_data
     tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
     tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
@@ -816,14 +815,13 @@ entero_stns <- unique(append(entero_trend, entero_stat))
 
 if(length(entero_stns) > 0) {
   
-  entero_all <- df.all[df.all$Analyte == 'Enterococcus',]
-  entero <- df.all[df.all$Analyte == 'Enterococcus',]
+  df.entero <- df.all[df.all$Analyte == 'Enterococcus',]
   
   entero_list<- list()
   exc_list<- list()
   
   for(j in 1: length(entero_stns)) {
-    new_data <- entero[entero$Station_ID == entero_stns[j],]
+    new_data <- df.entero[df.entero$Station_ID == entero_stns[j],]
     tmp_df <- new_data
     tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
     tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
@@ -846,7 +844,7 @@ if(length(entero_stns) > 0) {
   entero_plots <-list()
   
   for (i in 1:length(entero_stns)) {
-    mydata_sub <- entero_all[entero_all$Station_ID == entero_stns[i],]
+    new_data <- entero_all[entero_all$Station_ID == entero_stns[i],]
     
     trend_logic <- ifelse(grepl("Not Significant", 
                                 results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
@@ -856,11 +854,11 @@ if(length(entero_stns) > 0) {
                                  FALSE, TRUE))
     
     
-    b <- plot.bacteria(new_data=mydata_sub,
+    b <- plot.bacteria(new_data=new_data,
                        sea_ken_table=results_seaken ,
                        plot_trend = trend_logic,
                        plot_log = FALSE,
-                       parm = unique(mydata_sub$Analyte))
+                       parm = unique(new_data$Analyte))
     
     entero_plots[[i]] <- b
     
@@ -909,8 +907,7 @@ if(!is.null(tp_stn)){
 
 if(length(tp_stn) > 0) {
   
-  TP_all <- df.all[df.all$Analyte == 'Total Phosphorus',]
-  TP <- df.all[df.all$Analyte == 'Total Phosphorus',]
+  df.tp <- df.all[df.all$Analyte == 'Total Phosphorus',]
   results_seaken <-SeaKen %>% filter(analyte == 'Total Phosphorus')
   
   TP_list<- list()
@@ -920,7 +917,7 @@ if(length(tp_stn) > 0) {
   
   for(j in 1: length(tp_stn)) {
     
-    new_data <- TP[TP$Station_ID == tp_stn[j],]
+    new_data <- df.tp[df.tp$Station_ID == tp_stn[j],]
     
     tmp_df <- new_data
     tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
@@ -1023,8 +1020,7 @@ if(!is.null(tss_stn)) {
 
 if(length(tss_stn) > 0){
   
-  TSS_all <- df.all[df.all$Analyte == 'Total Suspended Solids',]
-  #TSS <- df.all[df.all$Analyte == 'Total Suspended Solids',]
+  df.tss <- df.all[df.all$Analyte == 'Total Suspended Solids',]
   results_seaken <- SeaKen %>% filter(analyte == 'Total Suspended Solids')
   
   TSS_list<- list()
@@ -1032,7 +1028,7 @@ if(length(tss_stn) > 0){
   tss_plots<-list()
   
   for(j in 1: length(tss_stn)) {
-    new_data <- TSS_all[TSS_all$Station_ID == tss_stn[j],]
+    new_data <- df.tss[df.tss$Station_ID == tss_stn[j],]
     
     tmp_df <- new_data
     tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
@@ -1116,140 +1112,115 @@ tss_exc <- exc
 ```{r pH, fig.height=6, fig.width=7, results='asis'}
 
 exc <- NULL
-pH_stn_table <- NULL
+pH_stns <- NULL
+pH <- NULL
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
-  pH_stn<-trend %>%
+  pH_trend <- trend %>%
     dplyr::filter(Analyte == "pH")
-  pH_stn_table<-c(unique(pH_stn$Station_ID))
+  pH_trend <- c(unique(pH_trend$Station_ID))
 }
+
+pH_stat <- status %>%
+  dplyr::filter(Analyte == "pH")
+pH_stat <- c(unique(pH_stat$Station_ID))
+
+pH_stns <- unique(append(pH_trend, pH_stat))
+
+if(length(pH_stns) > 0) {
   
-  p_stat<-status %>%
-    dplyr::filter(Analyte == "pH")
-  p_stat <- c(unique(p_stat$Station_ID))
+  df.pH <- df.all[df.all$Analyte == 'pH',]
+  results_seaken <- SeaKen %>% filter(analyte == 'pH')
+
+  in_bentable <- (Ben_use_LU[Ben_use_LU$Station_ID %in% pH_stns, c('Station_ID', 'pH_benuse', 'pH_low', 'pH_high')])
   
-  if(!is.null(pH_stn_table)){
-  pH_stn_table <- unique(append(pH_stn_table, p_stat))
-  }else{
-    pH_stn_table <- p_stat
-  }
-  if(length(pH_stn_table) > 0) {
-    
-  pH_all <- df.all[df.all$Analyte == 'pH',]
-  pH <- df.all[df.all$Analyte == 'pH',]
+  df.pH <- merge(df.pH,in_bentable, by.x = "Station_ID", by.y = "Station_ID")
   
-  in_bentable<-(Ben_use_LU[Ben_use_LU$Station_ID %in% pH_stn_table, 'pH_benuse'])
-  
-  dta <- merge(pH, Ben_use_LU, by.x = "Station_ID", by.y = "Station_ID")
-  pH_stn <- dta %>% filter(!is.na(pH_benuse))
-  pH_stn <- c(unique(pH_stn$Station_ID))
-  
-  ph_exc <- NULL
-  
-  if(any(!is.na(in_bentable))) {
-    
-    pH_list<- list()
-    pH_exclist<- list()
-    for(j in 1: length(pH_stn)) {
-      
-      new_data <- pH[pH$Station_ID == pH_stn[j],]
-      
-      
-      tmp_df <- new_data
-      tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-      tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-      sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-      tmp_df_MRL <- tmp_df[sub,]
-      tmp_df <- remove.dups(tmp_df_MRL, max)
-      
-      pH_evaluate <- EvaluatepHWQS(new_data = tmp_df)
-      
-      pH_evaluate$Year <- as.POSIXct(strptime(pH_evaluate$Sampled, format = "%Y"))
-      
-      pH_eval <- ddply(pH_evaluate, .(Station_ID, Station_Description), #, Month), 
-                       summarize, min_date = min(Year), 
-                       max_date = max(Year),
-                       Obs = length(exceed), 
-                       Exceedances = sum(exceed)) 
-      
-      # pH_eval <- attr(pH_evaluate, 'ex_df')
-      pH_list[[j]] <- pH_evaluate
-      pH_exclist[[j]] <- pH_eval
-    }
-    
-    pH<-rbind.fill(pH_list[])
-    ph_exc<-rbind.fill(pH_exclist[])
-    ph_exc$perc_exc <- (ph_exc$Exceedances / ph_exc$Obs) * 100
-    colnames(ph_exc) <- c("Station ID", "Station Description", "Min Date", "Max Date", "# Obs", "# Exceed", "% Exceed")
-    
-  }
-  #exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
-  
-  results_seaken<-SeaKen %>% filter(analyte == 'pH')
-  
-  if(length(pH_stn) > 0) {
-    
-    pH_plots<-list()
-    for (i in 1:length(pH_stn)) {
-      mydata_sub <- pH_all[pH_all$Station_ID == pH_stn[i],]
-      
-      
-      trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == pH_stn[i],'signif']), FALSE,
-                          ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == pH_stn[i],'signif']), FALSE, TRUE))
-      
-      ph_crit_min <- as.numeric(Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'pH_low'])
-      ph_crit_max <- as.numeric(Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'pH_high'])
-      crit_selected <- Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'pH_benuse']
-      plan_area <- Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'AgArea']
-      
-      ########### continuous stations that should not have trend lines
-      contstns <- c('USGS-14207200', 'USGS-14202980', 'USGS-423026123063401', "USGS-453040123065201")
-      if(pH_stn[i] %in% contstns) {
-        trend_logic <- FALSE
-      }
-      
-      b <- plot.ph(new_data = mydata_sub, 
-                   sea_ken_table=SeaKen,
-                   analyte_column = 'Analyte',
-                   result_column = 'Result',
-                   station_id_column = 'Station_ID',
-                   station_desc_column = 'Station_Description',
-                   datetime_column = 'Sampled', 
-                   datetime_format = '%Y-%m-%d %H:%M:%S', 
-                   plot_trend = trend_logic, 
-                   ph_crit_min = ph_crit_min, 
-                   ph_crit_max = ph_crit_max)
-      
-      
-      pH_plots[[i]]<-b
-      
-      print(pH_plots[[i]])
-      
-      cat(figs(name = paste0('pH_', pH_stn[i]), caption = paste0('Station ', pH_stn[i], ' pH water quality status and/or trends.')))
-      
-    } 
-    
-  }
-  pH_table <- as.data.frame(pH_stn_table)
-  if(length(pH_stn > 0)){
-    pH_table <- pH_table %>% filter(!(pH_stn_table %in% pH_stn))
-  }
-  colnames(pH_table) <- c("Station ID")
-  
-  if(nrow(pH_table)> 0) {
+  if(any(is.na(df.pH$pH_benuse) | is.na(df.pH$pH_low) | is.na(df.pH$pH_high))) {
     print("In order to assess against water quality standard, need to add pH beneficial uses to stations.csv for stations:")
-    print(pH_table)
-  }
-  
-  colnames(ph_exc) <- c("Station ID",	"Station Description",	"Min Date",	"Max Date",	"Observations", "Exceedances", "Percent Exceedance")
-  
-  if(!is.null(ph_exc)) {
-    knitr::kable(ph_exc, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "phExcTable", caption = "pH status."))
+      print(unique(df.pH[(is.na(df.pH$pH_benuse) | is.na(df.pH$pH_low) | is.na(df.pH$pH_high)),c("Station_ID")]))
+    break
   }
 
+  pH_list<- list()
+  pH_exclist<- list()
+  pH_plots <-list()
+
+  for(j in 1: length(pH_stns)) {
+    new_data <- df.pH[df.pH$Station_ID == pH_stns[j],]
+    
+    tmp_df <- new_data
+    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+    tmp_df_MRL <- tmp_df[sub,]
+    tmp_df <- remove.dups(tmp_df_MRL, max)
+
+    pH_evaluate <- EvaluatepHWQS(new_data = tmp_df,
+                                 ph_crit_min = unique(pH_evaluate$pH_low),
+                                 ph_crit_max = unique(pH_evaluate$pH_high),
+                                 analyte_column = 'Analyte',
+                                 station_id_column = 'Station_ID',
+                                 station_desc_column = 'Station_Description',
+                                 datetime_column = 'Sampled',
+                                 result_column = 'Result',
+                                 datetime_format = '%Y-%m-%d %H:%M:%S')
+
+    pH_eval <- attr(pH_evaluate, 'ex_df')
+    pH_list[[j]] <- pH_evaluate
+    pH_exclist[[j]] <- pH_eval
+    
+    trend_logic <-ifelse(grepl("Not Significant", 
+                                 results_seaken[results_seaken$Station_ID == pH_stns[j],'signif']), 
+                           FALSE,
+                           ifelse(grepl("Need at least 8 years", 
+                                        results_seaken[results_seaken$Station_ID == pH_stns[j],'signif']),
+                                  FALSE,
+                                  TRUE))
+    
+    # Tualatin stations that are not supposed to have trend
+    if(pH_stns[j] %in% c('USGS-14202980', 'USGS-14206694', 'USGS-453004122510301', 'USGS-453030122560101', 'USGS-453040123065201')) {
+      
+      trend_logic <- FALSE }
+    
+    b <- plot.pH(new_data = pH_evaluate,
+                 sea_ken_table = results_seaken,
+                 plot_trend = trend_logic,
+                 analyte_column = 'Analyte',
+                 station_id_column = 'Station_ID',
+                 station_desc_column = 'Station_Description',
+                 datetime_column = 'Sampled',
+                 result_column = 'Result',
+                 datetime_format = '%Y-%m-%d %H:%M:%S',
+                 ph_crit_min = unique(pH_evaluate$pH_low), 
+                 ph_crit_max = unique(pH_evaluate$pH_high))
+    
+    pH_plots[[j]]<-b
+    
+    print(pH_plots[[j]])
+    
+    cat(figs(name = paste0('pH_', pH_stns[j]), 
+             caption = paste0('Station ', pH_stns[j],
+                              ' pH water quality status and/or trends.')))
+    
+  }
+  
+  pH <-rbind.fill(pH_list[])
+  exc <-rbind.fill(pH_exclist[])
+  exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
+  
+    
+  colnames(exc) <- c("Station ID", "Station Description", "Min Date", "Max Date", "Observations", "Exceedances", "Percent Exceedance")
+    
+  knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE,
+               caption = tbls(name = "pHExcTable", caption = "pH status."))
+  
 }
+
+pH_exc <- exc
 
 ```
+
 
 ## Temperature
 
@@ -1278,8 +1249,7 @@ if(!is.null(temp_stn)){
 
 if(length(temp_stn) > 0) {
   
-  #temp_all <- df.all[df.all$Analyte == 'Temperature',]
-  temp <- df.all[df.all$Analyte == 'Temperature',]
+  df.temp <- df.all[df.all$Analyte == 'Temperature',]
   results_seaken <-SeaKen %>% filter(analyte == 'Temperature')
   
   temp_list<- list()
@@ -1288,7 +1258,7 @@ if(length(temp_stn) > 0) {
   
   for(j in 1: length(temp_stn)) {
     
-    new_data <- temp[temp$Station_ID == temp_stn[j],]
+    new_data <- df.temp[df.temp$Station_ID == temp_stn[j],]
     
     tmp_df <- new_data
     #tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
@@ -1387,16 +1357,16 @@ DO_stns <- unique(append(DO_trend, DO_stat))
 
 if(length(DO_stns) > 0) {
   
-  DO_all <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
+  df.DO <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
   results_seaken <- SeaKen %>% filter(analyte == 'Dissolved Oxygen')
 
   in_bentable <- (Ben_use_LU[Ben_use_LU$Station_ID %in% DO_stns, c('Station_ID', 'DO_use', 'spwn_time')])
   
-  DO_all <- merge(DO_all,in_bentable, by.x = "Station_ID", by.y = "Station_ID")
+  df.DO <- merge(df.DO,in_bentable, by.x = "Station_ID", by.y = "Station_ID")
   
-  if(any(is.na(DO_all$DO_use) | is.na(DO_all$spwn_time))) {
+  if(any(is.na(df.DO$DO_use) | is.na(df.DO$spwn_time))) {
     print("In order to assess against water quality standard, need to add Dissolved Oxygen beneficial uses and spawning time periods to stations.csv for stations:")
-      print(unique(DO_all[(is.na(DO_all$DO_use) | is.na(DO_all$spwn_time)),c("Station_ID")]))
+      print(unique(df.DO[(is.na(df.DO$DO_use) | is.na(df.DO$spwn_time)),c("Station_ID")]))
     break
   }
 
@@ -1405,7 +1375,8 @@ if(length(DO_stns) > 0) {
   DO_plots <-list()
 
   for(j in 1: length(DO_stns)) {
-    new_data <- DO_all[DO_all$Station_ID == DO_stns[j],]
+
+    new_data <- df.DO[df.DO$Station_ID == DO_stns[j],]
     
     DO_sat_data <-df.all %>% 
       dplyr::filter(Analyte == 'Dissolved oxygen saturation') %>%
@@ -1597,6 +1568,7 @@ colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
                                       "Temperature Status", "Temperature Trend",
                                       "TP Trend", 
                                       "TSS Trend")
+
 
 save(stns_param_summary, file=paste0(Rdata_dir,"/", stns_param_summary_file))
 
