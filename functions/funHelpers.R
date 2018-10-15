@@ -1844,6 +1844,11 @@ parm_summary <- function(stns,
                          status, 
                          trend) {
   
+  stns0 <- stns
+  stns <- stns[,c(1:4)]
+  entero <- NULL
+  status.years <- status_years
+
   
   #Add columns to stns dataframe
   stns$DO_S <- '--'
@@ -1876,7 +1881,7 @@ parm_summary <- function(stns,
     e_status <- ecoli %>% filter(Station_ID %in% e_status_stns) %>% filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria') & any(SeaKen[SeaKen$analyte == 'E. Coli',]$signif != 'Need at least 8 years'))  {
-      e_trend_stns <- SeaKen %>% filter(analyte == 'E. Coli', signif != 'Need at least 8 years')
+      e_trend_stns <- SeaKen %>% filter(analyte == 'E. Coli', signif != 'Need at least 8 years', signif != 'Insufficient data for trend analysis')
       e_trend_stns  <- unique(e_trend_stns$Station_ID)
     } else {
       e_trend_stns <- NULL
@@ -1933,7 +1938,7 @@ parm_summary <- function(stns,
     ent_status <- entero %>% filter(Station_ID %in% ent_status_stns) %>% filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      ent_trend_stns <- trend %>% filter(Analyte == 'Enterococcus')
+      ent_trend_stns <- SeaKen %>% filter(analyte == 'Enterococcus', signif != 'Need at least 8 years', signif != 'Insufficient data for trend analysis')
       ent_trend_stns  <- unique(ent_trend_stns$Station_ID)
     } else {
       ent_trend_stns <- NULL
@@ -1989,7 +1994,7 @@ parm_summary <- function(stns,
     pH_status <- pH %>% filter(Station_ID %in% pH_status_stns) %>% filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      pH_trend_stns <- trend %>% filter(Analyte == 'pH')
+      pH_trend_stns <- SeaKen %>% filter(analyte == 'pH', signif != 'Need at least 8 years', signif != 'Insufficient data for trend analysis')
       pH_trend_stns  <- unique(pH_trend_stns$Station_ID)
     }else{
       pH_trend_stns <- NULL
@@ -2040,7 +2045,7 @@ parm_summary <- function(stns,
     DO_status <- DO %>% filter(Station_ID %in% DO_status_stns) %>% filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      DO_trend_stns <- trend %>% filter(Analyte == 'Dissolved Oxygen')
+      DO_trend_stns <- SeaKen %>% filter(analyte == 'Dissolved Oxygen', signif != 'Need at least 8 years', signif != 'Insufficient data for trend analysis')
       DO_trend_stns  <- unique(DO_trend_stns$Station_ID)
     } else {
       DO_trend_stns <- NULL
@@ -2092,7 +2097,8 @@ parm_summary <- function(stns,
     temp_status_stns  <- unique(filter(status, Analyte == "Temperature")$Station_ID)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      temp_trend_stns <- unique(filter(SeaKen, analyte == "Temperature")$Station_ID)
+      temp_trend_stns <- SeaKen %>% filter(analyte == 'Temperature', signif != 'Need at least 8 years', signif != 'Insufficient data for trend analysis')
+      temp_trend_stns  <- unique(DO_trend_stns$Station_ID)
     } else {
       temp_trend_stns <- NULL
     }
@@ -2150,7 +2156,7 @@ parm_summary <- function(stns,
     tp_status <- tp %>% filter(Station_ID %in% tp_status_stns) %>% filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria') & any(SeaKen[SeaKen$analyte == 'Total Phosphorus',]$signif != 'Need at least 8 years'))  {
-      tp_trend_stns <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Need at least 8 years')
+      tp_trend_stns <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Need at least 8 years', signif != 'Insufficient data for trend analysis')
       tp_trend_stns  <- unique(tp_trend_stns$Station_ID)
     }else{
       tp_trend_stns <- NULL
@@ -2206,7 +2212,7 @@ parm_summary <- function(stns,
     tss_status <- tss %>% filter(Station_ID %in% tss_status_stns) %>% filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria') & any(SeaKen[SeaKen$analyte == 'Total Suspended Solids',]$signif != 'Need at least 8 years'))  {
-      tss_trend_stns <- SeaKen %>% filter(analyte == 'Total Suspended Solids', signif != 'Need at least 8 years')
+      tss_trend_stns <- SeaKen %>% filter(analyte == 'Total Suspended Solids', signif != 'Need at least 8 years', signif != 'Insufficient data for trend analysis')
       tss_trend_stns  <- unique(tss_trend_stns$Station_ID)
     }else{
       tss_trend_stns <- NULL

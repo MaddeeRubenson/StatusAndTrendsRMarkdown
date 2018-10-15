@@ -17,7 +17,7 @@ run_seaKen <- function (inputData) {
       # specifiy current Station_ID
       tmp.one.station <- sea_ken_int$Station_ID[ii]
       tmp.data.raw <- inputData[inputData$Station_ID == tmp.one.station & 
-                               inputData$Analyte == parm,]
+                                  inputData$Analyte == parm,]
       sea_ken_int$analyte[ii] <- parm
       sea_ken_int$N[ii] <- length(tmp.data.raw$Result)
       if (!nrow(tmp.data.raw) > 1 | all(is.na(tmp.data.raw$Result))) {
@@ -42,7 +42,7 @@ run_seaKen <- function (inputData) {
                        time.format = "%Y-%m-%d %H:%M:%S")
       # Create time series from water quality data
       tmp.ts <- suppressWarnings(tsMake(tmp.wq, focus = parm, qprob = 0.05, layer = c(0, 5))) #changed to median value per Helsel and Hirsch 2002; 11-14-2017
-      if (length(unique(year(tmp.data$date))) < 8) {
+      if (length(unique(year(tmp.data$date))) >= 8) {
         sea_ken_int$signif[ii] <- "Years<8"
       }
       if (!length(tmp.ts) > 2 |
@@ -50,7 +50,12 @@ run_seaKen <- function (inputData) {
           !any(1:frequency(tmp.ts) %in% cycle(tmp.ts)) |
           frequency(tmp.ts) <= 1
           #| !all(1:12 %in% cycle(tmp.ts))
-          ) next
+      ) {
+        sea_ken_int$signif[ii] <- "Insufficient Data"
+        next
+        }
+      
+      
       tmp.result <- seaKenPlus(tmp.ts)
       sea_ken_int$pvalue[ii] <- tmp.result$p.value
       sea_ken_int$slope[ii] <- tmp.result$sen.slope
@@ -66,17 +71,19 @@ run_seaKen <- function (inputData) {
     SeaKen$pvalue <- as.numeric(SeaKen$pvalue)
   }
   
-  SeaKen$signif <- ifelse(SeaKen$signif=="Years<8",
-                          "Need at least 8 years",
-                          ifelse(SeaKen$pvalue<=0.01, 
-                                 "99% Significance Level",
-                                 ifelse(SeaKen$pvalue<=0.05, 
-                                        "95% Significance Level",
-                                        ifelse(SeaKen$pvalue<=0.1, 
-                                               "90% Significance Level",
-                                               ifelse(SeaKen$pvalue<=0.2, 
-                                                      "80% Significance Level",
-                                                      "Not Significant")))))
+  SeaKen$signif <- ifelse(SeaKen$signif=="Insufficient Data",
+                          "Insufficient data for trend analysis",
+                          ifelse(SeaKen$signif=="Years<8",
+                                 "Need at least 8 years",
+                                 ifelse(SeaKen$pvalue<=0.01, 
+                                        "99% Significance Level",
+                                        ifelse(SeaKen$pvalue<=0.05, 
+                                               "95% Significance Level",
+                                               ifelse(SeaKen$pvalue<=0.1, 
+                                                      "90% Significance Level",
+                                                      ifelse(SeaKen$pvalue<=0.2, 
+                                                             "80% Significance Level",
+                                                             "Not Significant"))))))
   
   return(SeaKen)
 }
