@@ -11,13 +11,11 @@ plot.ph <- function(new_data,
                     ph_crit_max = NULL)
 {
   library(ggplot2)
-  # new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column], 
-  #                                         format = datetime_format))  
-  new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column], 
-                                          format = '%Y-%m-%d'))  
+ 
+  new_data[, datetime_column] <- as.POSIXct(strptime(new_data[, datetime_column], format = datetime_format))  
   
-  x.min <- min(new_data$Sampled)
-  x.max <- max(new_data$Sampled)
+  x.min <- min(new_data[, datetime_column])
+  x.max <- max(new_data[, datetime_column])
   x.lim <- c(x.min, x.max) 
   y.min <- ifelse(floor(min(new_data[, result_column]))< 4,
                   floor(min(new_data[, result_column])), 4) 
@@ -67,27 +65,9 @@ plot.ph <- function(new_data,
                               y = c(SK.min, SK.max),
                               variable = rep('Trend line', 2))
   
-  #Evaluate against standard
-  new_data <- EvaluatepHWQS(new_data)
   new_data$exceed <- factor(new_data$exceed, levels = c(0, 1), 
                             labels = c('Meets', 'Exceeds'))
-  
-  #Extract basin specific ph criteria
-  # OWRD_basin <- strsplit(plot_criteria, " - ")[[1]][1]
-  # crit_selected <- strsplit(plot_criteria, " - ")[[1]][2]
-  # ph_crit_min <- ph_crit[ph_crit$ph_standard == crit_selected &
-  #                          ph_crit$OWRD_basin == OWRD_basin &
-  #                          (ph_crit$plan_name == plan_area | 
-  #                             ph_crit$HUC8 == strsplit(plan_area, 
-  #                                                      split = " - ")[[1]][1]), 
-  #                        'ph_low']
-  # ph_crit_max <- ph_crit[ph_crit$ph_standard == crit_selected &
-  #                          ph_crit$OWRD_basin == OWRD_basin &
-  #                          (ph_crit$plan_name == plan_area | 
-  #                             ph_crit$HUC8 == strsplit(plan_area, 
-  #                                                      split = " - ")[[1]][1]), 
-  #                        'ph_high']
-  
+
   df_ph_crit_max <- data.frame(x = c(x.min + 10000, x.max - 10000),
                                y = rep(ph_crit_max, 2),
                                variable = rep('pH Criteria', 2))
@@ -162,12 +142,12 @@ plot.Temperature <- function(new_data,
                              plot_trend = FALSE) {
   library(ggplot2)
   
-  new_data$Sampled <- as.POSIXct(strptime(new_data[,datetime_column], 
+  new_data[, datetime_column] <- as.POSIXct(strptime(new_data[,datetime_column], 
                                           format = datetime_format))  
   new_data[!is.na(new_data$Result) & is.na(new_data$exceed), 'exceed'] <- FALSE
   new_data$exceed <- factor(new_data$exceed, levels = c(TRUE, FALSE), labels = c('Exceeds', 'Meets'))
-  x.min <- min(new_data$Sampled) 
-  x.max <- max(new_data$Sampled) 
+  x.min <- min(new_data[, datetime_column]) 
+  x.max <- max(new_data[, datetime_column]) 
   x.lim <- c(x.min, x.max) 
   y.min <- if(floor(min(new_data$Result, na.rm = TRUE))<=10 ){ 
     floor(min(new_data$Result, na.rm = TRUE)) 
@@ -570,8 +550,8 @@ plot.bacteria <- function(new_data,
                           plot_trend = FALSE,
                           plot_log = FALSE,
                           parm) {
-  x.min <- min(new_data$Sampled)
-  x.max <- max(new_data$Sampled)
+  x.min <- min(new_data[, datetime_column])
+  x.max <- max(new_data[, datetime_column])
   x.lim <- c(x.min, x.max) 
   y.min <- if(floor(min(new_data[,result_column]))<=0 & plot_log){
     1 
@@ -1024,10 +1004,10 @@ plot.DOsat<-function(new_data,
                      parm) {
   library(ggplot2)
   
-  new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column],
+  new_data[, datetime_column] <- as.POSIXct(strptime(new_data[, datetime_column],
                                           format = datetime_format))
-  x.min <- min(new_data$Sampled)
-  x.max <- max(new_data$Sampled)
+  x.min <- min(new_data[, datetime_column])
+  x.max <- max(new_data[, datetime_column])
   x.lim <- c(x.min, x.max)
   y.min <- floor(min(new_data[, result_column]))
   y.max <- ceiling(max(new_data[, result_column]))
@@ -1076,8 +1056,8 @@ plot.DO<-function(new_data,
   library(ggplot2)
   library(chron)
   
-  x.min <- min(as.POSIXct(new_data$Sampled)) 
-  x.max <- max(new_data$Sampled) 
+  x.min <- min(as.POSIXct(new_data[, datetime_column])) 
+  x.max <- max(new_data[, datetime_column]) 
   x.lim <- c(x.min, x.max)
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
                   min(new_data[, station_id_column]))
@@ -1242,9 +1222,9 @@ plot.DO<-function(new_data,
       }
     } else {
       ####DRAW WQS SPAWNING LINES
-      new_data <- new_data[order(new_data$Sampled),]
-      data_years <- unique(lubridate::year(new_data$Sampled))
-      whole_range <- seq(min(new_data$Sampled), max(new_data$Sampled), by = 'day')
+      new_data <- new_data[order(new_data[, datetime_column]),]
+      data_years <- unique(lubridate::year(new_data[, datetime_column]))
+      whole_range <- seq(min(new_data[, datetime_column]), max(new_data[, datetime_column]), by = 'day')
       wr <- data.frame('Sampled' = whole_range, bioc = NA)
       spd_list <- strsplit(selectSpawning, split = "-")
       
@@ -1404,9 +1384,9 @@ plot.DO<-function(new_data,
       }      
     } else {
       ####DRAW WQS SPAWNING LINES
-      new_data <- new_data[order(new_data$Sampled),]
-      data_years <- unique(lubridate::year(new_data$Sampled))
-      whole_range <- seq(min(new_data$Sampled), max(new_data$Sampled), by = 'day')
+      new_data <- new_data[order(new_data[, datetime_column]),]
+      data_years <- unique(lubridate::year(new_data[, datetime_column]))
+      whole_range <- seq(min(new_data[, datetime_column]), max(new_data[, datetime_column]), by = 'day')
       wr <- data.frame('Sampled' = whole_range, bioc = NA)
       spd_list <- strsplit(selectSpawning, split = "-")
       
@@ -1534,8 +1514,8 @@ plot.TSS<-function(new_data,
   #result_column <- 'Result'
   #datetime_format <- '%Y-%m-%d %H:%M:%S'
 
-  x.min <- min(new_data$Sampled) 
-  x.max <- max(new_data$Sampled) 
+  x.min <- min(new_data[, datetime_column]) 
+  x.max <- max(new_data[, datetime_column]) 
   x.lim <- c(x.min, x.max)
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
                   min(new_data[, station_id_column]))
@@ -1771,8 +1751,8 @@ plot.TP<-function(new_data,
   #result_column <- 'Result'
   #datetime_format <- '%Y-%m-%d %H:%M:%S'
   
-  x.min <- min(new_data$Sampled)
-  x.max <- max(new_data$Sampled) 
+  x.min <- min(new_data[, datetime_column])
+  x.max <- max(new_data[, datetime_column]) 
   x.lim <- c(x.min, x.max)
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
                   min(new_data[, station_id_column]))
