@@ -60,6 +60,7 @@ landuse_file <- paste0(gsub(" ", "_", agwqma), "_landuse.Rdata")
 stns_file <- paste0(gsub(" ", "_", agwqma), "_stns.Rdata")
 status_file <- paste0(gsub(" ", "_", agwqma), "_status.Rdata")
 trend_file <- paste0(gsub(" ", "_", agwqma), "_trend.Rdata")
+stns_param_summary_file <- paste0(gsub(" ", "_", agwqma), "_station_param_summary.Rdata")
 
 station_summary_map1_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map1.png")
 station_summary_map2_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map2.png")
@@ -130,7 +131,7 @@ knitr::kable(landuse, digits = 0, padding = 2, caption = tbls(name = "landUse", 
 
 ## Results Summary
 
-Within the `r input$select` Agricultural Water Quality Management Area, data from `r length(unique(stns$Station_ID))` monitoring stations were sufficient to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations. 
+Within the `r agwqma` Agricultural Water Quality Management Area, data from `r length(unique(stns$Station_ID))` monitoring stations were sufficient to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations. 
 
 ```{r results-summary}
 
@@ -154,14 +155,14 @@ station_summary_tbl <- data.frame(Analyte=c("_Ecoli_","_Enterococcus_","Dissolve
 colnames(station_summary_tbl) <- c("Analyte", "Number of stations w/ sufficient data for status analysis", "Number of stations w/ sufficient data for trend analysis")                                  
 
 knitr::kable(station_summary_tbl, digits = 0, padding = 2,row.names = FALSE, 
-             caption = tbls(name = "StnSumTable", caption = "Summary of stations with suffcient data for status or trend analysis**"))                                 
+             caption = tbls(name = "StnSumTable", caption = "Summary of stations with sufficient data for status or trend analysis**"))                                 
 
 ```
 
 
 ```{r parm-summary-table}
 
-knitr::kable(stns_param_summary,
+knitr::kable(stns_param_summary_tbl,
              padding = 2, digits = 3,
              row.names = FALSE,
              caption = tbls(name = "parmSumTable", 
