@@ -10,7 +10,7 @@ run_seaKen <- function (inputData) {
                             signif="none",
                             stringsAsFactors=FALSE)
   parms <- unique(inputData$Analyte)
-  # parms <- parms[parms != 'Temperature']
+
   for (p in 1:length(parms)) {
     parm <- parms[p]
     for(ii in 1:length(sea_ken_int$Station_ID)) {
@@ -21,7 +21,7 @@ run_seaKen <- function (inputData) {
       sea_ken_int$analyte[ii] <- parm
       sea_ken_int$N[ii] <- length(tmp.data.raw$Result)
       if (!nrow(tmp.data.raw) > 1 | all(is.na(tmp.data.raw$Result))) {
-        sea_ken_int$signif[ii] <- "Years<8"
+        sea_ken_int$signif[ii] <- "Insufficient data for trend analysis"
         next
       } else {sea_ken_int$signif[ii] <- "none"}
       # Reshape and manipulate data to convert to wqData-class
