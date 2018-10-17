@@ -375,35 +375,24 @@ Stations_Trend<-function(df.all, SeaKen){
   trend_pass <- SeaKen %>%
     filter(signif != 'Insufficient data for trend analysis')
   
-  for (i in 1:length(trend_pass)) {
+  for (i in 1:nrow(trend_pass)) {
     
-    sub_data <- dta[(dta$Analyte == trend_pass$analyte[i] & dta$Station_ID == trend_pass$Station_ID[i]),]
-    
-    trend<-sub_data%>%
-      group_by(Station_ID)%>%
-      dplyr::summarise(n_years=length(unique(year)))
-    stns<-c(as.character(unique(trend$Station_ID)))
-    dta_stns<-sub_data%>%
-      dplyr::filter(Station_ID %in% stns)
-    
-    if (nrow(trend) == 0) {
-      lstoutput[[i]] <- NULL
-    } else {
-      lstoutput[[i]] <- dta_stns %>% group_by(Station_ID, year) %>% 
-        dplyr::summarise(n = n()) %>% spread(year, n)
-      lstoutput[[i]]$Analyte<-as.character(sub_data$Analyte[i])
-    }
-  }
-
-  trend<-rbind.fill(lstoutput)
-  
-  if(length(trend) != 0){
-    trend <- trend[,c('Station_ID', sort(names(trend)[!names(trend) %in% c('Station_ID', 'Analyte')]),'Analyte')]
-    } else {
-      trend<-'No Stations Meet Trend Criteria'
+    lstoutput[[i]] <- dta %>% 
+      dplyr::filter(Analyte == trend_pass$analyte[i], Station_ID == trend_pass$Station_ID[i]) %>%
+      dplyr::group_by(Station_ID, Analyte, year) %>% 
+      dplyr::summarise(n = n()) %>% 
+      spread(year, n) %>%
+      as.data.frame()
   }
   
- return(trend)
+  trend <- rbind.fill(lstoutput)
+  
+  if(length(trend) == 0){
+    
+    trend <-'No Stations Meet Trend Criteria'
+  }
+  
+  return(trend)
 }
 
 Stations_by_Year <- function(df.all) {
