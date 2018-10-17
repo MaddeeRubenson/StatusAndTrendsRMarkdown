@@ -377,12 +377,11 @@ Stations_Trend<-function(df.all, SeaKen){
   
   for (i in 1:length(trend_pass)) {
     
-    sub_data <- dta[(dta$Analyte == trend_pass$analyte[1] & dta$Station_ID == trend_pass$Station_ID[1]),]
+    sub_data <- dta[(dta$Analyte == trend_pass$analyte[i] & dta$Station_ID == trend_pass$Station_ID[i]),]
     
     trend<-sub_data%>%
       group_by(Station_ID)%>%
-      dplyr::summarise(n_years=length(unique(year))) %>%
-      filter(n_years>=8)
+      dplyr::summarise(n_years=length(unique(year)))
     stns<-c(as.character(unique(trend$Station_ID)))
     dta_stns<-sub_data%>%
       dplyr::filter(Station_ID %in% stns)
