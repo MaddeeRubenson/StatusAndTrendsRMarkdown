@@ -390,7 +390,8 @@ status_years <- seq(year(floor_date(ymd(input$dates[2]) - years(2), unit="year")
                     year(ymd(input$dates[2])), by = 1)
 
 status <- Stations_Status(df.all, status.years=status_years)
-trend <- Stations_Trend(df.all)
+trend <- Stations_Trend(df.all, SeaKen=SeaKen)
+
 stns_by_year <- Stations_by_Year(df.all)
 
 # sort by analyte and station ID
@@ -486,11 +487,11 @@ The data returned were evaluated for quality. Data retrieved from DEQ's database
 
 ## Analysis
 
-The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids and total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters.
+The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids and total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters. A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(round_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. 
 
-Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A trend result was made at a site if there were a minimum of eight years of available data. A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p <= 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median.
+Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p <= 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median. A trend assessment was made at a monitoring station if data were available in a minimum of eight different years for any year in the period from `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. The observations must have beeen made with an underlying regularity (e.g. samples were taken in the same months for at least eight years)
 
-A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(round_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. A trend assessment was made if data were available in a minimum of eight different years for any year in the period from `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. Stations that met at least one of those data requirements were assessed with the results presented in this report. In some cases a station had sufficient data for trend but not status because data were not available anytime in the last two years. In these cases the status was shown on the plot for the older data along with the trend result but the status was not recorded in the maps, summary tables, or conclusions.
+Stations that met the status or trend data requirements were assessed with the results presented in this report. In some cases a station had sufficient data for trend but not status because data were not available anytime in the last two years. In these cases the status was shown on the plot for the older data along with the trend result but the status was not recorded in the maps, summary tables, or conclusions.
 
 Results for pH from both grab and continuous sample data were compared to the applicable water quality criterion as found in [OAR 340-041-0021][2.2.1].
 
@@ -693,7 +694,7 @@ For all monitoring stations with sufficient data (8 years or more), trending was
 ```{r Seasonal-Kendall, results="asis"}
 
 SK <- SeaKen %>% filter(Station_ID %in% unique(stns$Station_ID)) %>% 
-  filter(signif !=  "Need at least 8 years") %>% 
+  filter(signif !=  "Insufficient data for trend analysis") %>% 
   filter(analyte != 'Dissolved oxygen saturation')
 
 if(nrow(SK) > 0) {
