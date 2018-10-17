@@ -42,7 +42,7 @@ run_seaKen <- function (inputData) {
                        time.format = "%Y-%m-%d %H:%M:%S")
       # Create time series from water quality data
       tmp.ts <- suppressWarnings(tsMake(tmp.wq, focus = parm, qprob = 0.5, layer = c(0, 5))) #changed to median value per Helsel and Hirsch 2002; 11-14-2017
-      if (length(unique(year(tmp.data$date))) >= 8) {
+      if (length(unique(year(tmp.data$date))) < 8) {
         # Need at least 8 years
         sea_ken_int$signif[ii] <- "Insufficient data for trend analysis"
         next
