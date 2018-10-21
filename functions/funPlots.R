@@ -11,13 +11,11 @@ plot.ph <- function(new_data,
                     ph_crit_max = NULL)
 {
   library(ggplot2)
-  # new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column], 
-  #                                         format = datetime_format))  
-  new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column], 
-                                          format = '%Y-%m-%d'))  
+ 
+  new_data[, datetime_column] <- as.POSIXct(strptime(new_data[, datetime_column], format = datetime_format))  
   
-  x.min <- min(new_data$Sampled)
-  x.max <- max(new_data$Sampled)
+  x.min <- min(new_data[, datetime_column])
+  x.max <- max(new_data[, datetime_column])
   x.lim <- c(x.min, x.max) 
   y.min <- ifelse(floor(min(new_data[, result_column]))< 4,
                   floor(min(new_data[, result_column])), 4) 
@@ -67,27 +65,9 @@ plot.ph <- function(new_data,
                               y = c(SK.min, SK.max),
                               variable = rep('Trend line', 2))
   
-  #Evaluate against standard
-  new_data <- EvaluatepHWQS(new_data)
   new_data$exceed <- factor(new_data$exceed, levels = c(0, 1), 
                             labels = c('Meets', 'Exceeds'))
-  
-  #Extract basin specific ph criteria
-  # OWRD_basin <- strsplit(plot_criteria, " - ")[[1]][1]
-  # crit_selected <- strsplit(plot_criteria, " - ")[[1]][2]
-  # ph_crit_min <- ph_crit[ph_crit$ph_standard == crit_selected &
-  #                          ph_crit$OWRD_basin == OWRD_basin &
-  #                          (ph_crit$plan_name == plan_area | 
-  #                             ph_crit$HUC8 == strsplit(plan_area, 
-  #                                                      split = " - ")[[1]][1]), 
-  #                        'ph_low']
-  # ph_crit_max <- ph_crit[ph_crit$ph_standard == crit_selected &
-  #                          ph_crit$OWRD_basin == OWRD_basin &
-  #                          (ph_crit$plan_name == plan_area | 
-  #                             ph_crit$HUC8 == strsplit(plan_area, 
-  #                                                      split = " - ")[[1]][1]), 
-  #                        'ph_high']
-  
+
   df_ph_crit_max <- data.frame(x = c(x.min + 10000, x.max - 10000),
                                y = rep(ph_crit_max, 2),
                                variable = rep('pH Criteria', 2))
@@ -150,11 +130,11 @@ plot.ph <- function(new_data,
   g  
 }
 
-plot.Temperature <- function(new_data, 
-                             all_data,
+plot.Temperature <- function(new_data,
                              selectUse,
                              sea_ken_table,
                              selectSpawning,
+                             analyte_column = 'Analyte',
                              station_id_column = 'Station_ID',
                              station_desc_column = 'Station_Description',
                              datetime_column = 'date', 
@@ -162,12 +142,12 @@ plot.Temperature <- function(new_data,
                              plot_trend = FALSE) {
   library(ggplot2)
   
-  new_data$Sampled <- as.POSIXct(strptime(new_data[,datetime_column], 
+  new_data[, datetime_column] <- as.POSIXct(strptime(new_data[,datetime_column], 
                                           format = datetime_format))  
   new_data[!is.na(new_data$Result) & is.na(new_data$exceed), 'exceed'] <- FALSE
   new_data$exceed <- factor(new_data$exceed, levels = c(TRUE, FALSE), labels = c('Exceeds', 'Meets'))
-  x.min <- min(new_data$Sampled) 
-  x.max <- max(new_data$Sampled) 
+  x.min <- min(new_data[, datetime_column]) 
+  x.max <- max(new_data[, datetime_column]) 
   x.lim <- c(x.min, x.max) 
   y.min <- if(floor(min(new_data$Result, na.rm = TRUE))<=10 ){ 
     floor(min(new_data$Result, na.rm = TRUE)) 
@@ -187,51 +167,53 @@ plot.Temperature <- function(new_data,
   }
   y.lim <- c(y.min,y.max)
   y.median <- median(new_data$Result)
-  p.value <- NA
-  if(plot_trend){
-    slope <- suppressWarnings(
-      as.numeric(
-        sea_ken_table[sea_ken_table$Station_ID == 
-                        unique(new_data[, station_id_column]) & 
-                        sea_ken_table$analyte == "Temperature", 'slope']
-      )
+  slope <- suppressWarnings(
+    as.numeric(
+      sea_ken_table[sea_ken_table$Station_ID == 
+                      unique(new_data[, station_id_column]) & 
+                      sea_ken_table$analyte == 
+                      unique(new_data[, analyte_column]), 'slope']
     )
-    p.value <- suppressWarnings(
-      as.numeric(
-        sea_ken_table[sea_ken_table$Station_ID == 
-                        unique(new_data[,station_id_column]) & 
-                        sea_ken_table$analyte == "Temperature",'pvalue']
-      )
+  )
+  median <- sea_ken_table[sea_ken_table$Station_ID == 
+                            unique(new_data[,station_id_column]) & 
+                            sea_ken_table$analyte == 
+                            unique(new_data[,analyte_column]),'median']
+  p.value <- suppressWarnings(
+    as.numeric(
+      sea_ken_table[sea_ken_table$Station_ID == 
+                      unique(new_data[,station_id_column]) & 
+                      sea_ken_table$analyte == 
+                      unique(new_data[,analyte_column]),'pvalue']
     )
-    p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
-                                     unique(new_data[,station_id_column]) & 
-                                     sea_ken_table$analyte == "Temperature",'signif']
-    x.delta <- as.numeric((x.max-x.min)/2)####average date
-    SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
-    SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
-    sub.text <- paste0("p value = " ,
-                       round(p.value, digits=3),
-                       ", ",  
-                       p.value.label, 
-                       ", slope = ", 
-                       round(slope, digits=2), 
-                       ", n = ", 
-                       nrow(new_data))
-    df_trend_line <- data.frame(x = c(x.min, x.max),
-                                y = c(SK.min, SK.max),
-                                variable = rep('Trend line', 2))
-  }
+  )
+  p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
+                                   unique(new_data[,station_id_column]) & 
+                                   sea_ken_table$analyte == 
+                                   unique(new_data[,analyte_column]),'signif']
+  x.delta <- as.numeric((x.max-x.min)/2)####average date
+  SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
+  SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
+  sub.text <- paste0("p value = " ,
+                     round(p.value, digits=3),
+                     ", ",  
+                     p.value.label, 
+                     ", slope = ", 
+                     round(slope, digits=2), 
+                     ", n = ", 
+                     nrow(new_data),
+                     ", median = ", 
+                     median)
   
-  title <- paste0(unique(all_data[all_data[,station_id_column] == 
-                                    new_data[1, station_id_column],station_desc_column]), 
-                  ", ID = ", 
-                  new_data[1, station_id_column])
+  df_trend_line <- data.frame(x = c(x.min, x.max),
+                              y = c(SK.min, SK.max),
+                              variable = rep('Trend line', 2))
+  
+  title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
+                  min(new_data[, station_id_column]))
+  
   x.lab <- "Date"
   y.lab <- "Temperature (7DADM)"
-  
-  # df_trend_line <- data.frame(x = c(x.min, x.max),
-  #                             y = c(SK.min, SK.max),
-  #                             variable = rep('Trend line', 2))
   
   ####plot the timeseries
   elem_text <- element_text(face = "bold")
@@ -243,7 +225,7 @@ plot.Temperature <- function(new_data,
       ylab(y.lab) + 
       xlim(x.lim) +
       ylim(y.lim) +
-      ggtitle(title) + 
+      ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) + 
       theme(axis.title = elem_text,
             plot.title = element_text(vjust=1.5, face="bold", size = 10),
             legend.position = "top",
@@ -263,7 +245,7 @@ plot.Temperature <- function(new_data,
       ylab(y.lab) + 
       xlim(x.lim) +
       ylim(y.lim) +
-      ggtitle(title) + 
+      ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
       theme(axis.title = elem_text,
             plot.title = element_text(vjust=1.5, face="bold", size = 10),
             legend.position = "top",
@@ -511,7 +493,7 @@ plot.Temperature <- function(new_data,
       }
     }
     
-    if (plot_trend & !is.na(p.value)) {
+    if (plot_trend) {
       g <- g + geom_line(aes(x = x, y = y, linetype = "Trend", color="Trend"), data = df_trend_line
                          # , inherit.aes = FALSE
       )
@@ -537,7 +519,7 @@ plot.Temperature <- function(new_data,
                                               'Spawning' = "dotted",
                                               'Trend' = "solid")
     )
-    if (plot_trend & !is.na(p.value)) {
+    if (plot_trend) {
       if(all(new_data$exceed=='Meets')){
         if(selectSpawning != 'No spawning'){
           g <- g + guides(color=guide_legend(override.aes = list(shape = c(16,NA,NA,NA))))
@@ -552,23 +534,6 @@ plot.Temperature <- function(new_data,
         }
       }
     }
-    
-    # g <- g + scale_shape_manual(name = "Criteria, Status, and Trends",
-    #                             breaks = c('Meets', 'Exceeds', 'Spawning', 'Non-spawning', 'Trend'),
-    #                             labels = c('Meets', 'Exceeds', 'Spawning', 'Non-spawning', 'Trend'),
-    #                             values = c('Meets' = 16,
-    #                                        'Exceeds' = 16,
-    #                                        'Non-spawning' = NA,
-    #                                        'Spawning' = NA,
-    #                                        'Trend' = NA))
-    
-    # g <- g + guides(colour='legend', linetype='none') + guides(colour=guide_legend("Legend"))
-    
-    # g <- g + guides(linetype = guide_legend(override.aes = list(color = c('Meets' = 'black','Exceeds' = 'red','Non-spawning'='black','Spawning'='black','Trend'='blue'))))
-    
-    # g <- g + scale_linetype_manual(values = c('Non-spawning' = 5,
-    #                                           'Spawning' = 2,
-    #                                           'Trend' = 1))
   }
   g
 }
@@ -585,8 +550,8 @@ plot.bacteria <- function(new_data,
                           plot_trend = FALSE,
                           plot_log = FALSE,
                           parm) {
-  x.min <- min(new_data$Sampled)
-  x.max <- max(new_data$Sampled)
+  x.min <- min(new_data[, datetime_column])
+  x.max <- max(new_data[, datetime_column])
   x.lim <- c(x.min, x.max) 
   y.min <- if(floor(min(new_data[,result_column]))<=0 & plot_log){
     1 
@@ -1039,11 +1004,10 @@ plot.DOsat<-function(new_data,
                      parm) {
   library(ggplot2)
   
-  
-  new_data$Sampled <- as.POSIXct(strptime(new_data[, datetime_column],
+  new_data[, datetime_column] <- as.POSIXct(strptime(new_data[, datetime_column],
                                           format = datetime_format))
-  x.min <- min(new_data$Sampled)
-  x.max <- max(new_data$Sampled)
+  x.min <- min(new_data[, datetime_column])
+  x.max <- max(new_data[, datetime_column])
   x.lim <- c(x.min, x.max)
   y.min <- floor(min(new_data[, result_column]))
   y.max <- ceiling(max(new_data[, result_column]))
@@ -1077,14 +1041,11 @@ plot.DOsat<-function(new_data,
   g
 }
 
-
-
 plot.DO<-function(new_data,
-                  df.all,
-                  selectUseDO = input$selectUseDO,
-                  sea_ken_table = SeaKen,
-                  plot_trend = input$plotTrend,
-                  selectSpawning = input$selectSpawning,
+                  selectUseDO,
+                  sea_ken_table,
+                  plot_trend,
+                  selectSpawning,
                   analyte_column = 'Analyte',
                   station_id_column = 'Station_ID',
                   station_desc_column = 'Station_Description',
@@ -1094,17 +1055,9 @@ plot.DO<-function(new_data,
                   parm = 'Dissolved Oxygen') {
   library(ggplot2)
   library(chron)
-  #dataframe that assigns WQS values to Aquatic Life Uses
-  #new_data<-DO_evaluate
   
-  new_data <- EvaluateDOWQS(new_data = new_data,
-                            df.all = df.all,
-                            selectUseDO = selectUseDO,
-                            selectSpawning = selectSpawning,
-                            datetime_format = '%Y-%m-%d %H:%M:%S')
-  
-  x.min <- min(as.POSIXct(new_data$Sampled)) 
-  x.max <- max(new_data$Sampled) 
+  x.min <- min(as.POSIXct(new_data[, datetime_column])) 
+  x.max <- max(new_data[, datetime_column]) 
   x.lim <- c(x.min, x.max)
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
                   min(new_data[, station_id_column]))
@@ -1200,8 +1153,6 @@ plot.DO<-function(new_data,
     xlab(x.lab) +
     ylab(y.lab) 
   
-  
-  #g <- g + geom_line(data = d, aes(x=x, y=y, linetype = selectUseDO))
   g <- g + geom_line(aes(x = x, y = y, color = variable), data = d)
   
   if (plot_trend & !is.na(p.value)) {
@@ -1271,9 +1222,9 @@ plot.DO<-function(new_data,
       }
     } else {
       ####DRAW WQS SPAWNING LINES
-      new_data <- new_data[order(new_data$Sampled),]
-      data_years <- unique(lubridate::year(new_data$Sampled))
-      whole_range <- seq(min(new_data$Sampled), max(new_data$Sampled), by = 'day')
+      new_data <- new_data[order(new_data[, datetime_column]),]
+      data_years <- unique(lubridate::year(new_data[, datetime_column]))
+      whole_range <- seq(min(new_data[, datetime_column]), max(new_data[, datetime_column]), by = 'day')
       wr <- data.frame('Sampled' = whole_range, bioc = NA)
       spd_list <- strsplit(selectSpawning, split = "-")
       
@@ -1433,9 +1384,9 @@ plot.DO<-function(new_data,
       }      
     } else {
       ####DRAW WQS SPAWNING LINES
-      new_data <- new_data[order(new_data$Sampled),]
-      data_years <- unique(lubridate::year(new_data$Sampled))
-      whole_range <- seq(min(new_data$Sampled), max(new_data$Sampled), by = 'day')
+      new_data <- new_data[order(new_data[, datetime_column]),]
+      data_years <- unique(lubridate::year(new_data[, datetime_column]))
+      whole_range <- seq(min(new_data[, datetime_column]), max(new_data[, datetime_column]), by = 'day')
       wr <- data.frame('Sampled' = whole_range, bioc = NA)
       spd_list <- strsplit(selectSpawning, split = "-")
       
@@ -1535,12 +1486,10 @@ plot.DO<-function(new_data,
   g
 }
 
-#ggsave("g.png", height = 6, width = 6)
-
 plot.TSS<-function(new_data,
-                   selectWQSTSS = input$selectWQSTSS,
-                   sea_ken_table = SeaKen,
-                   plot_trend = input$plotTrend,
+                   selectWQSTSS,
+                   sea_ken_table,
+                   plot_trend,
                    analyte_column = 'Analyte',
                    station_id_column = 'Station_ID',
                    station_desc_column = 'Station_Description',
@@ -1564,9 +1513,9 @@ plot.TSS<-function(new_data,
   #datetime_column <- 'Sampled'
   #result_column <- 'Result'
   #datetime_format <- '%Y-%m-%d %H:%M:%S'
-  
-  x.min <- min(new_data$Sampled) 
-  x.max <- max(new_data$Sampled) 
+
+  x.min <- min(new_data[, datetime_column]) 
+  x.max <- max(new_data[, datetime_column]) 
   x.lim <- c(x.min, x.max)
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
                   min(new_data[, station_id_column]))
@@ -1660,7 +1609,7 @@ plot.TSS<-function(new_data,
     
   } else { 
     # No TMDL Target
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) +
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) +
       geom_point() + 
       xlim(x.lim) +
       ylim(y.lim) +
@@ -1711,9 +1660,9 @@ plot.TSS<-function(new_data,
       }
     } else { 
       if(selectWQSTSS == 0) {
-        # Trend, No TMDL Target, All Meet
+        # Trend, No TMDL Target, No Status
         g <- g + scale_color_manual("", values = c('black', 'blue'),
-                                    labels = c('Meets', 'Trend line'),
+                                    labels = c('Observation', 'Trend line'),
                                     guide = guide_legend(override.aes = list(
                                       linetype = c('blank', 'solid'),
                                       shape=c(16,NA))))
@@ -1752,9 +1701,10 @@ plot.TSS<-function(new_data,
     } else {
       
       if(selectWQSTSS == 0) {
-        # No Trend, No TMDL Target, All Meet
+
+        # No Trend, No TMDL Target, No Status
         g <- g + scale_color_manual("", values = c('black'),
-                                    labels = c('Meets'),
+                                    labels = c('Observation'),
                                     guide = guide_legend(override.aes = list(
                                       linetype = c('blank'),
                                       shape=c(16))))
@@ -1776,10 +1726,9 @@ plot.TSS<-function(new_data,
 
 
 plot.TP<-function(new_data,
-                  df.all,
-                  selectWQSTP = input$selectWQSTP,
-                  sea_ken_table = SeaKen,
-                  plot_trend = input$plotTrend,
+                  selectWQSTP,
+                  sea_ken_table,
+                  plot_trend,
                   analyte_column = 'Analyte',
                   station_id_column = 'Station_ID',
                   station_desc_column = 'Station_Description',
@@ -1789,13 +1738,10 @@ plot.TP<-function(new_data,
                   parm = 'Total Phosphorus (mg/l)') {
   library(ggplot2)
   library(chron)
-  #dataframe that assigns WQS values to Aquatic Life Uses
-  
-  
+
   # testing
-  #new_data<-mydata_sub
-  #df.all <- df.all
-  #sea_ken_table<- results_seaken
+  #new_data <- TP_evaluate
+  #sea_ken_table <- results_seaken
   #plot_trend <-trend_logic
   #selectWQSTP <- 0.07
   #parm <- unique(mydata_sub$Analyte)
@@ -1805,15 +1751,10 @@ plot.TP<-function(new_data,
   #datetime_column <- 'Sampled'
   #result_column <- 'Result'
   #datetime_format <- '%Y-%m-%d %H:%M:%S'
-  #parm <- 'Total Phosphorus (mg/l)'
+
   
-  new_data<-EvaluateTPWQS(new_data = new_data,
-                          selectWQSTP = selectWQSTP)
-  
-  new_data$exceed <- ifelse(new_data$exceed == 0, "Meets", "Exceeds")
-  
-  x.min <- min(new_data$Sampled) 
-  x.max <- max(new_data$Sampled) 
+  x.min <- min(new_data[, datetime_column])
+  x.max <- max(new_data[, datetime_column]) 
   x.lim <- c(x.min, x.max)
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
                   min(new_data[, station_id_column]))
@@ -1908,7 +1849,7 @@ plot.TP<-function(new_data,
     
   } else {
     # No TMDL Target
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result)) + 
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) + 
       geom_point() +
       xlim(x.lim) +
       ylim(y.lim) +
@@ -1958,9 +1899,9 @@ plot.TP<-function(new_data,
     } else { 
       
       if(selectWQSTP == 0) {
-        # Trend, No TMDL Target, All Meet
+        # Trend, No TMDL Target, No Status
         g <- g + scale_color_manual("", values = c('black', 'blue'),
-                                    labels = c('Meets', 'Trend line'),
+                                    labels = c('Observation', 'Trend line'),
                                     guide = guide_legend(override.aes = list(
                                       linetype = c('blank', 'solid'),
                                       shape=c(16,NA))))
@@ -1995,9 +1936,9 @@ plot.TP<-function(new_data,
       }
     } else {
       if(selectWQSTP == 0) {
-        # No Trend, No TMDL Target, All Meet
+        # No Trend, No TMDL Target, No Status
         g <- g + scale_color_manual("", values = c('black'),
-                                    labels = c('Meets'),
+                                    labels = c('Observation'),
                                     guide = guide_legend(override.aes = list(
                                       linetype = c('blank'),
                                       shape=c(16))))

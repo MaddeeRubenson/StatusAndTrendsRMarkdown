@@ -300,6 +300,9 @@ extract_303d <- function (df.all, wq_limited, selectedPlanArea) {
 }
 
 Stations_Status <- function(df.all, status.years) {
+  # Generatures a dataframe with the number of observations per year for 
+  # monitoring stations that fit the criteria to assess status
+  
   require(dplyr)
   require(reshape2)
   dta<-df.all
@@ -352,58 +355,44 @@ Stations_Status <- function(df.all, status.years) {
     }
   }
   
-  #status<-distinct(status)
   return(status)
 }
 
-Stations_Trend<-function(df.all){
+Stations_Trend<-function(df.all, SeaKen){
+  # Generatures a dataframe with the number of observations per year for 
+  # monitoring stations that fit the criteria to assess trend
+  
   require(tidyr)
   require(dplyr)
-  dta<-df.all
-
+  
+  dta <- df.all
+  lstoutput <- list()
+  
   dta$Sampled <- as.POSIXct(strptime(dta$Sampled, format = '%Y-%m-%d')) 
   dta$Sampled<-as.Date(dta$Sampled)
   dta$year<-as.numeric(format(dta$Sampled, format="%Y"))
   
-  lstoutput <- list()
-  for (i in 1 : as.character(length(unique(dta$Analyte)))) {
-    sub_data <- dta[dta$Analyte == unique(dta$Analyte)[i],]
-    trend<-sub_data%>%
-      group_by(Station_ID)%>%
-      dplyr::summarise(n_years=length(unique(year))) %>%
-      filter(n_years>=8)
-    stns<-c(as.character(unique(trend$Station_ID)))
-    dta_stns<-sub_data%>%
-      dplyr::filter(Station_ID %in% stns)
+  trend_pass <- SeaKen %>%
+    filter(signif != 'Insufficient data for trend analysis')
+  
+  for (i in 1:nrow(trend_pass)) {
     
-    #tx <- sub_data %>%
-      #group_by(Station_ID,year)%>%
-      #dplyr::summarise(n = n()) %>% spread(year, n) %>%
-      #dplyr::filter(Station_ID %in% unique(trend$Station_ID))
-    
-    if (nrow(trend) == 0) {
-      lstoutput[[i]] <- NULL
-    } else {
-      lstoutput[[i]] <- dta_stns %>% group_by(Station_ID, year) %>% 
-          dplyr::summarise(n = n()) %>% spread(year, n)
-      
-      #lstoutput[[i]] <- dcast(dta_stns, Station_ID ~ year, value.var = 'year',
-                              #fun.aggregate = length)
-      lstoutput[[i]]$Analyte<-as.character(sub_data$Analyte[i])
-    }
+    lstoutput[[i]] <- dta %>% 
+      dplyr::filter(Analyte == trend_pass$analyte[i], Station_ID == trend_pass$Station_ID[i]) %>%
+      dplyr::group_by(Station_ID, Analyte, year) %>% 
+      dplyr::summarise(n = n()) %>% 
+      spread(year, n) %>%
+      as.data.frame()
   }
   
-  trend<-rbind.fill(lstoutput)
-  #trend<-ldply(lstoutput, data.frame, .id = NULL)
+  trend <- rbind.fill(lstoutput)
   
-  if(length(trend) != 0){
-    trend <- trend[,c('Station_ID', sort(names(trend)[!names(trend) %in% c('Station_ID', 'Analyte')]),'Analyte')]
-    #trend<-distinct(trend)  commented out becaues distint is acting strange
-    } else {
-    trend<-'No Stations Meet Trend Criteria'
+  if(length(trend) == 0){
+    
+    trend <-'No Stations Meet Trend Criteria'
   }
   
- return(trend)
+  return(trend)
 }
 
 Stations_by_Year <- function(df.all) {
@@ -546,14 +535,14 @@ convert_temp_F_C <- function(df, result_column_name="Result", unit_column_name="
   return(df$result_celsius)
 }
 
-Calculate.sdadm <- function(df, result_column_name, station_column_name, datetime_column_name, datetime_format) {
+Calculate.sdadm <- function(df, result_column_name, station_id_column, datetime_column_name, datetime_format) {
   # Description:
   # Calculates seven day average daily maximum
   #
   # This function takes 4 arguments:
   #  df                   = A data frame containing at minimum the columns representing a Station Identifier, Numeric results and a datetime
   #  result_column_name   = A character string specifying the name of the result column in df
-  #  station_column_name  = A character string specifying the name of the station column in df
+  #  station_id_column  = A character string specifying the name of the station column in df
   #  datetime_column_name = A character string specifying the name of the datetime column in df. datetime column should be in format "%m/%d/%Y %H:%M:%S"
   #  datetime_format      = A character string specifying the format of the datetime column. See the format argument of strptime for details
   #
@@ -569,14 +558,14 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
   # Value: 
   # An object of class data frame with columns:
   # date: class Date in format %Y-%m-%d
-  # station_column_name: in same format and name as provided
+  # station_id_column: in same format and name as provided
   # SDADM: class numeric representing the calculated seven day average
   
   library(chron)
   library(reshape)
   library(zoo)
   
-  tdata <- df[,c(station_column_name, datetime_column_name, result_column_name)]
+  tdata <- df[,c(station_id_column, datetime_column_name, result_column_name)]
   
   ## RENAME
   colnames(tdata)[1] <- "id"
@@ -643,13 +632,19 @@ Calculate.sdadm <- function(df, result_column_name, station_column_name, datetim
     colnames(sdadm.melt)[3] <- "sdadm"
     sdadm.melt$id <- gsub("X","",sdadm.melt$id,fixed=TRUE)
     sdadm.melt$id <- gsub(".","-",sdadm.melt$id,fixed=TRUE)
-    colnames(sdadm.melt)[2] <- station_column_name
+    colnames(sdadm.melt)[2] <- station_id_column
     sdadm.melt$date <- as.Date(sdadm.melt$date)
     return(sdadm.melt)
   }
 }
 
-EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_name) {
+EvaluateTempWQS <- function(sdadm_df,
+                            selectUse,
+                            selectSpawning,
+                            station_id_column = 'Station_ID',
+                            station_desc_column = 'Station_Description',
+                            date_column = 'date',
+                            result_column = 'Result') {
   # Description:
   # Evaluates temperature seven day average daily max values against Oregon's Water Quality Standards for Temperature
   #
@@ -661,9 +656,10 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
   #  Requires plyr and chron
   #
   #  sdadm_df must have columns with name and format as specified:
-  #   station_column_name = Class character representing the station ID
-  #   date        = Class Date representing date of seven day average daily maximum
-  #   Result      = Class numeric representing the values of the seven day average daily maximum
+  #   station_id_column = Class character representing the station ID col
+  #   station_desc_column = Class character representing the station name col 
+  #   date_column        = Class Date representing date of seven day average daily maximum
+  #   result_column      = Class numeric representing the values of the seven day average daily maximum
   #   spwn_dates  = Class character with the start and end dates of the 
   #                           applicable spawning time period. Requires the format 
   #                           "StartMonth Day-EndMonth Day" e.g. ("January 1-May 15") OR
@@ -694,7 +690,7 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
   ## Build the spawning reference data frame based on the spawning dates and benefiicial use specified
   sdadm_df$spwn_dates <- selectSpawning
   sdadm_df$ben_use_des <- selectUse
-  stations <- unique(sdadm_df[,station_column_name])
+  stations <- unique(sdadm_df[,station_id_column])
   spd <- unique(sdadm_df[,c('Station_ID','spwn_dates','ben_use_des')])
   spd_list <- strsplit(spd$spwn_dates, split = "-")
   spd_chron <- lapply(spd_list, function(x) {as.chron(x, format = "%B %d")})
@@ -722,12 +718,12 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
      SSTART_DAY,SEND_MONTH,SEND_DAY)
   
   ## Grab numeric spawning values
-  sdadm_df$sdata <- match(sdadm_df[, station_column_name], 
-                          sdata[, station_column_name])
+  sdadm_df$sdata <- match(sdadm_df[, station_id_column], 
+                          sdata[, station_id_column])
   
   ## finds the current date, and spawning start/end date and formats as a numeric in the form mm.dd
-  sdadm_df$cdate <- as.numeric(months(as.chron(sdadm_df$date))) + 
-    (as.numeric(chron::days(as.chron(sdadm_df$date))) * .01)
+  sdadm_df$cdate <- as.numeric(months(as.chron(sdadm_df[,date_column]))) + 
+    (as.numeric(chron::days(as.chron(sdadm_df[,date_column]))) * .01)
   sdadm_df$sstr <- as.numeric(sdata$SSTART_MONTH[sdadm_df$sdata]) + 
     (as.numeric(sdata$SSTART_DAY[sdadm_df$sdata]) *.01)
   sdadm_df$send <- as.numeric(sdata$SEND_MONTH[sdadm_df$sdata]) + 
@@ -750,38 +746,43 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
   
   ## Calculate total 7DADM obersvations and # of 7DADM observations that exceed the summer spawning critera in those time periods; and 
   ## number of 7DADM observations that exceed 16 and 18 over the whole time period (not just in the stated periods)
-  sdadm_df$exceedsummer <- ifelse(sdadm_df$Result >= sdadm_df$bioc & 
+  sdadm_df$exceedsummer <- ifelse(sdadm_df[,result_column] >= sdadm_df$bioc & 
                                     sdadm_df$summer == TRUE, 1, 0)
-  sdadm_df$exceedspawn <- ifelse(sdadm_df$Result >= sdadm_df$bioc & 
+  sdadm_df$exceedspawn <- ifelse(sdadm_df[,result_column] >= sdadm_df$bioc & 
                                    sdadm_df$spawn == TRUE, 1, 0)
-  sdadm_df$daystot <-ifelse(!is.na(sdadm_df$Result), 1, 0)
+  sdadm_df$daystot <-ifelse(!is.na(sdadm_df[,result_column]), 1, 0)
   
   ## TABULUAR RESULTS
-  # daystot <- tapply(sdadm_df$daystot,list(sdadm_df[, station_column_name],
+  # daystot <- tapply(sdadm_df$daystot,list(sdadm_df[, station_id_column],
   #                                         sdadm_df$daystot), length)
   # exceedsummer <- tapply(sdadm_df$exceedsummer,
-  #                        list(sdadm_df[, station_column_name],
+  #                        list(sdadm_df[, station_id_column],
   #                             sdadm_df$exceedsummer), length)
   # exceedspawn <- tapply(sdadm_df$exceedspawn,
-  #                       list(sdadm_df[, station_column_name],
+  #                       list(sdadm_df[, station_id_column],
   #                            sdadm_df$exceedspawn), length)
-  #sdadm_df <- sdadm_df[!is.na(sdadm_df$Result),]
+  #sdadm_df <- sdadm_df[!is.na(sdadm_df[,result_column]),]
   
-  sdadm_df$Time_Period <- ifelse(sdadm_df$summer, "Summer", "Spawning")
-  sdadm_df$Time_Period <- factor(sdadm_df$Time_Period, levels = c('Summer', 'Spawning', 'Total'))
+  sdadm_df$Time_Period <- ifelse(sdadm_df$summer, "Non-Spawning", "Spawning")
+  sdadm_df$Time_Period <- factor(sdadm_df$Time_Period, levels = c('Non-Spawning', 'Spawning', 'Total'))
   sdadm_df$exceed <- sdadm_df$exceedspawn | sdadm_df$exceedsummer
-  sdadm_df_noNA <- sdadm_df[!is.na(sdadm_df$Result),]
+  sdadm_df_noNA <- sdadm_df[!is.na(sdadm_df[,result_column]),]
   sdadm_df_noNA[is.na(sdadm_df_noNA$Time_Period), 'exceed'] <- FALSE
-  sdadm_df_noNA[is.na(sdadm_df_noNA$Time_Period), 'Time_Period'] <- 'Summer'
-  result_summary <- ddply(sdadm_df_noNA, .(sdadm_df_noNA[, station_column_name], Time_Period), 
-                          summarise, 
-                          Exceedances = sum(exceed),                  
-                          #exceedspawn = sum(exceedspawn),
-                          #exceedsummer = sum(exceedsummer),
-                          Obs = sum(daystot), .drop = FALSE)
-  result_summary <- plyr::rename(result_summary, 
-                                 c('sdadm_df_noNA[, station_column_name]' = 
-                                     station_column_name))
+  sdadm_df_noNA[is.na(sdadm_df_noNA$Time_Period), 'Time_Period'] <- 'Non-Spawning'
+  
+  
+  #Min_Date = min(year(new_data$Sampled)),
+  #Max_Date = min(year(new_data$Sampled)),
+  
+  result_summary <- ddply(sdadm_df_noNA, .(sdadm_df_noNA[, station_id_column],
+                                           sdadm_df_noNA[, station_desc_column], 
+                                           Time_Period), 
+                          summarise,
+                          Obs = sum(daystot),
+                          Exceedances = sum(exceed),
+                          .drop = FALSE)
+  result_summary <- plyr::rename(result_summary, c('sdadm_df_noNA[, station_id_column]' = station_id_column,
+                                                   'sdadm_df_noNA[, station_desc_column]'= station_desc_column))
   
   if (any(is.na(result_summary$Time_Period))) {
     result_summary[which(result_summary$Time_Period == 'Total'), 
@@ -805,29 +806,34 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
   return(sdadm_df)
 }
 
-EvaluatepHWQS <- function(new_data) {
-    
-    ph_crit_min <- Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'pH_low']
-    ph_crit_max <- Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'pH_high']
-    crit_selected <- Ben_use_LU[Ben_use_LU$Station_ID == pH_stn[j], 'pH_benuse']
-    
-    #OWRD_basin <- strsplit(selectpHCrit, " - ")[[1]][1]
-    #crit_selected <- strsplit(selectpHCrit, " - ")[[1]][2]
-    # ph_crit_min <- unique(ph_crit[ph_crit$ph_standard == crit_selected & 
-    #                                 ph_crit$OWRD_basin == OWRD_basin & 
-    #                                 (ph_crit$plan_name == PlanName | ph_crit$HUC8 == 
-    #                                    strsplit(PlanName, split = " - ")[[1]][1]), 
-    #                               'ph_low'])
-    # ph_crit_max <- unique(ph_crit[ph_crit$ph_standard == crit_selected &
-    #                                 ph_crit$OWRD_basin == OWRD_basin & 
-    #                                 (ph_crit$plan_name == PlanName | ph_crit$HUC8 == 
-    #                                    strsplit(PlanName, split = " - ")[[1]][1]), 
-    #                               'ph_high'])
-    new_data$exceed <- ifelse(new_data[, 'Result'] < ph_crit_min |
-                                new_data[, 'Result'] > ph_crit_max, 
-                              1, 0)
-    new_data$Year <- as.character(chron::years(new_data$Sampled))
-    return(new_data)
+EvaluatepHWQS <- function(new_data,
+                          ph_crit_min,
+                          ph_crit_max,
+                          analyte_column = 'Analyte',
+                          station_id_column = 'Station_ID',
+                          station_desc_column = 'Station_Description',
+                          datetime_column = 'Sampled',
+                          result_column = 'Result',
+                          datetime_format = '%Y-%m-%d %H:%M:%S') {
+  
+  new_data[, datetime_column] <- as.POSIXct(new_data[, datetime_column],
+                                            format = datetime_format)
+  
+  new_data$exceed <- ifelse((new_data[, result_column] < ph_crit_min | new_data[, result_column] > ph_crit_max), 
+                            1, 0)
+
+  exc <- new_data %>% 
+    filter(exceed == 1)
+  
+  ex_df <- data.frame("Station_ID" = (unique(new_data[,station_id_column])),
+                      "Station_Description" = (unique(new_data[,station_desc_column])),
+                      "Min_Date" = format(min(new_data[, datetime_column]), "%m/%d/%Y"),
+                      "Max_Date" = format(max(new_data[, datetime_column]), "%m/%d/%Y"),
+                      "Obs" = c(nrow(new_data)),
+                      "Exceedances" = c(nrow(exc)))
+  
+  attr(new_data, "ex_df") <- ex_df
+  return(new_data)
   
 }
 
@@ -873,7 +879,7 @@ EvaluateEnteroWQS <- function(new_data) {
 }
 
 EvaluateDOWQS<-function(new_data, 
-                        df.all, 
+                        DOsat_data, 
                         selectUseDO,
                         selectSpawning,
                         analyte_column = 'Analyte',
@@ -883,14 +889,13 @@ EvaluateDOWQS<-function(new_data,
                         result_column = 'Result',
                         datetime_format = '%Y-%m-%d %H:%M:%S'){
   
-  #datetime_format = '%Y-%m-%d %H:%M:%S'
+
   library(dplyr)
- 
-  new_data$Result <- as.numeric(new_data$Result)
-  new_data$Sampled <- as.POSIXct(new_data$Sampled,
-                                          format = datetime_format)
-  #new_data$Sampled<-as.Date(new_data$Sampled)
-  new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
+  
+  new_data[, result_column] <- as.numeric(new_data[, result_column])
+  new_data[, datetime_column] <- as.POSIXct(new_data[, datetime_column],
+                                            format = datetime_format)
+  new_data$year<-as.numeric(format(new_data[, datetime_column], format="%Y"))
   
   
   ##Generate Exceedances of WQS##
@@ -907,7 +912,7 @@ EvaluateDOWQS<-function(new_data,
   SEND_DAY <- unlist(lapply(spd_days_num, function(x) x[2]))
   sdata <- as.data.frame(cbind(SSTART_MONTH, SSTART_DAY, SEND_MONTH, SEND_DAY))
   
-  sdata$Station_ID <- unique(new_data$Station_ID)
+  sdata$Station_ID <- unique(new_data[, station_id_column])
   sdata$aqu_use_des <- selectUseDO
   sdata$numcrit<- if(selectUseDO == 'Cold-Water Aquatic Life') {
     8
@@ -921,7 +926,7 @@ EvaluateDOWQS<-function(new_data,
   
   new_data$sdata <- match(new_data[, 'Station_ID'],
                           sdata[, 'Station_ID'])
-  new_data$cdate <- lubridate::month(new_data$Sampled) + lubridate::day(new_data$Sampled)*.01
+  new_data$cdate <- lubridate::month(new_data[, datetime_column]) + lubridate::day(new_data[, datetime_column])*.01
   new_data$sstr <- as.numeric(sdata$SSTART_MONTH[new_data$sdata]) +
     (as.numeric(sdata$SSTART_DAY[new_data$sdata]) *.01)
   new_data$send <- as.numeric(sdata$SEND_MONTH[new_data$sdata]) +
@@ -936,26 +941,24 @@ EvaluateDOWQS<-function(new_data,
            11, new_data$bioc),
     ifelse(new_data$sstr <= new_data$cdate & new_data$send >= new_data$cdate,
            11, new_data$bioc)))
+  
   #Merge %DO with [DO]##
-  DOsat<-df.all%>%
-    dplyr::filter(Analyte == 'Dissolved oxygen saturation') %>%
-    dplyr::filter(Station_ID == unique(new_data$Station_ID))
-  DOsat$Result <- as.numeric(DOsat$Result)
-  DOsat$Sampled<-as.POSIXct(strptime(DOsat[, datetime_column],
-                                     format = datetime_format))
-  DOsat$id<-paste(DOsat$Station_ID, DOsat$Sampled, sep=" ")
-  new_data$id<-paste(new_data$Station_ID, new_data$Sampled, sep=" ")
+  DOsat_data[, result_column] <- as.numeric(DOsat_data[, result_column])
+  DOsat_data[, datetime_column]<-as.POSIXct(strptime(DOsat_data[, datetime_column],
+                                                     format = datetime_format))
+  DOsat_data$id<-paste(DOsat_data[, station_id_column], DOsat_data[, datetime_column], sep=" ")
+  new_data$id<-paste(new_data[, station_id_column], new_data[, datetime_column], sep=" ")
   #Result.y = results from %DO; Result.x = [DO]
-  new_data_DOsat<-merge(new_data, DOsat[,c('id','Result')], by="id")
+  new_data_DOsat<-merge(new_data, DOsat_data[,c('id','Result')], by="id")
   new_data_DOsat<-plyr::rename(new_data_DOsat, c("Result.y" = "Result_DOsat", "Result.x" = "Result_DOconc"))
   #merge new_data with new_data_DOsat
   new_data_all<-dplyr::full_join(new_data, new_data_DOsat[,c('id', 'Result_DOsat')], by="id")
   #Add columns to identify exceedances of WQS for [DO] and %DO
-  new_data_all$Result<-as.numeric(new_data_all$Result)
-  new_data_all$Result_DOsat<-as.numeric(new_data_all$Result_DOsat)
+  new_data_all[, result_column]<-as.numeric(new_data_all[, result_column])
+  new_data_all$Result_DOsat <-as.numeric(new_data_all$Result_DOsat)
   
-  new_data_all$Cexceed<- ifelse(new_data_all$Result > new_data_all$bioc, 'Meets', 'Exceeds')
-  new_data_all$Cexceed<-as.factor(new_data_all$Cexceed)
+  new_data_all$Cexceed <- ifelse(new_data_all[, result_column] > new_data_all$bioc, 'Meets', 'Exceeds')
+  new_data_all$Cexceed <-as.factor(new_data_all$Cexceed)
   new_data_all$Sat_Exceed<-if (selectSpawning != 'No spawning') {
     ifelse(new_data_all$Result_DOsat < 95, 'Exceeds', 'Meets')
   } else if (selectUseDO == 'Cold-Water Aquatic Life') {
@@ -970,57 +973,6 @@ EvaluateDOWQS<-function(new_data,
                                            ifelse(new_data_all$Sat_Exceed == 'Meets', "Meets b/c %Sat",
                                                   as.character(new_data_all$Cexceed))))
   new_data_all$exceed <- as.factor(new_data_all$BCsat_Exceed)
-  
-  # ##IF no spawning##
-  # new_data_all$numcrit<-sdata$numcrit
-  # new_data_all$numcrit<-as.numeric(new_data_all$numcrit)
-  # new_data_all$Cexceed_nspwn<-ifelse(new_data_all$Result > new_data_all$numcrit, 'Meets', 'Exceeds')
-  # new_data_all$Cexceed_nspwn<-as.factor(new_data_all$Cexceed_nspwn)
-  # 
-  # ##filter points that meet because of the dissolved oxygen saturation##
-  # BCsat<-new_data_all%>%
-  #   filter(BCsat_Exceed == "Meets", Cexceed_nspwn == "Exceeds")
-  # 
-  # if (selectSpawning == 'No spawning'){
-  #   BCsat_spwn_exceed<-c("BCsat_spwn_exceed")
-  #   new_data_all[,BCsat_spwn_exceed] <- NA 
-  #   if (is.data.frame(BCsat) && nrow(BCsat)>0) {
-  #     BCsat$BCsat_spwn_exceed<-ifelse((length(BCsat$BCsat_Exceed) > 0), 'Meets b/c %Sat', NA)
-  #     BCsat_spwn_exceed<-c("BCsat_spwn_exceed")
-  #     new_data_all[,BCsat_spwn_exceed] <- NA 
-  #   }
-  # } else {
-  #   BCsat_spwn<-new_data_all%>%
-  #     filter(BCsat_Exceed == "Meets")
-  #   if (nrow(BCsat_spwn) > 0){
-  #     BCsat_spwn$BCsat_spwn_exceed<- ifelse(length(BCsat_spwn$BCsat_Exceed) > 0, 'Meets b/c %Sat', NA)
-  #     BCsat_spwn_exceed<-c("BCsat_spwn_exceed")
-  #     new_data_all[,BCsat_spwn_exceed] <- NA
-  #     new_data_all$BCsat_spwn_exceed <- NA
-  #     new_data_all<-rbind(new_data_all, BCsat_spwn) 
-  #   } else{
-  #     BCsat_spwn_exceed<-c("BCsat_spwn_exceed")
-  #     new_data_all[,BCsat_spwn_exceed] <- NA
-  #     new_data_all$BCsat_spwn_exceed <- NA
-  #     new_data_all<-rbind(new_data_all, BCsat_spwn)
-  #   }
-  # } 
-  # 
-  # if (selectSpawning == 'No spawning') {
-  #   new_data_all<-rbind(new_data_all, BCsat)
-  #   new_data_all$exceed<-ifelse(new_data_all$Cexceed_nspwn == 'Meets', 
-  #                               'Meets', 
-  #                               ifelse(!is.na(new_data_all$BCsat_spwn_exceed), 
-  #                                      "Meets b/c %Sat", 
-  #                                      'Exceeds'))
-  # } else {
-  #   new_data_all$exceed<-ifelse(new_data_all$Cexceed == 'Meets', 
-  #                               'Meets', 
-  #                               ifelse(!is.na(new_data_all$BCsat_spwn_exceed), 
-  #                                      "Meets b/c %Sat", 
-  #                                      'Exceeds'))
-  # }
-  # 
   
   exc<-new_data_all%>%
     filter(exceed == 'Exceeds' & BCsat_Exceed != 'Meets')
@@ -1052,13 +1004,13 @@ EvaluateTSSWQS<-function(new_data,
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   if(selectWQSTSS != 0) {
-    new_data$exceed<- ifelse(new_data$Result > selectWQSTSS,  'Exceeds', 'Meets')
+    new_data$exceed <- ifelse(new_data$Result > selectWQSTP, "Meets", "Exceeds")
   } else {
-    new_data$exceed<-NA
+    new_data$exceed <- "No Status"
   }
   
-  exc<-new_data%>%
-    filter(exceed == 'Exceeds')
+  exc <-new_data %>%
+    filter(exceed ==  "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1072,7 +1024,7 @@ EvaluateTSSWQS<-function(new_data,
   
 }
 
-EvaluateTSS_SNRHC<-function(new_data, TSS_target=50) {
+EvaluateTSS_SRHC<-function(new_data, TSS_target=50) {
   # function to evaluate monthly mean 50 mg/L TSS target in Snake River Hells Canyon Sediment TMDL
   # applies during the growing season May - September
   
@@ -1105,7 +1057,7 @@ EvaluateTSS_SNRHC<-function(new_data, TSS_target=50) {
 }
 
 EvaluateTPWQS<-function(new_data, 
-                         selectWQSTP) {
+                        selectWQSTP) {
   
   
   new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
@@ -1113,14 +1065,40 @@ EvaluateTPWQS<-function(new_data,
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   if(selectWQSTP != 0) {
-    # May - Sept TP target in Snake Hells Canyon TMDL
-    new_data$exceed<- ifelse(new_data$Result > selectWQSTP & month(new_data$Sampled) >= 5 & month(new_data$Sampled) <=9, 1, 0)
+    new_data$exceed <- ifelse(new_data$Result > selectWQSTP, "Meets", "Exceeds")
   } else {
-    new_data$exceed<-NA
+    new_data$exceed <- "No Status"
   }
   
+  exc <-new_data %>%
+    filter(exceed ==  "Exceeds")
+  
+  ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
+                      "Station_Description" = (unique(new_data$Station_Description)),
+                      "Min_Date" = min(new_data$year),
+                      "Max_Date" = max(new_data$year),
+                      "Obs" = c(nrow(new_data)),
+                      "Exceedances" = c(nrow(exc)))
+  
+  attr(new_data, "ex_df") <-ex_df
+  return(new_data)
+  
+}
+
+EvaluateTP_SRHC<-function(new_data, selectWQSTP) {
+  
+  # function to evaluate May - Sept 0.07 mg/L TP target in Snake Hells Canyon Nutrient TMDL
+  # applies during the growing season May - September
+  
+  new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
+  new_data$Sampled<-as.Date(new_data$Sampled)
+  new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
+  
+  # May - Sept TP target in Snake Hells Canyon TMDL
+  new_data$exceed<- ifelse(new_data$Result > selectWQSTP & month(new_data$Sampled) >= 5 & month(new_data$Sampled) <=9, "Exceeds", "Meets")
+  
   exc<-new_data%>%
-    filter(exceed == 1)
+    filter(exceed == "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1146,7 +1124,7 @@ generate_exceed_df <- function(new_data,
                                selectUse, 
                                selectSpawning, 
                                selectUseDO,
-                               station_column_name = 'Station_ID') {
+                               station_id_column = 'Station_ID') {
   exceed_df <- switch(
     parm,
     "pH" = ({
@@ -1847,28 +1825,27 @@ Delineation<-function(stns,
 
 }
 
-##parm summary data table 
-
 parm_summary <- function(stns,
-                         ecoli,
+                         DO = NULL,
+                         ecoli = NULL,
                          entero = NULL,
-                         pH,
+                         pH = NULL,
                          temp = NULL,
-                         tss = NULL,
                          tp = NULL,
-                         DO_eval,
-                         SeaKen, 
+                         tss = NULL,
+                         SeaKen,
+                         status.years,
                          status, 
                          trend) {
   
   
   #Add columns to stns dataframe
+  stns$DO_S <- '--'
+  stns$DO_T <- '--'
   stns$Ecoli_S <- '--'
   stns$Ecoli_T <- '--'
   stns$Entero_S  <- '--'
   stns$Entero_T  <- '--'
-  stns$DO_S <- '--'
-  stns$DO_T <- '--'
   stns$pH_S <- '--'
   stns$pH_T <- '--'
   stns$Temp_S <- '--'
@@ -1878,60 +1855,59 @@ parm_summary <- function(stns,
   stns$TSS_S <- '--'
   stns$TSS_T <- '--'
   
-  
-  
   #-- ecoli --------------------------------------------------------------------------
   
-  # add year column to data to delineate status
-  ecoli$Sampled <- as.POSIXct(strptime(ecoli$Sampled, format = '%Y-%m-%d')) 
-  ecoli$Sampled<-as.Date(ecoli$Sampled)
-  ecoli$year<-as.numeric(format(ecoli$Sampled, format="%Y"))
-  
-  maxyear <- max(ecoli$year)
-  statyear<-seq(maxyear-3, maxyear, by = 1)
-  
-  #filter out stations that meet status and stations that meet trend
-  e_status_stns <- status %>% filter(Analyte == 'E. Coli')
-  e_status_stns  <- unique(e_status_stns$Station_ID)
-  e_status <- ecoli %>% filter(Station_ID %in% e_status_stns) %>% filter(year %in% statyear)
-  
-  if(any(trend != 'No Stations Meet Trend Criteria') & any(SeaKen[SeaKen$analyte == 'E. Coli',]$signif != 'Need at least 8 years'))  {
-    e_trend_stns <- SeaKen %>% filter(analyte == 'E. Coli', signif != 'Need at least 8 years')
-    e_trend_stns  <- unique(e_trend_stns$Station_ID)
-  } else {
-    e_trend_stns <- NULL
-  }
-  
-  #status Ecoli
-  for(i in 1:length(e_status_stns)) {
-    #status  
-    e_data <- e_status[e_status$Station_ID == e_status_stns[i],]
+  if(!is.null(ecoli)){
     
-    if(any(unique(e_data$exceed) > 0)) {
-      stns[stns$Station_ID == e_status_stns[i], ]$Ecoli_S <- 'Exceeds'
+    # add year column to data to delineate status
+    ecoli$Sampled <- as.POSIXct(strptime(ecoli$Sampled, format = '%Y-%m-%d')) 
+    ecoli$Sampled<-as.Date(ecoli$Sampled)
+    ecoli$year<-as.numeric(format(ecoli$Sampled, format="%Y"))
+    
+    #filter out stations that meet status and stations that meet trend
+    e_status_stns <- status %>% filter(Analyte == 'E. Coli')
+    e_status_stns  <- unique(e_status_stns$Station_ID)
+    e_status <- ecoli %>% filter(Station_ID %in% e_status_stns) %>% filter(year %in% status.years)
+    
+    if(any(trend != 'No Stations Meet Trend Criteria'))  {
+      e_trend_stns <- SeaKen %>% filter(analyte == 'E. Coli', signif != 'Insufficient data for trend analysis')
+      e_trend_stns  <- unique(e_trend_stns$Station_ID)
     } else {
-      stns[stns$Station_ID == e_status_stns[i], ]$Ecoli_S <- 'Meets'
+      e_trend_stns <- NULL
     }
     
-  }
-
-  #trend Ecoli
-  if(length(e_trend_stns) > 0) {
-    for(j in 1:length(e_trend_stns)) {
-
-      e_seaken <- SeaKen %>% filter(analyte == 'E. Coli')
-      e_seaken <- e_seaken[e_seaken$Station_ID == e_trend_stns[j],]
-      
-      if(e_seaken$signif != "Not Significant") {
-        if(e_seaken$pvalue < 0.2 & e_seaken$slope > 0) {
-          stns[stns$Station_ID == e_trend_stns[j], ]$Ecoli_T <-'Degrading'
-        } else if(e_seaken$pvalue < 0.2 & e_seaken$slope < 0){
-          stns[stns$Station_ID == e_trend_stns[j], ]$Ecoli_T <- 'Improving'
-        } else if(e_seaken$pvalue < 0.2 & e_seaken$slope == 0) {
-          stns[stns$Station_ID == e_trend_stns[j], ]$Ecoli_T <-'Steady'
-        } 
-      } else {
-        stns[stns$Station_ID == e_trend_stns[j], ]$Ecoli_T <- 'No Sig Trend'
+    #status Ecoli
+    if(length(e_status_stns) > 0) {
+      for(i in 1:length(e_status_stns)) {
+        #status  
+        e_data <- e_status[e_status$Station_ID == e_status_stns[i],]
+        
+        if(any(unique(e_data$exceed) > 0)) {
+          stns[stns$Station_ID == e_status_stns[i], ]$Ecoli_S <- 'Exceeds'
+        } else {
+          stns[stns$Station_ID == e_status_stns[i], ]$Ecoli_S <- 'Meets'
+        }
+        
+      }
+    }
+    
+    #trend Ecoli
+    if(length(e_trend_stns) > 0) {
+      for(j in 1:length(e_trend_stns)) {
+        e_seaken <- SeaKen %>% filter(analyte == 'E. Coli')
+        e_seaken <- e_seaken[e_seaken$Station_ID == e_trend_stns[j],]
+        
+        if(e_seaken$signif != "Not Significant") {
+          if(e_seaken$pvalue < 0.2 & e_seaken$slope > 0) {
+            stns[stns$Station_ID == e_trend_stns[j], ]$Ecoli_T <-'Degrading'
+          } else if(e_seaken$pvalue < 0.2 & e_seaken$slope < 0){
+            stns[stns$Station_ID == e_trend_stns[j], ]$Ecoli_T <- 'Improving'
+          } else if(e_seaken$pvalue < 0.2 & e_seaken$slope == 0) {
+            stns[stns$Station_ID == e_trend_stns[j], ]$Ecoli_T <-'Steady'
+          } 
+        } else {
+          stns[stns$Station_ID == e_trend_stns[j], ]$Ecoli_T <- 'No Sig Trend'
+        }
       }
     }
   }
@@ -1945,32 +1921,31 @@ parm_summary <- function(stns,
     entero$Sampled<-as.Date(entero$Sampled)
     entero$year<-as.numeric(format(entero$Sampled, format="%Y"))
     
-    maxyear <- max(entero$year)
-    statyear<-seq(maxyear-3, maxyear, by = 1)
-    
     #filter out stations that meet status and stations that meet trend
     ent_status_stns <- status %>% filter(Analyte == 'Enterococcus')
     ent_status_stns  <- unique(ent_status_stns$Station_ID)
-    ent_status <- entero %>% filter(Station_ID %in% ent_status_stns) %>% filter(year %in% statyear)
+    ent_status <- entero %>% filter(Station_ID %in% ent_status_stns) %>% filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      ent_trend_stns <- trend %>% filter(Analyte == 'Enterococcus')
+      ent_trend_stns <- SeaKen %>% filter(analyte == 'Enterococcus', signif != 'Insufficient data for trend analysis')
       ent_trend_stns  <- unique(ent_trend_stns$Station_ID)
     } else {
       ent_trend_stns <- NULL
     }
     
     # status Enterococcus
-    for(i in 1:length(ent_status_stns)) {
-      #status  
-      ent_data <- ent_status[ent_status$Station_ID == ent_status_stns[i],]
-      
-      if(any(unique(ent_data$exceed) > 0)) {
-        stns[stns$Station_ID == ent_status_stns[i], ]$Entero_S <- 'Exceeds'
-      } else {
-        stns[stns$Station_ID == ent_status_stns[i], ]$Entero_S <- 'Meets'
+    if(length(ent_status_stns) > 0) {
+      for(i in 1:length(ent_status_stns)) {
+        #status  
+        ent_data <- ent_status[ent_status$Station_ID == ent_status_stns[i],]
+        
+        if(any(unique(ent_data$exceed) > 0)) {
+          stns[stns$Station_ID == ent_status_stns[i], ]$Entero_S <- 'Exceeds'
+        } else {
+          stns[stns$Station_ID == ent_status_stns[i], ]$Entero_S <- 'Meets'
+        }
+        
       }
-      
     }
     
     # trend Enterococcus
@@ -1995,109 +1970,111 @@ parm_summary <- function(stns,
   }
   
   #-- pH --------------------------------------------------------------------------
-  pH$Sampled <- as.POSIXct(strptime(pH$Sampled, format = '%Y-%m-%d')) 
-  pH$Sampled<-as.Date(pH$Sampled)
-  pH$year<-as.numeric(format(pH$Sampled, format="%Y"))
   
-  maxyear <- max(pH$year)
-  statyear<-seq(maxyear-3, maxyear, by = 1)
-  
-  #filter out stations that meet status and stations that meet trend
-  pH_status_stns <- status %>% filter(Analyte == 'pH')
-  pH_status_stns  <- unique(pH_status_stns$Station_ID)
-  pH_status <- pH %>% filter(Station_ID %in% pH_status_stns) %>% filter(year %in% statyear)
-  
-  if(any(trend != 'No Stations Meet Trend Criteria'))  {
-    pH_trend_stns <- trend %>% filter(Analyte == 'pH')
-    pH_trend_stns  <- unique(pH_trend_stns$Station_ID)
-  }else{
-    pH_trend_stns <- NULL
-  }
-  
-  # status pH
-  for(i in 1:length(pH_status_stns)) {
-    #status  
-    pH_data <- pH_status[pH_status$Station_ID == pH_status_stns[i],]
+  if(!is.null(pH)){
     
-    if(sum(pH_data$exceed) > 0) {
-      stns[stns$Station_ID == pH_status_stns[i], ]$pH_S <- 'Exceeds'
-    } else {
-      stns[stns$Station_ID == pH_status_stns[i], ]$pH_S <- 'Meets'
+    pH$Sampled <- as.POSIXct(strptime(pH$Sampled, format = '%Y-%m-%d')) 
+    pH$Sampled<-as.Date(pH$Sampled)
+    pH$year<-as.numeric(format(pH$Sampled, format="%Y"))
+    
+    #filter out stations that meet status and stations that meet trend
+    pH_status_stns <- status %>% filter(Analyte == 'pH')
+    pH_status_stns  <- unique(pH_status_stns$Station_ID)
+    pH_status <- pH %>% filter(Station_ID %in% pH_status_stns) %>% filter(year %in% status.years)
+    
+    if(any(trend != 'No Stations Meet Trend Criteria'))  {
+      pH_trend_stns <- SeaKen %>% filter(analyte == 'pH', signif != 'Insufficient data for trend analysis')
+      pH_trend_stns  <- unique(pH_trend_stns$Station_ID)
+    }else{
+      pH_trend_stns <- NULL
     }
     
-  }
-  
-  # trend pH
-  if(length(pH_trend_stns) > 0 ) {
-    for(j in 1:length(pH_trend_stns)) {
-      pH_seaken <- SeaKen %>% filter(analyte == 'pH')
-      pH_seaken <- pH_seaken[pH_seaken$Station_ID == pH_trend_stns[j],]
-      
-      if(pH_seaken$signif != "Not Significant") {
-        if(pH_seaken$pvalue < 0.2 & pH_seaken$slope > 0) {
-          stns[stns$Station_ID == pH_trend_stns[j], ]$pH_T <-'Degrading'
-        } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope < 0){
-          stns[stns$Station_ID == pH_trend_stns[j], ]$pH_T <- 'Improving'
-        } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope == 0) {
-          stns[stns$Station_ID == pH_trend_stns[j], ]$pH_T <-'Steady'
-        } 
-      } else {
-        stns[stns$Station_ID == pH_trend_stns[j], ]$pH_T <- 'No Sig Trend'
+    # status pH
+    if(length(pH_status_stns) > 0) {
+      for(i in 1:length(pH_status_stns)) {
+        #status  
+        pH_data <- pH_status[pH_status$Station_ID == pH_status_stns[i],]
+        
+        if(sum(pH_data$exceed) > 0) {
+          stns[stns$Station_ID == pH_status_stns[i], ]$pH_S <- 'Exceeds'
+        } else {
+          stns[stns$Station_ID == pH_status_stns[i], ]$pH_S <- 'Meets'
+        }
+        
+      }
+    }
+    
+    # trend pH
+    if(length(pH_trend_stns) > 0 ) {
+      for(j in 1:length(pH_trend_stns)) {
+        pH_seaken <- SeaKen %>% filter(analyte == 'pH')
+        pH_seaken <- pH_seaken[pH_seaken$Station_ID == pH_trend_stns[j],]
+        
+        if(pH_seaken$signif != "Not Significant") {
+          if(pH_seaken$pvalue < 0.2 & pH_seaken$slope > 0) {
+            stns[stns$Station_ID == pH_trend_stns[j], ]$pH_T <-'Degrading'
+          } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope < 0){
+            stns[stns$Station_ID == pH_trend_stns[j], ]$pH_T <- 'Improving'
+          } else if(pH_seaken$pvalue < 0.2 & pH_seaken$slope == 0) {
+            stns[stns$Station_ID == pH_trend_stns[j], ]$pH_T <-'Steady'
+          } 
+        } else {
+          stns[stns$Station_ID == pH_trend_stns[j], ]$pH_T <- 'No Sig Trend'
+        }
       }
     }
   }
-  
   #-- Dissolved Oxygen --------------------------------------------------------------------------
   
-  maxyear <- max(DO_eval$year)
-  statyear<-seq(maxyear-3, maxyear, by = 1)
-  
-  #filter out stations that meet status and stations that meet trend
-  DO_status_stns <- status %>% filter(Analyte == 'Dissolved Oxygen')
-  DO_status_stns  <- unique(DO_status_stns$Station_ID)
-  DO_status <- DO_eval %>% filter(Station_ID %in% DO_status_stns) %>% filter(year %in% statyear)
-  
-  if(any(trend != 'No Stations Meet Trend Criteria'))  {
-    DO_trend_stns <- trend %>% filter(Analyte == 'Dissolved Oxygen')
-    DO_trend_stns  <- unique(DO_trend_stns$Station_ID)
-  } else {
-    DO_trend_stns <- NULL
-  }
-  
-  # status DO
-  for(i in 1:length(DO_status_stns)) {
-    #status  
-    DO_data <- DO_status[DO_status$Station_ID == DO_status_stns[i],]
+  if(!is.null(DO)){
     
-    if(any(as.character(DO_data$exceed) == 'Exceeds')) {
-      stns[stns$Station_ID == DO_status_stns[i], ]$DO_S <- 'Exceeds'
+    #filter out stations that meet status and stations that meet trend
+    DO_status_stns <- status %>% filter(Analyte == 'Dissolved Oxygen')
+    DO_status_stns  <- unique(DO_status_stns$Station_ID)
+    DO_status <- DO %>% filter(Station_ID %in% DO_status_stns) %>% filter(year %in% status.years)
+    
+    if(any(trend != 'No Stations Meet Trend Criteria'))  {
+      DO_trend_stns <- SeaKen %>% filter(analyte == 'Dissolved Oxygen', signif != 'Insufficient data for trend analysis')
+      DO_trend_stns  <- unique(DO_trend_stns$Station_ID)
     } else {
-      stns[stns$Station_ID == DO_status_stns[i], ]$DO_S <- 'Meets'
+      DO_trend_stns <- NULL
     }
     
-  }
-  
-  # trend DO
-  if(length(DO_trend_stns) > 0){
-    for(j in 1:length(DO_trend_stns)) {
-      # print(j)
-      DO_seaken <- SeaKen %>% filter(analyte == 'Dissolved Oxygen')
-      DO_seaken <- DO_seaken[DO_seaken$Station_ID == DO_trend_stns[j],]
-      
-      if(DO_seaken$signif != "Not Significant") {
-        if(DO_seaken$pvalue < 0.2 & DO_seaken$slope > 0) {
-          stns[stns$Station_ID == DO_trend_stns[j], ]$DO_T <-'Improving'
-        } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope < 0){
-          stns[stns$Station_ID == DO_trend_stns[j], ]$DO_T <- 'Degrading'
-        } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope == 0) {
-          stns[stns$Station_ID == DO_trend_stns[j], ]$DO_T <-'Steady'
-        } 
-      } else {
-        stns[stns$Station_ID == DO_trend_stns[j], ]$DO_T <- 'No Sig Trend'
+    # status DO
+    if(length(DO_status_stns) > 0) {
+      for(i in 1:length(DO_status_stns)) {
+        #status  
+        DO_data <- DO_status[DO_status$Station_ID == DO_status_stns[i],]
+        
+        if(any(as.character(DO_data$exceed) == 'Exceeds')) {
+          stns[stns$Station_ID == DO_status_stns[i], ]$DO_S <- 'Exceeds'
+        } else {
+          stns[stns$Station_ID == DO_status_stns[i], ]$DO_S <- 'Meets'
+        }
+        
       }
     }
-  }
-  
+    
+    # trend DO
+    if(length(DO_trend_stns) > 0){
+      for(j in 1:length(DO_trend_stns)) {
+        DO_seaken <- SeaKen %>% filter(analyte == 'Dissolved Oxygen')
+        DO_seaken <- DO_seaken[DO_seaken$Station_ID == DO_trend_stns[j],]
+        
+        if(DO_seaken$signif != "Not Significant") {
+          if(DO_seaken$pvalue < 0.2 & DO_seaken$slope > 0) {
+            stns[stns$Station_ID == DO_trend_stns[j], ]$DO_T <-'Improving'
+          } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope < 0){
+            stns[stns$Station_ID == DO_trend_stns[j], ]$DO_T <- 'Degrading'
+          } else if(DO_seaken$pvalue < 0.2 & DO_seaken$slope == 0) {
+            stns[stns$Station_ID == DO_trend_stns[j], ]$DO_T <-'Steady'
+          } 
+        } else {
+          stns[stns$Station_ID == DO_trend_stns[j], ]$DO_T <- 'No Sig Trend'
+        }
+      }
+    }
+  } 
   
   #-- Temperature  --------------------------------------------------------------------------
   
@@ -2109,7 +2086,8 @@ parm_summary <- function(stns,
     temp_status_stns  <- unique(filter(status, Analyte == "Temperature")$Station_ID)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      temp_trend_stns <- unique(filter(SeaKen, analyte == "Temperature")$Station_ID)
+      temp_trend_stns <- SeaKen %>% filter(analyte == 'Temperature', signif != 'Insufficient data for trend analysis')
+      temp_trend_stns  <- unique(temp_trend_stns$Station_ID)
     } else {
       temp_trend_stns <- NULL
     }
@@ -2119,12 +2097,8 @@ parm_summary <- function(stns,
       for(i in 1:length(temp_status_stns)) {
         # status  
         temp_data <- temp[temp$Station_ID == temp_status_stns[i],]
-        # 
-        # 
-        # maxyear <- max(temp_data$year)
-        # statyear<-seq(maxyear-3, maxyear, by = 1)
         
-        temp_status <- temp_data %>% filter(Station_ID %in% temp_status_stns[i]) %>% filter(year %in% statyear)
+        temp_status <- temp_data %>% filter(Station_ID %in% temp_status_stns[i]) %>% filter(year %in% status.years)
         
         if(any(!is.na(temp_status$exceed))) {
           if(any(unique((temp_status$exceed) == 'TRUE'))) {
@@ -2165,34 +2139,33 @@ parm_summary <- function(stns,
     tp$Sampled<-as.Date(tp$Sampled)
     tp$year<-as.numeric(format(tp$Sampled, format="%Y"))
     
-    maxyear <- max(tp$year)
-    statyear<-seq(maxyear-3, maxyear, by = 1)
-    
     #filter out stations that meet status and stations that meet trend
     tp_status_stns <- status %>% filter(Analyte == 'Total Phosphorus')
     tp_status_stns  <- unique(tp_status_stns$Station_ID)
-    tp_status <- tp %>% filter(Station_ID %in% tp_status_stns) %>% filter(year %in% statyear)
+    tp_status <- tp %>% filter(Station_ID %in% tp_status_stns) %>% filter(year %in% status.years)
     
-    if(any(trend != 'No Stations Meet Trend Criteria') & any(SeaKen[SeaKen$analyte == 'Total Phosphorus',]$signif != 'Need at least 8 years'))  {
-      tp_trend_stns <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Need at least 8 years')
+    if(any(trend != 'No Stations Meet Trend Criteria'))  {
+      tp_trend_stns <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Insufficient data for trend analysis')
       tp_trend_stns  <- unique(tp_trend_stns$Station_ID)
     }else{
       tp_trend_stns <- NULL
     }
     
     #status tp
-    for(i in 1:length(tp_status_stns)) {
-      #status  
-      tp_data <- tp_status[tp_status$Station_ID == tp_status_stns[i],]
-      
-      if(is.na(tp_data$exceed)) {
-        stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- '--'
-      } else if(sum(tp_data$exceed, na.rm = TRUE) > 0) {
-        stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- 'Exceeds'
-      } else {
-        stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- 'Meets'
+    if(length(tp_status_stns) > 0) {
+      for(i in 1:length(tp_status_stns)) {
+        #status  
+        tp_data <- tp_status[tp_status$Station_ID == tp_status_stns[i],]
+        
+        if(any(tp_data$exceed == 'Exceeds')) {
+          stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- 'Exceeds'
+        } else if(any(tp_data$exceed == 'Meets')) {
+          stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- 'Meets'
+        } else {
+          stns[stns$Station_ID == tp_status_stns[i], ]$TP_S <- '--'
+        }
+        
       }
-      
     }
 
     #trend tp
@@ -2224,34 +2197,33 @@ parm_summary <- function(stns,
     tss$Sampled<-as.Date(tss$Sampled)
     tss$year<-as.numeric(format(tss$Sampled, format="%Y"))
     
-    maxyear <- max(tss$year)
-    statyear<-seq(maxyear-3, maxyear, by = 1)
-    
     #filter out stations that meet status and stations that meet trend
     tss_status_stns <- status %>% filter(Analyte == 'Total Suspended Solids')
     tss_status_stns  <- unique(tss_status_stns$Station_ID)
-    tss_status <- tss %>% filter(Station_ID %in% tss_status_stns) %>% filter(year %in% statyear)
+    tss_status <- tss %>% filter(Station_ID %in% tss_status_stns) %>% filter(year %in% status.years)
     
-    if(any(trend != 'No Stations Meet Trend Criteria') & any(SeaKen[SeaKen$analyte == 'Total Suspended Solids',]$signif != 'Need at least 8 years'))  {
-      tss_trend_stns <- SeaKen %>% filter(analyte == 'Total Suspended Solids', signif != 'Need at least 8 years')
+    if(any(trend != 'No Stations Meet Trend Criteria'))  {
+      tss_trend_stns <- SeaKen %>% filter(analyte == 'Total Suspended Solids', signif != 'Insufficient data for trend analysis')
       tss_trend_stns  <- unique(tss_trend_stns$Station_ID)
     }else{
       tss_trend_stns <- NULL
     }
     
     #status tss
-    for(i in 1:length(tss_status_stns)) {
-      #status  
-      tss_data <- tss_status[tss_status$Station_ID == tss_status_stns[i],]
-      
-      if(is.na(tss_data$exceed)) {
-        stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- '--'
-      } else if(any(tss_data$exceed == 'Exceeds')) {
-        stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Exceeds'
-      } else {
-        stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Meets'
+    if(length(tss_status_stns) > 0) {
+      for(i in 1:length(tss_status_stns)) {
+        #status  
+        tss_data <- tss_status[tss_status$Station_ID == tss_status_stns[i],]
+        
+        if(any(tss_data$exceed == 'Exceeds')) {
+          stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Exceeds'
+        } else if(any(tss_data$exceed == 'Meets')) {
+          stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- 'Meets'
+        } else {
+          stns[stns$Station_ID == tss_status_stns[i], ]$TSS_S <- '--'
+        }
+        
       }
-      
     }
     
     #trend tss
