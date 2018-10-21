@@ -1914,11 +1914,11 @@ parm_summary <- function(stns,
     }
     
   }
-  print("Summarizing trends for E. Coli")
+
   #trend Ecoli
   if(length(e_trend_stns) > 0) {
     for(j in 1:length(e_trend_stns)) {
-      print(e_trend_stns[j])
+
       e_seaken <- SeaKen %>% filter(analyte == 'E. Coli')
       e_seaken <- e_seaken[e_seaken$Station_ID == e_trend_stns[j],]
       
@@ -2194,11 +2194,11 @@ parm_summary <- function(stns,
       }
       
     }
-    print("Summarizing trends for Total Phosphorus")
+
     #trend tp
     if(length(tp_trend_stns) > 0 ) {
       for(j in 1:length(tp_trend_stns)) {
-        print(tp_trend_stns[j])
+
         tp_seaken <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Need at least 8 years')
         tp_seaken <- tp_seaken[tp_seaken$Station_ID == tp_trend_stns[j],]
         
