@@ -50,7 +50,7 @@ project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Owyhee/2018
 word_output <- TRUE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
-split_param_summary <- FALSE
+split_param_summary <- TRUE
 
 # Everything below here should not change
 Rdata_dir <- paste0(project_dir,"/RData")
@@ -106,7 +106,7 @@ This report presents data and analysis that will help DEQ fulfill its role in th
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
-*	Are the Snake River - Hells Canyon sediment and nutrients TMDL targets for total phosphorus and total suspended solids being acheived?
+*	Are the Snake River - Hells Canyon sediment and nutrients TMDL targets for total phosphorus and total suspended solids being achieved?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 
