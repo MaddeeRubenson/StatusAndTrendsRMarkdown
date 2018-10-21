@@ -64,7 +64,7 @@ source("functions/funPlots.R")
 source('functions/TualatinR_Allocations.R')
 
 tbls  <- captioner(prefix="Table")
-figs <- captioner(prefix="  \nFigure")
+figs <- captioner(prefix="\nFigure")
 ```
 
 ```{r inputs}
@@ -777,6 +777,7 @@ if(length(ecoli_stns) > 0) {
     
     print(b)
     cat(figs(name = paste0('E_', ecoli_stns[j]), caption = paste0('Station ', ecoli_stns[j], ' _E. coli_ water quality status and/or trends.')))
+    cat('\n\n')
     
   }
   
@@ -868,6 +869,7 @@ if(length(entero_stns) > 0) {
     
     cat(figs(name = paste0('Entero_', entero_stns[i]),
              caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and/or trends.')))
+    cat('\n\n')
   }
   
   colnames(exc) <- c("Station ID", "Station Description", "Criteria", "Observations", "Exceedances", "Percent Exceedance")
@@ -975,6 +977,7 @@ if(length(tp_stn) > 0) {
     cat(figs(name = paste0('TP_', tp_stn[j]), 
              caption = paste0('Station ', tp_stn[j], 
                               ' Total Phosphorus water quality status and/or trends.')))
+    cat('\n\n')
     
     
   }
@@ -1088,6 +1091,7 @@ if(length(tss_stn) > 0){
     cat(figs(name = paste0('TSS_', tss_stn[j]), 
              caption = paste0('Station ', tss_stn[j], 
                               ' Total Suspended Solids water quality status and trends.')))
+    cat('\n\n')
     
     
   }
@@ -1204,6 +1208,7 @@ if(length(pH_stns) > 0) {
     cat(figs(name = paste0('pH_', pH_stns[j]), 
              caption = paste0('Station ', pH_stns[j],
                               ' pH water quality status and/or trends.')))
+    cat('\n\n')
     
   }
   
@@ -1441,6 +1446,7 @@ if(length(DO_stns) > 0) {
     cat(figs(name = paste0('DO_', DO_stns[j]), 
              caption = paste0('Station ', DO_stns[j],
                               ' Dissolved Oxygen water quality status and/or trends.')))
+    cat('\n\n')
     
   }
   
@@ -1513,7 +1519,7 @@ knitr::include_graphics(path = paste0("Figures/",station_summary_map_pH_file))
 
 ```{r TP-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="TP_map", caption="Summary of stations that fit the criteria for trend analysis for Total Phosphorus.  Trend was determined by significant trends associated with long-term datasets.")}
 
-knitr::include_graphics(path = paste0("/Figures/",station_summary_map_tp_file))
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_tp_file))
 
 ```
 
