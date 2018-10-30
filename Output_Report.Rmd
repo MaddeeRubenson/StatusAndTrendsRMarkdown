@@ -64,7 +64,7 @@ source("functions/funPlots.R")
 source('functions/TualatinR_Allocations.R')
 
 tbls  <- captioner(prefix="Table")
-figs <- captioner(prefix="  \nFigure")
+figs <- captioner(prefix="\n\n Figure")
 ```
 
 ```{r inputs}
@@ -433,8 +433,13 @@ if (word_output) {
   
   tbls(name="tbl1_lu", display=FALSE)
   tbls(name="tbl2_results_summary", display=FALSE)
-  figs(name="fig1_result_map1", display=FALSE)
-  figs(name="fig2_result_map2", display=FALSE)
+  figs(name="fig1_result_map", display=FALSE)
+  figs(name="fig2_result_map", display=FALSE)
+  figs(name="fig3_result_map", display=FALSE)
+  figs(name="fig4_result_map", display=FALSE)
+  figs(name="fig5_result_map", display=FALSE)
+  figs(name="fig6_result_map", display=FALSE)
+  figs(name="fig7_result_map", display=FALSE)
   tbls(name="tbl3_station_summary", display=FALSE)
 }
 
@@ -483,7 +488,7 @@ knitr::kable(BC_table,
 
 ## Data Sources
 
-Water quality data were retrieved from [DEQ][2.1.1] (LASAR and ELEMENT), U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) U.S. Geological Survey [NWIS][2.1.3] (USGS 2016), and [Water Quality Portal][2.1.4]) databases. Many other organizations provided data that were queried and evaluated for use in this report (see Appendix for a complete list). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). ** REMOVE IF NOT NEEDED. Stations located within the Confederated Tribes of Umatilla Indian Reservation were not included in this report. The Confederated Tribes of Umatilla administer Clean Water Act programs on the reservation.**
+Water quality data were retrieved from [DEQ][2.1.1] (LASAR and ELEMENT), U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) U.S. Geological Survey [NWIS][2.1.3] (USGS 2016), and [Water Quality Portal][2.1.4]) databases. Many other organizations provided data that were queried and evaluated for use in this report (see Appendix for a complete list). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*).
 
 The data returned were evaluated for quality. Data retrieved from DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual][2.1.5] (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data.
 
@@ -793,6 +798,7 @@ if(length(ecoli_stns) > 0) {
     
     print(b)
     cat(figs(name = paste0('E_', ecoli_stns[j]), caption = paste0('Station ', ecoli_stns[j], ' _E. coli_ water quality status and/or trends.')))
+    cat('\n\n')
     
   }
   
@@ -884,6 +890,7 @@ if(length(entero_stns) > 0) {
     
     cat(figs(name = paste0('Entero_', entero_stns[i]),
              caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and/or trends.')))
+    cat('\n\n')
   }
   
 
@@ -998,6 +1005,7 @@ if(length(tp_stn) > 0) {
     cat(figs(name = paste0('TP_', tp_stn[j]), 
              caption = paste0('Station ', tp_stn[j], 
                               ' Total Phosphorus water quality status and/or trends.')))
+    cat('\n\n')
     
     
   }
@@ -1117,6 +1125,7 @@ if(length(tss_stn) > 0){
     cat(figs(name = paste0('TSS_', tss_stn[j]), 
              caption = paste0('Station ', tss_stn[j], 
                               ' Total Suspended Solids water quality status and trends.')))
+    cat('\n\n')
     
     
   }
@@ -1233,6 +1242,7 @@ if(length(pH_stns) > 0) {
     cat(figs(name = paste0('pH_', pH_stns[j]), 
              caption = paste0('Station ', pH_stns[j],
                               ' pH water quality status and/or trends.')))
+    cat('\n\n')
     
   }
   
@@ -1342,6 +1352,7 @@ if(length(temp_stn) > 0) {
     cat(figs(name = paste0('temp_', temp_stn[j]), 
              caption = paste0('Station ', temp_stn[j], 
                               ' Temperature water quality status and/or trends.')))
+    cat('\n\n')
     
   }
   
@@ -1469,6 +1480,7 @@ if(length(DO_stns) > 0) {
     cat(figs(name = paste0('DO_', DO_stns[j]), 
              caption = paste0('Station ', DO_stns[j],
                               ' Dissolved Oxygen water quality status and/or trends.')))
+    cat('\n\n')
     
   }
   
