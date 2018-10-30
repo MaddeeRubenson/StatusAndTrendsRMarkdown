@@ -1,7 +1,7 @@
 ---
-title: Lower Deschutes Agricultural Water Quality Management Area Water Quality Status and Trends Report
+title: Willow Creek Agricultural Water Quality Management Area Water Quality Status and Trends Report
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: June 2018
+date: November 2018
 output: 
   word_document:
     reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
@@ -42,9 +42,9 @@ figs <- captioner(prefix="Figure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_shp').
 
-agwqma <- "Lower Deschutes"
+agwqma <- "Willow Creek"
 query_dates <- c("2000-01-01", "2018-07-01")
-project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Lower Deschutes/2018-Lower-Deschutes"
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Willow Creek/2018-Willow-Creek"
 
 word_output <- TRUE
 split_param_summary <- FALSE
