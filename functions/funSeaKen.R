@@ -41,7 +41,7 @@ run_seaKen <- function (inputData) {
                        type = "long",
                        time.format = "%Y-%m-%d %H:%M:%S")
       # Create time series from water quality data
-      tmp.ts <- suppressWarnings(tsMake(tmp.wq, focus = parm, qprob = 0.05, layer = c(0, 5))) #changed to median value per Helsel and Hirsch 2002; 11-14-2017
+      tmp.ts <- suppressWarnings(tsMake(tmp.wq, focus = parm, qprob = 0.5, layer = c(0, 5))) #changed to median value per Helsel and Hirsch 2002; 11-14-2017
       if (length(unique(year(tmp.data$date))) < 8) {
         sea_ken_int$signif[ii] <- "Years<8"
       }
