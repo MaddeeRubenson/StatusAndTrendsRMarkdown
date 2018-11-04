@@ -1748,6 +1748,9 @@ leaflet(agwqma_shp) %>%
 
 ```{r conclusions-setup}
 
+
+Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "DO"), c("conclusion")] <- conclusions.DO
+
 conclusions.DO <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "DO"), c("conclusion")]
 conclusions.Ecoli <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Ecoli"), c("conclusion")]
 conclusions.Entero <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Entero"), c("conclusion")]
