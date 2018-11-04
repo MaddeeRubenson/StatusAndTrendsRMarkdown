@@ -9,6 +9,16 @@ s <- function(x) {
   
 }
 
+a <- function(x) {
+  # function to return "a" or "" given the count of x
+  
+  if (x == 1) {
+    return("a")
+  } else {
+    return("") }
+  
+}
+
 was.were <- function(x) {
   # function to return past singular (was) or past plural (were) given the count of x
   
@@ -23,11 +33,18 @@ a.an <- function(x) {
   
 }
 
-numbers.to.words <- function(x, cap=TRUE) {
+numbers.to.words <- function(x, cap=TRUE, plural.only=FALSE) {
   # function to convert numbers < 10 to words
   # x = numeric number
+  if (plural.only) {
+    
+    words <- c("", "", "two", "three", "four", "five", "six", "seven", "eight", "nine")
   
-  words <- c("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
+    } else {
+    
+    words <- c("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
+    
+  }
   
   if (x >= 0 & x < 10) {
     if (cap) {
@@ -41,8 +58,7 @@ numbers.to.words <- function(x, cap=TRUE) {
 }
 
 
-
-con.auto <- function(df) {
+con.auto <- function(analyte, stns_param_summary) {
   
   # if (status_station_ID_vector == trend_station_ID_vector)
   # 1. Data collected at [n_status_trend] station(s) were sufficient to assess both [analyte] status and trends.
@@ -51,12 +67,12 @@ con.auto <- function(df) {
   # s1a. Data collected at [n_status] station(s) were sufficient to assess status.
   # or
   # s1a. [analyte ?concentrations] data were not availible in the last two years to assess status.
-
+  
   # s2a. All [n_status] station(s) (station_ID_vector) had [analyte ?concentrations] that [status_result] the [analyte] water quality criteria.
   # or
   # s2a. [n_status_attain] station(s) (station_ID_vector) had [analyte ?concentrations] that [status_result] the [analyte] water quality criteria.
   # s2b. [n_status_exceed] station(s) (Station_ID_vector) [status_result] the [analyte] water quality criteria.
-
+  
   # TRENDS
   # t1a. [n_trends] station(s) had sufficient data to assess trends.
   # or
@@ -72,35 +88,6 @@ con.auto <- function(df) {
   
   # t4. [n_trend_insuff] station(s) (station_ID_vector) did not have statistically significant trends.
   
-
-  "Nine stations had sufficient data to assess trends. Three stations (10729, 1119USBR_WQX-MAL218, 1119USBR_WQX-OWY110)
-  had an improving trend. One drain station (1119USBR_WQX-MAL214) had a degrading trend. 
-  The remaining five stations (10730, 11050, 1119USBR_WQX-MAL216, 1119USBR_WQX-OWY002, 36783) 
-  did not have statistically significant trends."
-  
-  # Examples
-  ex <- "Data collected at nine stations were sufficient to assess status. 
-  All nine stations (10729, 10730, 11050, 1119USBR_WQX-OWY301, 1119USBR_WQX-OWY304, 1119USBR_WQX-OWY307, 1119USBR_WQX-OWY310, 1119USBR_WQX-OWY313) 
-  had total phosphours concentrations that exceeded the 0.07 mg/L Snake River - Hells-Canyon Sediment TMDL targets. 
-  Nine stations had sufficient data to assess trends. Three stations (10729, 1119USBR_WQX-MAL218, 1119USBR_WQX-OWY110)
-  had an improving trend. One drain station (1119USBR_WQX-MAL214) had a degrading trend. 
-  The remaining five stations (10730, 11050, 1119USBR_WQX-MAL216, 1119USBR_WQX-OWY002, 36783) 
-  did not have statistically significant trends."
-  
-  ex <- "Data collected at six stations were sufficient to evaluate both pH status and trends. 
-  All six stations (10729, 10730, 11050, 15540, 15541, 36783) met the water quality standard within the last two whole years. 
-  One station (10729) exhibited an improving trend, one station (15540) exhibited a steady trend, 
-  while the remaining four stations exhibited no significant trend."
-  
-  ex <- "A status or trend assessment was not made for _Enterococcus_ because the coastal water contact recreation use criteria does not apply in the Owyhee"
-  
-  ex <- "Continuous temperature data were not available in sufficient quantity to assess status and trends."
-  
-  ex <- "Data collected at four monitoring stations were sufficient to assess status and/or trends of dissolved oxygen concentration. 
-  Dissolved oxygen concentrations observed at two stations (10406, 11489) had excursions of the water quality criterion within the last two whole years. 
-  Two other stations (10406, 11489) did not attain the dissolved oxygen criterion in the last two whole years. 
-  Observed trends were mixed, with two stations degrading (10404, 11489), 
-  one station improving (12005) and station 10406 with no statistically significant trend."
   
   al <- list("DO_S"=c("dissolved oxygen","concentrations"),
              "DO_T"=c("dissolved oxygen","concentrations"),
@@ -125,13 +112,15 @@ con.auto <- function(df) {
   
   df <- stns_param_summary
   
+  #col.status <- "pH_S"
+  #col.trend <- "pH_T"
+  
   col.status <- "DO_S"
   col.trend <- "DO_T"
   analyte <- al[[col.status]][1]
   conc <- al[[col.status]][2]
   
-  #col.status <- "TP_S"
-  #col.trend <- "pH_T"
+
   
   status.result <- c("Meets", "Exceeds")
   trend.result <- c("Improving", "Steady", "Degrading", "No Sig Trend")
@@ -148,12 +137,13 @@ con.auto <- function(df) {
     s2a <-""
     s2b <-""
     
-  } else {
+  } else 
+  {
     
     s1a <- paste0("Data collected at ",numbers.to.words(n_status, cap=FALSE)," station",s(n_status)," ",was.were(n_status)," sufficient to assess status. ")
     
     if(length(status.unique) == 1) {
-      # All [n_status] station(s) (station_ID_vector) had [analyte ?concentrations] that [status_result] the [analyte] water quality criteria.
+      
       s2a <- paste0(" All ", numbers.to.words(n_status, cap=FALSE)," station", s(n_status),
                     " had ", analyte," ", conc," that ",status.unique, 
                     " the ", analyte, " water quality criteria in the last two years.")
@@ -161,6 +151,7 @@ con.auto <- function(df) {
     } else { 
       
       n_status.meets <- length(df[df[,col.status] == "Meets", col.status])
+      # Meets
       if(n_status.meets > 0) {
         s2a <- paste0(numbers.to.words(n_status.meets)," of the ", numbers.to.words(n_status, cap=FALSE)," station",s(n_status)," (",
                       paste0(df[df[,col.status] == "Meets", "Station_ID"], collapse=", "),
@@ -169,6 +160,7 @@ con.auto <- function(df) {
       }
       
       n_status.exceeds <- length(df[df[,col.status] == "Exceeds", col.status])
+      # Exceeds
       if(n_status.exceeds > 0) {
         s2b <- paste0("The remaining ", numbers.to.words(n_status.exceeds, cap=FALSE)," station",s(n_status)," (",
                       paste0(df[df[,col.status] == "Exceeds", "Station_ID"], collapse=", "),
@@ -180,6 +172,7 @@ con.auto <- function(df) {
   
   txt.status <- paste0(s1a,s2a,s2b)
   
+  trend.result <- c("Improving", "Steady", "Degrading", "No Sig Trend")
   
   if(n_trend == 0) {
     
@@ -191,21 +184,88 @@ con.auto <- function(df) {
     t3 <-""
     t4 <-""
     
-  } else {
+  } else 
+  {
     
     t1a <- paste0("Data collected at ",numbers.to.words(n_trend, cap=FALSE)," station",s(n_trend)," ",was.were(n_trend)," sufficient to assess trends. ")
     
-    if(length(trends.unique) == 1) {
+    if(length(trend.unique) == 1) {
+      
+      if(n_trend == 1) {
+        
+        t2a <- paste0("Station ",df[df[,col.trend] == trend.unique, "Station_ID"]," had ", a.an[[trend.unique]]," ", trend.unique, 
+                      " trend.")
+        
+      } else
+      {
       
       t2a <- paste0(" All ", numbers.to.words(n_trend, cap=FALSE)," station", s(n_trend),
                     " had ", a.an[[trend.unique]]," ", trend.unique, 
-                     " trend.")
+                    " trend.")
       t2b <-""
       t2c <-""
       t2d <-""
       t3 <-""
       t4 <-""
+      }
+    } else {
+      
+      n_trend_improving <- length(df[df[,col.trend] == "Improving", col.trend])
+      # Improving
+      if(n_trend_improving > 0) {
+        
+        t2a <- paste0(numbers.to.words(n_trend_improving)," of the ", numbers.to.words(n_trend, cap=FALSE)," station",s(n_trend)," (",
+                      paste0(df[df[,col.trend] == "Improving", "Station_ID"], collapse=", "),
+                      ") had an improving trend.")
+      } else {
+        
+        t2a <- ""
+      }
+      
+      n_trend_steady <- length(df[df[,col.trend] == "Steady", col.trend])
+      # Steady
+      if(n_trend_steady > 0) {
+        
+        ("Degrading" %in% trend.unique | "No Sig Trend" %in% trend.unique)
+        
+        t2b <- paste0(numbers.to.words(n_trend_steady)," of the ", numbers.to.words(n_trend, cap=FALSE)," station",s(n_trend)," (",
+                      paste0(df[df[,col.trend] == "Steady", "Station_ID"], collapse=", "),
+                      ") had a steady trend.")
+        
+      } else {
+        t2b <- ""
+      }
+      
+      n_trend_degrading <- length(df[df[,col.trend] == "Degrading", col.trend])
+      # Degrading
+      
+      if(n_trend_degrading > 0) {
+        
+        "No Sig Trend" %in% trend.unique
+        
+        t2c <- paste0(numbers.to.words(n_trend_degrading)," of the ", numbers.to.words(n_trend, cap=FALSE)," station",s(n_trend)," (",
+                      paste0(df[df[,col.trend] == "Degrading", "Station_ID"], collapse=", "),
+                      ") had a degrading trend.")
+      } else {
+        t2c <- ""
+      }
+      
+      n_trend_nosig <- length(df[df[,col.trend] == "No Sig Trend", col.trend])
+      # No Sig Trend
+      if(n_trend_nosig > 0) {
+        
+        t2d <- paste0("The remaining ", numbers.to.words(n_trend_nosig, cap=FALSE, plural.only = TRUE)," station",s(n_trend_nosig)," (",
+                      paste0(df[df[,col.trend] == "No Sig Trend", "Station_ID"], collapse=", "),
+                      ") did not have ",a(n_trend_nosig)," statistically significant trend",s(n_trend_nosig),".")
+      } else {
+        t2d <- ""
+      }
       
     }
   }
+  txt.trend <- paste0(t1a," ",t2a," ",t2b," ",t2c," ",t2d)
+  
+  txt.con <- trimws(gsub("\\s+", " ", paste0(txt.status," ",txt.trend)))
+  
+  
 }
