@@ -1,17 +1,17 @@
 ---
 title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Lower Willamette Agricultural Water Quality Management Area Water Quality Status and Trends Report'
-date: August 2018
+date: October 2018
 output:
-  word_document:
-    fig_caption: yes
-    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
-    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
+  word_document:
+    fig_caption: yes
+    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+    toc: yes
 always_allow_html: yes
 ---
 
@@ -48,9 +48,7 @@ library(zoo)
 library(spatialEco)
 library(dplyr)
 library(lubridate)
-library(ggthemes)
 library(captioner)
-library(plyr)
 library(tidyr)
 library(leaflet)
 
@@ -76,7 +74,7 @@ query_dates <- c("2000-01-01", "2018-06-01")
 project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Lower Willamette/2018-Lower-Willamette"
 
 # Set to TRUE if knitting a word document
-word_output <- TRUE
+word_output <- FALSE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
 split_param_summary <- FALSE
@@ -403,7 +401,7 @@ This report presents data and analysis that will help DEQ fulfill its roles in t
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
-*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
+*	Are TMDL targets for total suspended solids being met?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 DEQ basin coordinators review pertinent information including this report as part of ODA's biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL load allocations through ODA's survey. 
@@ -430,18 +428,18 @@ knitr::kable(BC_table,
 
 # Background Information
 
-Both the Willamette/Lower Willamette and Columbia Slough TMDLs apply to the Lower Willamette Agricultural Water Quality Management Area. Pollutants addressed in the TMDLs include: chlorophyll a, dissolved oxygen, phosphorus, bacteria, DDE/DDT, PCBs, lead, mercury, temperature, Dieldrin, and 2, 3, 7, 8 TCDD. Load allocations written in these TMDLs are as follows: 
+Both the Willamette/Lower Willamette and Columbia Slough TMDLs apply to the Lower Willamette Agricultural Water Quality Management Area. Pollutants addressed in the TMDLs include: chlorophyll a, dissolved oxygen, phosphorus, bacteria, DDE/DDT, PCBs, lead, mercury, temperature, Dieldrin, and 2, 3, 7, 8 TCDD. Targets established in those TMDLs are as follows: 
 
 Toxics
 
 * DDT (Johnson Creek):
-    + Load allocations are expressed as a TSS target of 15 mg/l or a DDT reduction of 94%
+    + TSS was identified as a surrogate measure for DDT. The TMDL established an instream TSS concentration of 15 mg/L in order to achieve a DDT reduction of 94%
     + The applicable chronic freshwater DDT target is listed in Table 2
     + Separate allocations for DDT and DDE apply to the Columbia Slough TMDL
 * Dieldrin (Johnson Creek):
     + ODEQ believes that achieving DDT criteria will also result in the attainment of Dieldrin criteria
     + The freshwater chronic criteria for Dieldrin is 0.056 ug/l
-    + Separate allocations for Dieldrin apply to the Columbia Slough TMDL
+    + Separate targets for Dieldrin apply to the Columbia Slough TMDL
     
 Lead
 
@@ -467,34 +465,38 @@ Nutrients and pH Criteria
 
 ## Data Sources
 
-Analysts retrieved data from [DEQ](http://www.oregon.gov/deq/wq/Pages/WQdata.aspx) (LASAR and ELEMENT), EPA ([Storet](https://www.epa.gov/waterdata/water-quality-data-wqx)) USGS ([NWIS](https://qwwebservices.usgs.gov/), [Water Quality Portal](https://www.waterqualitydata.us/)) databases. Many other organizations provided data that were queried and evaluated for use in this report (see Appendix). Data collected between `r input$dates[1]` to `r input$dates[2]` were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria. Note that there are TMDLs in the Lower Willamette for temperature, bacteria, total phosphorus, dieldrin/DDT (TSS as surrogate), mercury, PCBs, and lead.
+Water quality data were retrieved from [DEQ][2.1.1] (LASAR and ELEMENT), U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) U.S. Geological Survey [NWIS][2.1.3] (USGS 2016), and [Water Quality Portal][2.1.4]) databases. Many other organizations provided data that were queried and evaluated for use in this report (see Appendix for a complete list). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). ** REMOVE IF NOT NEEDED. Stations located within the Confederated Tribes of Umatilla Indian Reservation were not included in this report. The Confederated Tribes of Umatilla administer Clean Water Act programs on the reservation.**
 
-Monitoring stations that had at least two years of recent data and/or at least 8 years of data fit the criteria to assess status and trends (see flow chart in full report). Stations that did not meet either of these criteria were not assessed for status or trends, but these stations were included in this report.
+The data returned were evaluated for quality. Data retrieved from DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual][2.1.5] (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data.
 
-The data returned were evaluated for data quality. DEQ data included  `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` data that were rated under the [DEQ's Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf) guidelines. EPA and USGS data were included unless result comments indicated problems with the data. Recent provisional data (after June 2014) from the USGS were included in this analysis. 
+[2.1.1]: http://www.oregon.gov/deq/wq/Pages/WQdata.aspx
+[2.1.2]: https://www.epa.gov/waterdata/water-quality-data-wqx
+[2.1.3]: https://qwwebservices.usgs.gov/
+[2.1.4]: https://www.waterqualitydata.us/
+[2.1.5]: http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf
 
-## Decision Criteria
+## Analysis
 
-Status and long-term water quality trends were compared to to water quality criteria or TMDL allocations. The decision criterion shown below was created for selecting stations that had greater than eight years of data and/or data to address water quality status. Monitoring data collected in tribal lands were not included in this analysis. Dominant upstream land use characteristics were calculated for each station, but were not used to decide what stations to include in this report.
+The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, various toxic chemicals, and temperature samples were made in relation to the applicable numeric water quality criterion. Status for total suspended solids in Johnson Creek was based on a comparison to the instream total suspended solids concentration targets established in the Willamette and Columbia Slough Toxics TMDLs. Status was not determined for total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters.
 
-```{r flowchart, eval=FALSE, fig.cap=figs(name="DecisionFlow", caption="Monitoring station decision criteria to ensure the stations contain sufficient data to represent status and trends for the waterbody**")}
+Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A trend result was made at a site if there were a minimum of eight years of available data. A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p <= 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median.
 
-knitr::include_graphics(path = "Figures/Agreview_flowchart_V5.png")
+A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(round_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. A trend assessment was made if data were available in a minimum of eight different years for any year in the period from `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. Stations that met at least one of those data requirements were assessed with the results presented in this report. In some cases a station had sufficient data for trend but not status because data were not available anytime in the last two years. In these cases the status was shown on the plot for the older data along with the trend result but the status was not recorded in the maps, summary tables, or conclusions.
 
-```
+Results for pH from both grab and continuous sample data were compared to the applicable water quality criterion as found in [OAR 340-041-0021][2.2.1].
 
-# Analysis
+Results for bacteria samples were compared to the applicable bacteria criterion as found in [OAR 340-041-0009][2.2.2]. The bacteria standard for freshwater contact recreation is based on the presence of *E. coli* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The bacteria standard for coastal water contact recreation is based on the presence of *Enterococcus* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period.
 
-DEQ compared pH results from both grab and continuous sample data to the water quality criterion. The bacteria standard is based on the presence of E. coli compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The temperature standard is based on the calculation of the seven day average of the daily maximum stream temperatures. When applicable, total suspended solids and total phosphorus were compared to the TMDL load allocation. If no allocation was present, total suspended solid and total phosphorus result values were plotted over time. Trends for pH, E. coli, total phosphorus, and total suspended solids were assessed using Seasonal Kendall Analysis, which removes the influence of season-to-season fluctuations .  The Seasonal Kendall Analysis also indicates the statistical significance and slope of the trend [Hirsch et al. 1982](https://profile.usgs.gov/myscience/upload_folder/ci2012Oct1508260828033Techniques%20of%20Trend%20Analysis%20for%20Monthly%20Water%20Quality%20Data.pdf). 
+Dissolved oxygen status was assessed by comparing the observed concentration values to the applicable daily minimum water quality criterion found in [OAR 340-041-0016][2.2.3]. If the dissolved oxygen concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality criterion. These points were noted in the plots using a different shape. Assessments were not made against the seven and 30-day mean minimum dissolved oxygen criteria due to the general lack of continuous dissolved oxygen data.
 
-Dissolved oxygen (DO) was assessed by comparing the concentration to the water quality criterion. If the DO concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality criterion. These points were noted in the plots using a different color. Fish use and spawning maps  and the DO criteria flow chart  were used to determine the applicable temperature and DO standards for the spawning and non-spawning time periods. 
+Results for continuous temperature data were compared against the applicable temperature criteria found in [OAR 340-041-0028][2.2.4]. The applicable temperature criteria is based on the seven day average daily maximum (7DADM) stream temperature metric. In order to ensure there was sufficient continuous data to calculate 7DADM, at least one observation per hour from noon to midnight must have been recorded. In addition, each month can have no more than one day of missing observations to ensure that no more than 10% of the 7DADM results in that month were missing.
 
-For temperature trend analysis, analysts used data only from stations with eight years of continuous hourly temperature data in each month during the query period. Data were not used if observations were missing for more than one day each month or if fewer than 22 hourly measurements were recorded during the day. These criteria resulted in no more than 10% missing data across each of the temporal periods of interest. Trends in the data were tested using a Mann Kendall test (Mann 1945). Trends were evaluated on the following metrics:
+A land use summary was developed for all monitoring stations that fit the criteria to assess water quality status and/or trends. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. A map was made showing station locations in relation to 2011 national land cover dataset (Homer et al. 2015).
 
-* Average Monthly 7-day average daily maximum
-* Average Monthly daily degree hours > the applicable temperature standard. 
-
-Trends are more detectable with the average monthly daily degree hours that exceed the applicable temperature standard because the metric incorporates both magnitude and duration of temperatures; the 7-day average daily maximum only incorporates the magnitude of exceedance. Fish use and spawning maps were used to determine the applicable temperature standards for the spawning and non-spawning time periods. The results of this report includes graphs for stations with data that exceeded a water quality criterion more than once and/or showed a positive or negative trend. When data were insufficient, that was noted in the graphs. 
+[2.2.1]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68713
+[2.2.2]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68695
+[2.2.3]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68706
+[2.2.4]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=244176
 
 # Results
 
@@ -739,6 +741,7 @@ if(length(ecoli_stns) > 0) {
     sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
     tmp_df_MRL <- tmp_df[sub,]
     tmp_df <- remove.dups(tmp_df_MRL, max)
+    new_data <- tmp_df
     
     ecoli_evaluate <- EvaluateEColiWQS(tmp_df)
     ecoli_eval <- attr(ecoli_evaluate, 'ex_df')
@@ -829,6 +832,14 @@ if(length(entero_stns) > 0) {
   
   for (i in 1:length(entero_stns)) {
     mydata_sub <- entero_all[entero_all$Station_ID == entero_stns[i],]
+    
+    tmp_df <- new_data
+    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+    tmp_df_MRL <- tmp_df[sub,]
+    tmp_df <- remove.dups(tmp_df_MRL, max)
+    mydata_sub <- tmp_df
     
     trend_logic <- ifelse(grepl("Not Significant", 
                                 results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
@@ -1050,9 +1061,9 @@ if(length(tss_stn) > 0){
     tmp_df_MRL <- tmp_df[sub,]
     tmp_df <- remove.dups(tmp_df_MRL, max)
     
-    if (input$select == 'Powder-Brownlee') {
+    if (grepl("Johnson Creek", unique(tmp_df$Station_Description))) {
       TSS_evaluate <- EvaluateTSSWQS(tmp_df, 
-                                     selectWQSTSS = 50)
+                                     selectWQSTSS = 15)
     } else {
       TSS_evaluate <- EvaluateTSSWQS(tmp_df, 
                                      selectWQSTSS = 0)
@@ -1072,6 +1083,13 @@ if(length(tss_stn) > 0){
   for (i in 1:length(tss_stn)) {
     mydata_sub <- TSS_all[TSS_all$Station_ID == tss_stn[i],]
     
+    tmp_df <- mydata_sub
+    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+    tmp_df_MRL <- tmp_df[sub,]
+    tmp_df <- remove.dups(tmp_df_MRL, max)
+    mydata_sub <- tmp_df
     
     trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == tss_stn[i],'signif']), FALSE,
                         ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == tss_stn[i],'signif']), FALSE, TRUE))
@@ -1192,6 +1210,13 @@ if(any(!(trend == "No Stations Meet Trend Criteria"))) {
     for (i in 1:length(pH_stn)) {
       mydata_sub <- pH_all[pH_all$Station_ID == pH_stn[i],]
       
+      tmp_df <- mydata_sub
+      tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+      tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+      sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+      tmp_df_MRL <- tmp_df[sub,]
+      tmp_df <- remove.dups(tmp_df_MRL, max)
+      mydata_sub <- tmp_df
       
       trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == pH_stn[i],'signif']), FALSE,
                           ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == pH_stn[i],'signif']), FALSE, TRUE))
@@ -1447,13 +1472,13 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
         
         new_data <- DO_all[DO_all$Station_ID == DO_stn[j],]
         
-          tmp_df <- new_data
-          tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-          tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-          sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-          tmp_df_MRL <- tmp_df[sub,]
-          tmp_df <- remove.dups(tmp_df, min)
-          
+        tmp_df <- new_data
+        tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+        tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+        sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+        tmp_df_MRL <- tmp_df[sub,]
+        tmp_df <- remove.dups(tmp_df, min)
+        
         #if(!is.na(any(new_data$sdadm))) {
         
         DO_Benuse <- (Ben_use_LU[Ben_use_LU$Station_ID == DO_stn[j], 'DO_use'])
@@ -1492,6 +1517,14 @@ if(any(trend != "No Stations Meet Trend Criteria")) {
       for (i in 1:length(DO_stn)) {
         
         new_data <- DO_all[DO_all$Station_ID == DO_stn[i],]
+        
+        tmp_df <- new_data
+        tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+        tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+        sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+        tmp_df_MRL <- tmp_df[sub,]
+        tmp_df <- remove.dups(tmp_df, min)
+        new_data <- tmp_df
         
         trend_logic<-ifelse(grepl("Not Significant", results_seaken[results_seaken$Station_ID == DO_stn[i],'signif']), FALSE,
                             ifelse(grepl("Need at least 8 years", results_seaken[results_seaken$Station_ID == DO_stn[i],'signif']), FALSE, TRUE))
@@ -1554,7 +1587,7 @@ DO_exc <- exc
 
 ```
 
-## Additional Parameters Included in the Lower Willamette TMDL
+## Additional Parameters Included in the Willamette TMDL
 
 Toxics data provided by the City of Gresham is summarized in throughout this section. Four sites in the Johnson Creek watershed were sampled for a variety of parameters over a two year period. Data that was less than the minimum reporting limit (MRL) was marked as 'NA' and not included in the plots. Station descriptions are included in the following table. The data in this section is pulled directly from the [2017 Lower Willamette Status and Trends Report](https://www.oregon.gov/deq/FilterDocs/LWillstatusTrends.pdf) and no new analysis has been done to for this report.
 
@@ -1667,7 +1700,7 @@ stns_param_summary_shp <- stns_param_summary_shp[order(stns_param_summary_shp$St
 writeOGR(obj=stns_param_summary_shp, dsn=GIS_dir, layer="station_param_summary", driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 # format for table
-stns_param_summary_tbl <- dplyr::select(stns_param_summary, -c(DECIMAL_LAT,DECIMAL_LONG, TP_S, TSS_S))
+stns_param_summary_tbl <- dplyr::select(stns_param_summary, -c(DECIMAL_LAT,DECIMAL_LONG, TP_S))
 
 colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
                                   "E.coli Status", "E.coli Trend", 
@@ -1675,8 +1708,8 @@ colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
                                   "DO Status", "DO Trend",
                                   "pH Status", "pH Trend", 
                                   "Temperature Status", "Temperature Trend",
-                                  "TP Trend", 
-                                  "TSS Trend")
+                                  "TP Trend",
+                                  "TSS Status", "TSS Trend")
 
 
 save(stns_param_summary, file=paste0(Rdata_dir,"/", stns_param_summary_file))
@@ -1840,6 +1873,9 @@ conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "
 conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Temp"), c("conclusion")]
 conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TP"), c("conclusion")]
 conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TSS"), c("conclusion")]
+conclusions.Dieldrin_Aldrin <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Dieldrin and Aldrin"), c("conclusion")]
+conclusions.Mercury <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Mercury"), c("conclusion")]
+conclusions.DDT_DDD_DDE <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "DDT, DDD, DDE"), c("conclusion")]
 conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc"), c("conclusion", "sub.conclusion")]
 
 ```
@@ -1853,6 +1889,9 @@ conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 
 * *Temperature*: `r conclusions.Temp`
 * *Total Phosphorus*: `r conclusions.TP`
 * *Total Suspended Solids*: `r conclusions.TSS`
+* *Dieldrin and Aldrin*: `r conclusions.Dieldrin_Aldrin`
+* *Mercury*: `r conclusions.Mercury`
+* *DDT, DDD, DDE*: `r conclusions.DDT_DDD_DDE`
 
 
 **Additional Conclusions:**

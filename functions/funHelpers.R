@@ -766,12 +766,12 @@ EvaluateTempWQS <- function(sdadm_df, selectUse, selectSpawning, station_column_
   #                            sdadm_df$exceedspawn), length)
   #sdadm_df <- sdadm_df[!is.na(sdadm_df$Result),]
   
-  sdadm_df$Time_Period <- ifelse(sdadm_df$summer, "Summer", "Spawning")
-  sdadm_df$Time_Period <- factor(sdadm_df$Time_Period, levels = c('Summer', 'Spawning', 'Total'))
+  sdadm_df$Time_Period <- ifelse(sdadm_df$summer, "Non-Spawning", "Spawning")
+  sdadm_df$Time_Period <- factor(sdadm_df$Time_Period, levels = c('Non-Spawning', 'Spawning', 'Total'))
   sdadm_df$exceed <- sdadm_df$exceedspawn | sdadm_df$exceedsummer
   sdadm_df_noNA <- sdadm_df[!is.na(sdadm_df$Result),]
   sdadm_df_noNA[is.na(sdadm_df_noNA$Time_Period), 'exceed'] <- FALSE
-  sdadm_df_noNA[is.na(sdadm_df_noNA$Time_Period), 'Time_Period'] <- 'Summer'
+  sdadm_df_noNA[is.na(sdadm_df_noNA$Time_Period), 'Time_Period'] <- 'Non-Spawning'
   result_summary <- ddply(sdadm_df_noNA, .(sdadm_df_noNA[, station_column_name], Time_Period), 
                           summarise, 
                           Exceedances = sum(exceed),                  

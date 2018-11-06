@@ -1122,10 +1122,11 @@ plot.DO<-function(new_data,
                                    unique(new_data[,station_id_column]) & 
                                    sea_ken_table$analyte == 
                                    unique(new_data[,analyte_column]),'signif']
-  N <- sea_ken_table[sea_ken_table$Station_ID == 
-                       unique(new_data[,station_id_column]) & 
-                       sea_ken_table$analyte == 
-                       unique(new_data[,analyte_column]),'N']
+  # N <- sea_ken_table[sea_ken_table$Station_ID == 
+  #                      unique(new_data[,station_id_column]) & 
+  #                      sea_ken_table$analyte == 
+  #                      unique(new_data[,analyte_column]),'N']
+    
   x.delta <- as.numeric((x.max-x.min)/2)####average date
   SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
   SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
@@ -1136,7 +1137,7 @@ plot.DO<-function(new_data,
                      ", slope = ", 
                      round(slope, digits=2), 
                      ", n = ", 
-                     N)
+                     NROW(new_data))
   df_trend_line <- data.frame(x = c(x.min, x.max),
                               y = c(SK.min, SK.max),
                               variable = rep('Trend line', 2))
@@ -1581,7 +1582,7 @@ plot.TSS<-function(new_data,
                               variable = rep('Trend line', 2))
   
   d<-data.frame(x = c(x.min, x.max), y = rep(selectWQSTSS, 2),
-                variable = rep("TSS Allocation", 2))
+                variable = rep("TSS Target", 2))
   
   elem_text <- element_text(face = 'bold')
    ##PLOT THE TIMESERIES
@@ -1591,11 +1592,12 @@ if(selectWQSTSS != 0){ #Allocation
     theme_gdocs() + theme(axis.title = elem_text) +
     xlim(x.lim) +
     ylim(y.lim) +
-    theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
+    theme(plot.title = element_text(vjust=1.5, face="bold", size = 10, color = 'black'))+
     ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
     theme(legend.position = "top",
           legend.title = element_blank(),
-          legend.direction = 'horizontal') +
+          legend.direction = 'horizontal',
+          axis.text = element_text(color = "black")) +
     xlab(x.lab) +
     ylab(y.lab) 
     
@@ -1605,11 +1607,12 @@ if(selectWQSTSS != 0){ #Allocation
     geom_point() + theme_gdocs() + theme(axis.title = elem_text) +
     xlim(x.lim) +
     ylim(y.lim) +
-    theme(plot.title = element_text(vjust=1.5, face="bold", size = 10))+
+    theme(plot.title = element_text(vjust=1.5, face="bold", size = 10, color = 'black'))+
     ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
     theme(legend.position = "top",
           legend.title = element_blank(),
-          legend.direction = 'horizontal') +
+          legend.direction = 'horizontal',
+          axis.text = element_text(color = "black")) +
     xlab(x.lab) +
     ylab(y.lab) 
     
