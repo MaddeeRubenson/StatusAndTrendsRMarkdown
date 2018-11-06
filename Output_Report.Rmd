@@ -106,6 +106,7 @@ station_summary_map_tp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_
 # Name of output files
 df_all_raw_file <- paste0(gsub(" ", "_", agwqma), "_df_all_raw_",paste(query_dates, collapse = "."), ".Rdata")
 df_all_clean_file <- paste0(gsub(" ", "_", agwqma), "_df_all_clean_",paste(query_dates, collapse = "."), ".Rdata")
+duplicates_file <- paste0(gsub(" ", "_", agwqma), "_duplicates_",paste(query_dates, collapse = "."), ".Rdata")
 landuse_file <- paste0(gsub(" ", "_", agwqma), "_landuse.Rdata")
 stns_file <- paste0(gsub(" ", "_", agwqma), "_stns.Rdata")
 status_file <- paste0(gsub(" ", "_", agwqma), "_status.Rdata")
@@ -279,6 +280,15 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
   df.all <- remove_QAfail(df.all)
   
+  # Remove duplicate samples based on station ID, datetime, analyte, and IDSA (in case of a analyte conversion)
+  df.all$code <- paste(df.all$Station_ID, df.all$Sampled, df.all$Analyte, df.all$IDSA)
+  duplicates <- df.all[duplicated(df.all$code),]
+  df.all <- df.all[!duplicated(df.all$code),]
+  
+  # Store duplicate list for reference
+  save(duplicates, file=paste0(Rdata_dir,"/",duplicates_file))
+  
+  # Run temperature sufficiency tests
   if (any('Temperature' %in% df.all$Analyte)) {
     
     tempStns <- temp_sufficiency_analysis(df.all)
