@@ -47,7 +47,7 @@ query_dates <- c("2000-01-01", "2018-07-01")
 project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Willow Creek/2018-Willow-Creek"
 
 word_output <- TRUE
-split_param_summary <- FALSE
+split_param_summary <- TRUE
 
 # Everything below here should not change
 Rdata_dir <- paste0(project_dir,"/RData")
