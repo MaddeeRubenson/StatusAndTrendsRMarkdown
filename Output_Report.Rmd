@@ -791,7 +791,7 @@ if(length(ecoli_stns) > 0) {
   
   knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE,
                caption = tbls(name = "ecoliExcTable", 
-                              caption = "_E. coli_ status. If sufficient data exists to calculate the geometric mean, it is included in the table."))
+                              caption = "_E. coli_ status. If sufficient data exists to calculate the geometric mean (5 samples within 90 days), it is included in the table."))
 }  else {
   print("No monitoring stations have data to assess status and/or trend of _E. coli_.") 
 }  
