@@ -1749,6 +1749,17 @@ leaflet(agwqma_shp) %>%
 
 ```{r conclusions-setup}
 
+stns_param_summary <- stns_param_summary_tbl
+
+colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
+                                      "DO_S", "DO_T",
+                                      "Ecoli_S", "Ecoli_T", 
+                                      "Entero_S", "Entero_T",
+                                      "pH_S", "pH_T", 
+                                      "Temp_S", "Temp_T",
+                                      "TP_S","TP_T", 
+                                      "TSS_S","TSS_T")
+
 conclusions.DO <- con.auto(df=stns_param_summary, status_column="DO_S", trend_column="DO_T")
 conclusions.Ecoli <- con.auto(df=stns_param_summary, status_column="Ecoli_S", trend_column="Ecoli_T")
 conclusions.Entero <- con.auto(df=stns_param_summary, status_column="Entero_S", trend_column="Entero_T")
