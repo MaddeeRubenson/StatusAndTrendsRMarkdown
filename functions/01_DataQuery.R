@@ -1,9 +1,39 @@
-combine <- function(E = NULL, L = NULL, W = NULL, N = NULL) {
+combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
  # E <- elmData
  # L <- lasarData
  # W <- wqpData
  # N <- nwisData
 
+  if(is.data.frame(A)){
+    AWQMS.map <- c('MLocID' = 'Station_ID',
+                   'OrganizationID' = 'Client',
+                   'Char_Name' = 'Analyte',
+                   'Result' = 'Result',
+                   'Result_Unit' = 'Unit',
+                   'QualifierAbbr' = 'Status',
+                   'Activity_Type' = 'SampleType',
+                   'MRLValue' = 'MRL',
+                   # 'MRLUnit' = 'MRLUnit',
+                   'StationDes' = 'Station_Description',
+                   # 'Analytical_method' = 'SpecificMethod',
+                   'Lat_DD' = 'DECIMAL_LAT',
+                   'Long_DD' = 'DECIMAL_LONG',
+                   # 'HorizontalCoordinateReferenceSystemDatumName' = 'DATUM',
+                   # 'ResultDetectionConditionText' = 'Detect',
+                   'General_Comments' = 'Comment',
+                   'Result_status' = 'StatusIdentifier',
+                   'HUC8' = 'HUC'
+                   )
+    A$Activity_Type <- ifelse(A$SamplingMethod == "Continuous Summary" & !is.na(A$SamplingMethod), A$Statistical_Base, A$Activity_Type)
+    A$DATUM <- 'Assumed NAD83'
+    A$Sampled <- paste(A$SampleStartDate, A$SampleStartTime)
+    A$Detect <- NA
+    A <- A[,c(names(AWQMS.map),'Sampled', 'DATUM', 'Detect')]
+    A <- plyr::rename(A,AWQMS.map)
+    A$Database <- 'AWQMS'
+    A$SD <- paste(A$Database, A$Station_ID)
+  }
+  
   if (is.data.frame(W)) {
     wqp.map <- c('MonitoringLocationIdentifier' = 'Station_ID',
                  'OrganizationFormalName' = 'Client',
@@ -107,7 +137,7 @@ combine <- function(E = NULL, L = NULL, W = NULL, N = NULL) {
     E <- cbind(E, data.frame(Detect = rep(NA, nrow(E))))
   }
   
-  df.all <- rbind(E,L,W,N)
+  df.all <- rbind(A,E,L,W,N)
   
   if ('Dissolved Oxygen' %in% df.all$Analyte){
     df.all[which(df.all$Unit == '%'), 'Analyte'] <- 'Dissolved oxygen saturation'

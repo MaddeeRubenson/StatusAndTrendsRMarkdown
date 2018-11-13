@@ -1432,7 +1432,7 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
 }
 
 temp_sufficiency_analysis <- function(df.all) {
-  df.all <- filter(df.all, Analyte == "Temperature")
+  df.all <- filter(df.all, Analyte == "Temperature", SampleType != '7DADM')
   df.all$isMax <- ifelse(df.all$SampleType == "Maximum", TRUE, FALSE)
   stns <- unique(df.all$Station_ID)
   qc.results.1 <- NULL
@@ -2296,7 +2296,9 @@ remove_stn_dups <- function(df.all) {
   
   df <- df.all %>%
     dplyr::select(Station_ID, DECIMAL_LAT, DECIMAL_LONG) %>%
-    dplyr::distinct(Station_ID, DECIMAL_LAT, DECIMAL_LONG)
+    dplyr::distinct(Station_ID, DECIMAL_LAT, DECIMAL_LONG) %>% 
+    group_by(Station_ID) %>% summarise(DECIMAL_LAT = dplyr::first(DECIMAL_LAT),
+    DECIMAL_LONG = dplyr::first(DECIMAL_LONG))
   
   #stn_list <- list()
   #stn <- unique(df.all$Station_ID)

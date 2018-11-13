@@ -72,12 +72,15 @@ figs <- captioner(prefix="\nFigure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
-agwqma <- "Generic"
-query_dates <- c("2000-01-01", "2018-07-01")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/2018-Generic"
+agwqma <- "Clackamas"
+query_dates <- c("2000-01-01", "2018-11-01")
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Enhancement-Branches/enhancement-awqms-query"
 
 # Set to TRUE if knitting a word document
 word_output <- TRUE
+
+# Set to TRUE if wanting to use AWQMS Query
+Query_AWQMS <- TRUE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
 split_param_summary <- FALSE
@@ -121,8 +124,10 @@ input$parms <- c('Total Phosphorus',
                  'Bacteria',
                  'Temperature',
                  'pH',
-                 'Dissolved Oxygen',
-                 'Total Nitrogen')
+                 'Dissolved Oxygen'
+                 # ,
+                 # 'Total Nitrogen'
+                 )
 
 input$db <- c('DEQ', 'Water Quality Portal')
 
@@ -176,7 +181,41 @@ load(paste0(support_files_dir,'/OR_cats.Rdata'))
 
 ```
 
-```{r Query, include=FALSE}
+```{r AWQMS-Query, include=FALSE, eval=Query_AWQMS}
+source('functions/AWQMS_Query.R')
+
+if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
+  
+  print("loading existing raw df.all")
+  load(file=paste0(Rdata_dir,"/",df_all_raw_file))
+  
+} else {
+  
+  AWQMS_Data <- AWQMS_Query(planArea = agwqma,
+                            area.Shp = agwqma_shp,
+                            inParms = input$parms,
+                            luParms = lu_parms,
+                            startDate = min(input$dates),
+                            endDate = max(input$dates),
+                            stations.Channel.Name = "STATIONS")
+  
+  NWIS_Data <- tryCatch(nwisQuery(planArea = agwqma,
+                                  HUClist = HUClist,
+                                  inParms = input$parms,
+                                  startDate = input$dates[1],
+                                  endDate = input$dates[2]),
+                        error = function(err) {err <- geterrmessage()})
+  
+  df.all <- tryCatch(combine(A=AWQMS_Data,N=NWIS_Data),
+                     error = function(err) 
+                     {err <- geterrmessage()})
+  
+  save(df.all, file=paste0(Rdata_dir,"/",df_all_raw_file))
+}
+
+```
+
+```{r Query, include=FALSE, eval=!Query_AWQMS}
 
 if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
@@ -192,7 +231,6 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
   save(df.all, file=paste0(Rdata_dir,"/",df_all_raw_file))
 }
-
 
 ```
 
@@ -211,7 +249,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands_shp, outside=TRUE),]
   
   
-  # remove stations outside the agwqma
+    # remove stations outside the agwqma
   df.all <- clipToPlanArea(df.all, agwqma_all_shp, input$select)
 
   
@@ -343,6 +381,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   }
 
   save(df.all, file=paste0(Rdata_dir,"/",df_all_clean_file))
+  # save(df.all, file=paste0(Rdata_dir,"/", gsub(" ", "_", agwqma), "_df_all_clean_",paste(query_dates, collapse = "."), "_old.Rdata"))
   
 }
 
