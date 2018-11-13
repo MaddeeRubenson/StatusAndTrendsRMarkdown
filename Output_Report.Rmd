@@ -1493,7 +1493,7 @@ knitr::include_graphics(paste0("Figures/",station_summary_map_DO_file))
 
 
 
-```{r Ecoli-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for E. coli.")}
+```{r Ecoli-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for _E coli_. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for _E. coli_.")}
 
 knitr::include_graphics(path = paste0("Figures/",station_summary_map_ecoli_file))
 
