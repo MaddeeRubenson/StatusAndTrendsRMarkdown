@@ -103,7 +103,7 @@ This report presents data and analysis that will help DEQ fulfill its role in th
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
-*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being acheived?
+*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 
