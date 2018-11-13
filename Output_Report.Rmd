@@ -1579,7 +1579,7 @@ colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
                                       "TP Status","TP Trend", 
                                       "TSS Status","TSS Trend")
 
-save(stns_param_summary, file=paste0(Rdata_dir,"/", stns_param_summary_file))
+save(stns_param_summary_tbl, file=paste0(Rdata_dir,"/", stns_param_summary_file))
 
 knitr::kable(stns_param_summary_tbl, 
              padding = 2, digits = 3,
