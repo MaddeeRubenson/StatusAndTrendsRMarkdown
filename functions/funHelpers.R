@@ -1432,8 +1432,8 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
 }
 
 temp_sufficiency_analysis <- function(df.all) {
-  df.all <- filter(df.all, Analyte == "Temperature", SampleType != '7DADM')
-  df.all$isMax <- ifelse(df.all$SampleType == "Maximum", TRUE, FALSE)
+  df.all <- filter(df.all, Analyte == "Temperature", Statistical_Base != '7DADM')
+  df.all$isMax <- ifelse(df.all$Statistical_Base == "Maximum", TRUE, FALSE)
   stns <- unique(df.all$Station_ID)
   qc.results.1 <- NULL
   qc.results.2 <- NULL

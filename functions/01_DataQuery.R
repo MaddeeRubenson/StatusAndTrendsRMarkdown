@@ -22,7 +22,8 @@ combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
                    # 'ResultDetectionConditionText' = 'Detect',
                    'General_Comments' = 'Comment',
                    'Result_status' = 'StatusIdentifier',
-                   'HUC8' = 'HUC'
+                   'HUC8' = 'HUC',
+                   'Statistical_Base' = 'Statistical_Base'
                    )
     A$Activity_Type <- ifelse(A$SamplingMethod == "Continuous Summary" & !is.na(A$SamplingMethod), A$Statistical_Base, A$Activity_Type)
     A$DATUM <- 'Assumed NAD83'
@@ -53,7 +54,8 @@ combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
                  'ResultDetectionConditionText' = 'Detect',
                  'ResultCommentText' = 'Comment',
                  'ResultStatusIdentifier' = 'StatusIdentifier',
-                 'HUCEightDigitCode' = 'HUC'
+                 'HUCEightDigitCode' = 'HUC',
+                 'StatisticalBaseCode' = 'Statistical_Base'
     )
     Wx <- attr(W, 'siteInfo')
     W <- merge(W, Wx[,c('MonitoringLocationIdentifier',
@@ -87,14 +89,16 @@ combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
                   'dec_lat_va' = 'DECIMAL_LAT',
                   'dec_lon_va' = 'DECIMAL_LONG',
                   'hucCd' = 'HUC',
-                  'srs' = 'DATUM')
-    N <- N[,c(names(name_map),'Analyte','Result','Unit','Status','SampleType')]
+                  'srs' = 'DATUM',
+                  'SampleType' = 'Statistical_Base')
+    N <- N[,c(names(name_map),'Analyte','Result','Unit','Status')]
     N <- plyr::rename(N, name_map)
     N <- cbind(N, data.frame(MRL = rep(NA, nrow(N)),
                              Database = rep("NWIS", nrow(N)),
                              Detect = rep(NA, nrow(N)), 
                              Comment = rep(NA, nrow(N)), 
-                             StatusIdentifier = rep(NA, nrow(N))))
+                             StatusIdentifier = rep(NA, nrow(N)),
+                             SampleType = rep(NA, nrow(N))))
     N$SD <- paste(N$Database, N$Station_ID)
     N$Sampled <- strftime(N$Sampled, format = '%Y-%m-%d %H:%M:%S')
     N$Station_ID <- paste0(N$Client, "-", N$Station_ID)

@@ -199,14 +199,16 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
                             endDate = max(input$dates),
                             stations.Channel.Name = "STATIONS")
   
-  NWIS_Data <- tryCatch(nwisQuery(planArea = agwqma,
-                                  HUClist = HUClist,
-                                  inParms = input$parms,
-                                  startDate = input$dates[1],
-                                  endDate = input$dates[2]),
-                        error = function(err) {err <- geterrmessage()})
+  # NWIS_Data <- tryCatch(nwisQuery(planArea = agwqma,
+  #                                 HUClist = HUClist,
+  #                                 inParms = input$parms,
+  #                                 startDate = input$dates[1],
+  #                                 endDate = input$dates[2]),
+  #                       error = function(err) {err <- geterrmessage()})
   
-  df.all <- tryCatch(combine(A=AWQMS_Data,N=NWIS_Data),
+  df.all <- tryCatch(combine(A=AWQMS_Data
+                             # ,N=NWIS_Data
+                             ),
                      error = function(err) 
                      {err <- geterrmessage()})
   
@@ -318,7 +320,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   df.all <- remove_QAfail(df.all)
   
   if (any('Temperature' %in% df.all$Analyte)) {
-    
+    df.all <- df.all %>% filter(!(Statistical_Base %in% c('7DADM', 'Minimum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
     tempStns <- temp_sufficiency_analysis(df.all)
     
     qc.1.pass <- filter(attributes(tempStns)$day_test, result == "pass")
