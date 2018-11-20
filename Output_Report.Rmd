@@ -251,9 +251,11 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands_shp, outside=TRUE),]
   
   
-    # remove stations outside the agwqma
+  # remove stations outside the agwqma
   df.all <- clipToPlanArea(df.all, agwqma_all_shp, input$select)
 
+  # Remove all Dissolved Oxygen summary statistics from analysis except for 'minimum' 
+  df.all <- df.all %>% filter(!(Analyte == "Dissolved oxygen (DO)" & Statistical_Base %in% c('7DADM', 'Maximum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
   
   # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
   # The Station ID will be named the same as LASAR
@@ -320,7 +322,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   df.all <- remove_QAfail(df.all)
   
   if (any('Temperature' %in% df.all$Analyte)) {
-    df.all <- df.all %>% filter(!(Statistical_Base %in% c('7DADM', 'Minimum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
+    df.all <- df.all %>% filter(!(Analyte == "Temperature" & Statistical_Base %in% c('7DADM', 'Minimum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
     tempStns <- temp_sufficiency_analysis(df.all)
     
     qc.1.pass <- filter(attributes(tempStns)$day_test, result == "pass")
