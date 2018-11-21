@@ -73,8 +73,8 @@ figs <- captioner(prefix="\nFigure")
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
 agwqma <- "Generic"
-query_dates <- c("2000-01-01", "2018-07-01")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/2018-Generic"
+query_dates <- c("2000-01-01", "2018-11-01")
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Enhancement-Branches/enhancement-awqms-query"
 
 # Set to TRUE if knitting a word document
 word_output <- TRUE
@@ -122,10 +122,10 @@ input$parms <- c('Total Phosphorus',
                  'Bacteria',
                  'Temperature',
                  'pH',
-                 'Dissolved Oxygen',
-                 'Total Nitrogen')
-
-input$db <- c('DEQ', 'Water Quality Portal')
+                 'Dissolved Oxygen'
+                 # ,
+                 # 'Total Nitrogen'
+                 )
 
 # Check if the local GIS directory exists
 if (!file.exists(paste0(project_dir,"/GIS"))) {
@@ -177,7 +177,8 @@ load(paste0(support_files_dir,'/OR_cats.Rdata'))
 
 ```
 
-```{r Query, include=FALSE}
+```{r AWQMS-Query, include=FALSE}
+source('functions/AWQMS_Query.R')
 
 if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
@@ -186,14 +187,20 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
 } else {
   
-  df.all <- query(select =  input$select,
-                  parms = input$parms,
-                  dates = input$dates,
-                  db = input$db)
+  AWQMS_Data <- AWQMS_Query(planArea = agwqma,
+                            area.Shp = agwqma_shp,
+                            inParms = input$parms,
+                            luParms = lu_parms,
+                            startDate = min(input$dates),
+                            endDate = max(input$dates),
+                            stations.Channel.Name = "STATIONS")
+  
+  df.all <- tryCatch(combine(A=AWQMS_Data),
+                     error = function(err) 
+                     {err <- geterrmessage()})
   
   save(df.all, file=paste0(Rdata_dir,"/",df_all_raw_file))
 }
-
 
 ```
 
@@ -215,6 +222,8 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # remove stations outside the agwqma
   df.all <- clipToPlanArea(df.all, agwqma_all_shp, input$select)
 
+  # Remove all Dissolved Oxygen summary statistics from analysis except for 'minimum' 
+  df.all <- df.all %>% filter(!(Analyte == "Dissolved oxygen (DO)" & Statistical_Base %in% c('7DADM', 'Maximum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
   
   # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
   # The Station ID will be named the same as LASAR
@@ -290,7 +299,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
   # Run temperature sufficiency tests
   if (any('Temperature' %in% df.all$Analyte)) {
-    
+    df.all <- df.all %>% filter(!(Analyte == "Temperature" & Statistical_Base %in% c('7DADM', 'Minimum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
     tempStns <- temp_sufficiency_analysis(df.all)
     
     qc.1.pass <- filter(attributes(tempStns)$day_test, result == "pass")
@@ -353,6 +362,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   }
 
   save(df.all, file=paste0(Rdata_dir,"/",df_all_clean_file))
+  # save(df.all, file=paste0(Rdata_dir,"/", gsub(" ", "_", agwqma), "_df_all_clean_",paste(query_dates, collapse = "."), "_old.Rdata"))
   
 }
 
