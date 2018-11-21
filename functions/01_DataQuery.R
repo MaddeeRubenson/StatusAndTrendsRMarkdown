@@ -1,9 +1,40 @@
-combine <- function(E = NULL, L = NULL, W = NULL, N = NULL) {
+combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
  # E <- elmData
  # L <- lasarData
  # W <- wqpData
  # N <- nwisData
 
+  if(is.data.frame(A)){
+    AWQMS.map <- c('MLocID' = 'Station_ID',
+                   'OrganizationID' = 'Client',
+                   'Char_Name' = 'Analyte',
+                   'Result' = 'Result',
+                   'Result_Unit' = 'Unit',
+                   'QualifierAbbr' = 'Status',
+                   'Activity_Type' = 'SampleType',
+                   'MRLValue' = 'MRL',
+                   # 'MRLUnit' = 'MRLUnit',
+                   'StationDes' = 'Station_Description',
+                   # 'Analytical_method' = 'SpecificMethod',
+                   'Lat_DD' = 'DECIMAL_LAT',
+                   'Long_DD' = 'DECIMAL_LONG',
+                   # 'HorizontalCoordinateReferenceSystemDatumName' = 'DATUM',
+                   # 'ResultDetectionConditionText' = 'Detect',
+                   'General_Comments' = 'Comment',
+                   'Result_status' = 'StatusIdentifier',
+                   'HUC8' = 'HUC',
+                   'Statistical_Base' = 'Statistical_Base'
+                   )
+    A$Activity_Type <- ifelse(A$SamplingMethod == "Continuous Summary" & !is.na(A$SamplingMethod), A$Statistical_Base, A$Activity_Type)
+    A$DATUM <- 'Assumed NAD83'
+    A$Sampled <- paste(A$SampleStartDate, A$SampleStartTime)
+    A$Detect <- NA
+    A <- A[,c(names(AWQMS.map),'Sampled', 'DATUM', 'Detect')]
+    A <- plyr::rename(A,AWQMS.map)
+    A$Database <- 'AWQMS'
+    A$SD <- paste(A$Database, A$Station_ID)
+  }
+  
   if (is.data.frame(W)) {
     wqp.map <- c('MonitoringLocationIdentifier' = 'Station_ID',
                  'OrganizationFormalName' = 'Client',
@@ -23,7 +54,8 @@ combine <- function(E = NULL, L = NULL, W = NULL, N = NULL) {
                  'ResultDetectionConditionText' = 'Detect',
                  'ResultCommentText' = 'Comment',
                  'ResultStatusIdentifier' = 'StatusIdentifier',
-                 'HUCEightDigitCode' = 'HUC'
+                 'HUCEightDigitCode' = 'HUC',
+                 'StatisticalBaseCode' = 'Statistical_Base'
     )
     Wx <- attr(W, 'siteInfo')
     W <- merge(W, Wx[,c('MonitoringLocationIdentifier',
@@ -57,14 +89,16 @@ combine <- function(E = NULL, L = NULL, W = NULL, N = NULL) {
                   'dec_lat_va' = 'DECIMAL_LAT',
                   'dec_lon_va' = 'DECIMAL_LONG',
                   'hucCd' = 'HUC',
-                  'srs' = 'DATUM')
-    N <- N[,c(names(name_map),'Analyte','Result','Unit','Status','SampleType')]
+                  'srs' = 'DATUM',
+                  'SampleType' = 'Statistical_Base')
+    N <- N[,c(names(name_map),'Analyte','Result','Unit','Status')]
     N <- plyr::rename(N, name_map)
     N <- cbind(N, data.frame(MRL = rep(NA, nrow(N)),
                              Database = rep("NWIS", nrow(N)),
                              Detect = rep(NA, nrow(N)), 
                              Comment = rep(NA, nrow(N)), 
-                             StatusIdentifier = rep(NA, nrow(N))))
+                             StatusIdentifier = rep(NA, nrow(N)),
+                             SampleType = rep(NA, nrow(N))))
     N$SD <- paste(N$Database, N$Station_ID)
     N$Sampled <- strftime(N$Sampled, format = '%Y-%m-%d %H:%M:%S')
     N$Station_ID <- paste0(N$Client, "-", N$Station_ID)
@@ -107,7 +141,7 @@ combine <- function(E = NULL, L = NULL, W = NULL, N = NULL) {
     E <- cbind(E, data.frame(Detect = rep(NA, nrow(E))))
   }
   
-  df.all <- rbind(E,L,W,N)
+  df.all <- rbind(A,E,L,W,N)
   
   if ('Dissolved Oxygen' %in% df.all$Analyte){
     df.all[which(df.all$Unit == '%'), 'Analyte'] <- 'Dissolved oxygen saturation'
