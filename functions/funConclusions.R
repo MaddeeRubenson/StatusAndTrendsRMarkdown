@@ -9,6 +9,16 @@ s <- function(x) {
   
 }
 
+a <- function(x) {
+  # function to return "a" or "" given the count of x
+  
+  if (x == 1) {
+    return(" a")
+  } else {
+    return("") }
+  
+}
+
 was.were <- function(x) {
   # function to return past singular (was) or past plural (were) given the count of x
   
@@ -19,67 +29,32 @@ was.were <- function(x) {
   
 }
 
-a.an <- function(x){
-  if(x == "Improving"){
-    return("an")
-  } else {
-      return("a")
-    }
-}
-
-singular.status <- function(x){
-  if(x == "Meets"){
-    return("Met")
-  } else if(x == "Exceeds"){
-    return("Exceed")
-  }
-}
-
-numbers.to.words <- function(x) {
+numbers.to.words <- function(x, cap=TRUE, plural.only=FALSE) {
   # function to convert numbers < 10 to words
   # x = numeric number
+  if (plural.only) {
+    
+    words <- c("", "", "two", "three", "four", "five", "six", "seven", "eight", "nine")
   
-  words <- c("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
+    } else {
+    
+    words <- c("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
+    
+  }
   
   if (x >= 0 & x < 10) {
-    return(words[x +1])
+    if (cap) {
+      return(paste0(toupper(substr(words[x +1], 1, 1)), substr(words[x +1], 2, nchar(words[x +1]))))
+    } else {
+      return(words[x +1])
+    }
   } else {
     return(x) }
   
 }
 
-first.up <- function(x) {
-  substr(x, 1, 1) <- toupper(substr(x, 1, 1))
-  x
-}
-
-to.lower.analyte <- function(x) {
-  if(x %in% c("E.Coli", "Enterococcus", "pH")){
-    return(x)
-  } else {
-    return(tolower(x))
-  }
-}
-
-## For testing purposes
-# stns_param_summary <- data.frame("Station_ID"=c("12345", "USGS-12345", "14355", "12995", "19948", "USGS-00000"),
-#                                  "DO_S"=rep(c("Meets", "Exceeds"),3),
-#                                  "DO_T"=rep(c("Improving", "Degrading"),3),
-#                                  "Ecoli_S"=rep(c("Meets", "Exceeds"),3),
-#                                  "Ecoli_T"=rep(c("Improving", "Steady"),3),
-#                                  "Entero_S"=rep(c("Exceeds", "Exceeds"),3),
-#                                  "Entero_T"=rep(c("Improving", "--"),3),
-#                                  "pH_S"=rep(c("Meets", "--"),3),
-#                                  "pH_T"=rep(c("Improving", "No Sig Trend"),3),
-#                                  "Temp_S"=rep(c("Meets", "Meets"),3),
-#                                  "Temp_T"=rep(c("--", "Degrading"),3),             
-#                                  "TP_S"=rep(c("--", "--"),3), 
-#                                  "TP_T"=rep(c("Improving", "Degrading"),3), 
-#                                  "TSS_S"=rep(c("Meets", "Exceeds"),3),
-#                                  "TSS_T"=rep(c("Improving", "Degrading"),3)
-# )
-
-con.auto <- function(df, input_analyte) {
+con.auto <- function(df, status_column, trend_column, station_id_column="Station_ID", target="criteria") {
+  #function to auto generate conclusions based on status and trend results in stns_param_summary dataframe.
   
   # if (status_station_ID_vector == trend_station_ID_vector)
   # 1. Data collected at [n_status_trend] station(s) were sufficient to assess both [analyte] status and trends.
@@ -88,149 +63,214 @@ con.auto <- function(df, input_analyte) {
   # s1a. Data collected at [n_status] station(s) were sufficient to assess status.
   # or
   # s1a. [analyte ?concentrations] data were not availible in the last two years to assess status.
-
+  
   # s2a. All [n_status] station(s) (station_ID_vector) had [analyte ?concentrations] that [status_result] the [analyte] water quality criteria.
   # or
   # s2a. [n_status_attain] station(s) (station_ID_vector) had [analyte ?concentrations] that [status_result] the [analyte] water quality criteria.
   # s2b. [n_status_exceed] station(s) (Station_ID_vector) [status_result] the [analyte] water quality criteria.
-
+  
   # TRENDS
-  # t3a. [n_trends] station(s) had sufficient data to assess trends.
+  # t1a. [n_trends] station(s) had sufficient data to assess trends.
   # or
-  # t3a. [analyte ?concentrations] data were not availible in sufficient qunitity to assess trend.
+  # t1a. [analyte ?concentrations] data were not availible in sufficient qunitity to assess trend.
   
-  # t4a. All [n_trends] station(s) (station_ID_vector) had (a/an) [trend result].
+  # t2a. All [n_trends] station(s) (station_ID_vector) had (a/an) [trend result].
   # or
-  # t4a. [n_trend_improving] station(s) (station_ID_vector) had an improving trend.
-  # t4b. [n_trend_steady] station(s) (station_ID_vector) had a steady trend.
-  # t4c. [n_trend_degrading] station(s) (station_ID_vector) had a degrading trend.
+  # t2a. [n_trend_improving] station(s) (station_ID_vector) had an improving trend.
+  # t2b. [n_trend_steady] station(s) (station_ID_vector) had a steady trend.
+  # t2c. [n_trend_degrading] station(s) (station_ID_vector) had a degrading trend.
   
-  # t5. The remaining
+  # t3. The remaining
   
-  # t4d. [n_trend_insuff] station(s) (station_ID_vector) did not have statistically significant trends.
+  # t4. [n_trend_insuff] station(s) (station_ID_vector) did not have statistically significant trends.
+
+  # Testing
+  #df <- stns_param_summary
+  #station_id_column <- "Station_ID"
   
-  analyte_cols <- data.frame(analyte = c("E.Coli", "Enterococcus", "Dissolved Oxygen", "pH", "Temperature", "Total Phosphorus", "TSS"),
-                             status = c("Ecoli_S", "Entero_S", "DO_S", "pH_S", "Temp_S", "TP_S", "TSS_S"),
-                             trend = c("Ecoli_T", "Entero_T", "DO_T", "pH_T", "Temp_T", "TP_T", "TSS_T"))
+  #status_column <- "pH_S"
+  #trend_column <- "pH_T"
   
-  col.status <- analyte_cols[analyte_cols$analyte == input_analyte, "status"]
-  col.trend <- analyte_cols[analyte_cols$analyte == input_analyte, "trend"]
-  analyte <- input_analyte
+  #status_column <- "Entero_S"
+  #trend_column <- "Entero_T"
   
-  measurement <- if(analyte %in% c('Dissolved Oxygen', 'E.Coli', 'Enterococcus', 'Total Phosphorus', 'Total Suspended Solids')){
-    "concentrations"
-  } else {"measurements"}
+  #status_column <- "DO_S"
+  #trend_column <- "DO_T"
   
   status.result <- c("Meets", "Exceeds")
   trend.result <- c("Improving", "Steady", "Degrading", "No Sig Trend")
   
-  n_status <- length(df[df[,col.status] %in% status.result, col.status])
-  n_trend <- length(df[df[,col.trend] %in% trend.result, col.trend])
+  n_status <- length(df[df[,status_column] %in% status.result, status_column])
+  n_status.meets <- length(df[df[,status_column] == "Meets", status_column])
+  n_status.exceeds <- length(df[df[,status_column] == "Exceeds", status_column])
   
-  status.unique <- unique(df[df[,col.status] %in% status.result, col.status])
-  trend.unique <- unique(df[df[,col.trend] %in% trend.result, col.trend])
-  s1a <- NULL
-  s2a <- NULL
-  s2b <- NULL
-  t1a <- NULL
-  t2a <- NULL
-  t2b <- NULL
-  t2c <- NULL
-  t2d <- NULL
-  t2bx <- NULL
-  t2cx <- NULL
-  t2dx <- NULL
+  n_trend <- length(df[df[,trend_column] %in% trend.result, trend_column])
+  n_trend_improving <- length(df[df[,trend_column] == "Improving", trend_column])
+  n_trend_steady <- length(df[df[,trend_column] == "Steady", trend_column])
+  n_trend_degrading <- length(df[df[,trend_column] == "Degrading", trend_column])
+  n_trend_nosig <- length(df[df[,trend_column] == "No Sig Trend", trend_column])
   
-  if(n_status == 0) { # If no stations had sufficient data to assess status do this
+  status.unique <- unique(df[df[,status_column] %in% status.result, status_column])
+  trend.unique <- unique(df[df[,trend_column] %in% trend.result, trend_column])
+  
+  al <- list("DO_S"=c("dissolved oxygen","concentrations"),
+             "DO_T"=c("dissolved oxygen","concentrations"),
+             "Ecoli_S"=c("_E. coli_","concentrations"),            
+             "Ecoli_T"=c("_E. coli_","concentrations"),
+             "Entero_S"=c("_Enterococcus_","concentrations"),
+             "Entero_T"=c("_Enterococcus_","concentrations"),
+             "pH_S"=c("pH",""),
+             "pH_T"=c("pH",""),
+             "Temp_S"=c("temperature",""),
+             "Temp_T"=c("temperature",""),             
+             "TP_S"=c("total phosphorus","concentrations"), 
+             "TP_T"=c("total phosphorus","concentrations"), 
+             "TSS_S"=c("total suspended soilids","concentrations"),
+             "TSS_T"=c("total suspended soilids","concentrations"))
+  
+  a.an <- list("Improving"="an", 
+               "Steady"="a",
+               "Degrading"="a", 
+               "No Sig Trend"="")
+  
+  result <- list("Meets"="met",
+                 "Exceeds"="exceeded",
+                 "Improving"="improving trend.",
+                 "Steady"="steady trend.",
+                 "Degrading"="degrading trend.", 
+                 "No Sig Trend"=paste0(" did not have",a(n_trend_nosig)," statistically significant trend",s(n_trend_nosig),"."))
+  
+  analyte <- al[[status_column]][1]
+  conc <- al[[status_column]][2]
+  
+  if(n_status == 0) {
+    # No status results
+    s1a <- "Data were not available in sufficient quantity to assess status."
+    s2a <-""
+    s2b <-""
+  } else {
     
-    s1a <- "Data were not available in the last two years to assess status. "
+    # Status Results
+    s1a <- paste0("Data collected at ",numbers.to.words(n_status, cap=FALSE)," station",s(n_status)," ",was.were(n_status)," sufficient to assess status. ")
     
-  } else { # Otherwise, do this
-    
-    # These stations had sufficient data to asses status
-    
-    s1a <- paste0("Data collected at ",numbers.to.words(n_status)," station",s(n_status)," ",was.were(n_status)," sufficient to assess status. ")
-    
-    if(length(status.unique) == 1) { # If all of the stations had the same status do this
+    if(length(status.unique) == 1) {
+      # All same status result
       
-      s2a <- paste0(" All ", numbers.to.words(n_status)," station", s(n_status)," had ", to.lower.analyte(analyte)," ", measurement, " that ", 
-                    tolower(singular.status(status.unique)), " the ", to.lower.analyte(analyte), " water quality criteria. ")
+      if(n_status == 1) {
+        # One station
+        s2a <- paste0("Station ",df[df[,status_column] == status.unique, station_id_column],
+                      " ", result[status.unique], " the ", analyte, " ", target, " in the last two years.")
+      } else {
+        
+        s2a <- paste0(" All ", numbers.to.words(n_status, cap=FALSE)," station", s(n_status)," (",
+                      paste0(df[df[,status_column] == status.unique, station_id_column], collapse=", "),
+                      ") ", result[status.unique]," the ", analyte, " ", target," in the last two years.")
+        s2b <-""
+      } 
       
-    } else { # Otherwise, do this
+    } else {
       
-      n_status_attain <- sum(df[,col.status] == "Meets")
-      n_status_exceed <- sum(df[,col.status] == "Exceeds")
-      s_attain_stations <- unique(df[df[,col.status] == "Meets",]$Station_ID)
-      s_exceed_stations <- unique(df[df[,col.status] == "Exceeds",]$Station_ID)
+      # Meets
+      s2a <- paste0(numbers.to.words(n_status.meets)," of the ", numbers.to.words(n_status, cap=FALSE)," station",s(n_status)," (",
+                    paste0(df[df[,status_column] == "Meets", station_id_column], collapse=", "),
+                    ") had ", analyte," ", conc," that met the ", target," in the last two years. ")
       
-      s2a <- paste0("The ", to.lower.analyte(analyte), " ", measurement, " observed at ", numbers.to.words(n_status_attain), " station(s) (", paste0(s_attain_stations, collapse = ", "), 
-                    ") had no in-stream values that exceeded the ", to.lower.analyte(analyte), " water quality criteria. ")
-      s2b <- paste0("The ", to.lower.analyte(analyte), " ", measurement, " observed at ", numbers.to.words(n_status_exceed), " station(s) (", paste0(s_exceed_stations, collapse = ", "), 
-                    ") had at least one in-stream value in the last two years that exceeded the ", to.lower.analyte(analyte), " water quality criteria. ")
-      }
+      # Exceeds
+      s2b <- paste0("The remaining ", numbers.to.words(n_status.exceeds, cap=FALSE)," station",s(n_status)," (",
+                    paste0(df[df[,status_column] == "Exceeds", station_id_column], collapse=", "),
+                    ") had ", analyte," ", conc," that exceeded the ", target," in the last two years.")
     }
+  }
   
-  if(n_trend == 0){ # If no stations had sufficient data to assess trends do this
+  txt.status <- paste0(s1a,s2a,s2b)
+  
+  if(n_trend == 0) {
+    t1a <- "Data were not available in the last two years to assess trend."
+    t2a <-""
+    t2b <-""
+    t2c <-""
+    t2d <-""
+    t3 <-""
+    t4 <-""
     
-    t1a <- paste0("Sufficient data was not available to assess trends related to ", to.lower.analyte(analyte), ".")
+  } else {
     
-  } else { # Otherwise, do this
+    t1a <- paste0("Data collected at ",numbers.to.words(n_trend, cap=FALSE)," station",s(n_trend)," ",was.were(n_trend)," sufficient to assess trends. ")
     
-    # These stations had sufficient data to asses trends
-    
-    t1a <- paste0("Data collected at ", numbers.to.words(n_trend)," station", s(n_trend)," ", was.were(n_trend)," sufficient to assess trends. ")
-    
-    if(length(trend.unique) == 1) { # If all of the stations had the same trend do this
+    if(length(trend.unique) == 1) {
       
-      t2a <- paste0(" All ", numbers.to.words(n_trend)," station", s(n_trend)," had ", to.lower.analyte(analyte)," concentrations that showed ", a.an(trend.unique), 
-                    " ", tolower(trend.unique), " trend in the available ", to.lower.analyte(analyte), " data. ")
-      
-    } else { # Otherwise, do this
-      
-      n_trend_improve <- sum(df[,col.trend] == "Improving")
-      n_trend_degrade <- sum(df[,col.trend] == "Degrading")
-      n_trend_steady <- sum(df[,col.trend] == "Steady")
-      n_trend_noSig <- sum(df[,col.trend] == "No Sig Trend")
-      t_improve_stations <- unique(df[df[,col.trend] == "Improving",]$Station_ID)
-      t_degrade_stations <- unique(df[df[,col.trend] == "Degrading",]$Station_ID)
-      t_steady_stations <- unique(df[df[,col.trend] == "Steady",]$Station_ID)
-      t_noSig_stations <- unique(df[df[,col.trend] == "No Sig Trend",]$Station_ID)
-      
-      # This many stations showed an improving trend
-      if(n_trend_improve > 0){
-        t2a <- paste0(first.up(numbers.to.words(n_trend_improve)), " station(s) (", paste0(t_improve_stations, collapse = ", "),
-                      ") showed an improving trend in the available ", to.lower.analyte(analyte), " data. ")
+      if(n_trend == 1) {
+        
+        t2a <- paste0("Station ",df[df[,trend_column] == trend.unique, station_id_column]," had ", a.an[[trend.unique]]," ", result[trend.unique])
+      } else {
+        t2a <- paste0(" All ", numbers.to.words(n_trend, cap=FALSE)," station", s(n_trend),
+                      " had ", a.an[[trend.unique]]," ", result[trend.unique])
+        t2b <-""
+        t2c <-""
+        t2d <-""
+        t3 <-""
+        t4 <-""
       }
-      # This many showed a degrading trend
-      if(n_trend_degrade > 0){
-        if(sum(n_trend_improve, n_trend_degrade) == n_trend){
-          t2bx <- "The remaining "
-          num.word <- ifelse(n_trend_degrade == 1, "", paste0(numbers.to.words(n_trend_degrade), " "))
-        } else {num.word <- paste0(first.up(numbers.to.words(n_trend_degrade))," ")}
-        t2b <- paste0(num.word, "station", s(n_trend_degrade), " (", paste0(t_degrade_stations, collapse = ", "),
-                      ") showed a degrading trend in the available ", to.lower.analyte(analyte), " data. ")
+    } else {
+      
+      # Improving
+      if(n_trend_improving > 0) {
+        
+        t2a <- paste0(numbers.to.words(n_trend_improving)," of the ", numbers.to.words(n_trend, cap=FALSE)," station",s(n_trend)," (",
+                      paste0(df[df[,trend_column] == "Improving", station_id_column], collapse=", "),
+                      ") had an improving trend.")
+      } else {
+        t2a <- ""
       }
-      # This many showed a steady trend
-      if(n_trend_steady > 0){
-        if(sum(n_trend_improve, n_trend_degrade, n_trend_steady) == n_trend){
-          t2cx <- "The remaining "
-          num.word <- ifelse(n_trend_steady == 1, "", paste0(numbers.to.words(n_trend_steady), " "))
-        } else {num.word <- paste0(first.up(numbers.to.words(n_trend_steady))," ")}
-        t2c <- paste0(num.word, "station", s(n_trend_steady), " (", paste0(t_steady_stations, collapse = ", "),
-                      ") showed a steady trend in the available ", to.lower.analyte(analyte), " data. ")
+      
+      pre.txt <- ""
+      cap.txt <- TRUE
+      
+      # Steady
+      if(n_trend_steady > 0) {
+        
+        if(n_trend_degrading + n_trend_nosig == 0) {
+          pre.txt <- "The remaining "
+          cap.txt <- FALSE}
+        
+        t2b <- paste0(pre.txt, numbers.to.words(n_trend_steady, cap=cap.txt)," of the ", numbers.to.words(n_trend, cap=FALSE)," station",s(n_trend)," (",
+                      paste0(df[df[,trend_column] == "Steady", station_id_column], collapse=", "),
+                      ") had a steady trend.")
+        
+      } else {
+        t2b <- ""
       }
-      # This many did not show a significant trend
-      if(n_trend_noSig > 0){
-        if(sum(n_trend_improve, n_trend_degrade, n_trend_steady, n_trend_noSig) == n_trend){
-          t2dx <- "The remaining "
-          num.word <- ifelse(n_trend_noSig == 1, "", paste0(numbers.to.words(n_trend_noSig), " "))
-        } else {num.word <- paste0(first.up(numbers.to.words(n_trend_noSig))," ")}
-        t2d <- paste0(num.word, "station", s(n_trend_noSig), " (", paste0(t_noSig_stations, collapse = ", "),
-                      ") did not show significant trending in the available ", to.lower.analyte(analyte), " data. ")
+      
+      # Degrading
+      if(n_trend_degrading > 0) {
+        
+        if(n_trend_nosig == 0) {
+          pre.txt <- "The remaining "
+          cap.txt <- FALSE
+        }
+        
+        t2c <- paste0(pre.txt, numbers.to.words(n_trend_degrading, cap=cap.txt)," of the ", numbers.to.words(n_trend, cap=FALSE)," station",s(n_trend)," (",
+                      paste0(df[df[,trend_column] == "Degrading", station_id_column], collapse=", "),
+                      ") had a degrading trend.")
+      } else {
+        t2c <- ""
+      }
+      
+      # No Sig Trend
+      if(n_trend_nosig > 0) {
+        
+        t2d <- paste0("The remaining ", numbers.to.words(n_trend_nosig, cap=FALSE, plural.only = TRUE)," station",s(n_trend_nosig)," (",
+                      paste0(df[df[,trend_column] == "No Sig Trend", station_id_column], collapse=", "),
+                      ") did not have ",a(n_trend_nosig)," statistically significant trend",s(n_trend_nosig),".")
+      } else {
+        t2d <- ""
       }
     }
   }
-  return(paste0(s1a, s2a, s2b, t1a, t2a, t2bx, t2b, t2cx, t2c, t2dx, t2d))
+  
+    txt.trend <- paste0(t1a," ",t2a," ",t2b," ",t2c," ",t2d)
+    
+    txt.con <- trimws(gsub("\\s+", " ", paste0(txt.status," ",txt.trend)))
+    
+  return(txt.con)
 }
-
-
