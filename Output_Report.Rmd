@@ -1749,8 +1749,6 @@ leaflet(agwqma_shp) %>%
 
 ```{r conclusions-setup}
 
-stns_param_summary <- stns_param_summary_tbl
-
 colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
                                       "DO_S", "DO_T",
                                       "Ecoli_S", "Ecoli_T", 
@@ -1783,22 +1781,13 @@ Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TSS"), c("conclusi
 
 **What is the overall status or trends in water quality?**
 
-```{r auto-conclusion, results='asis'}
-conclusions <- list()
-for(i in unique(SeaKen$analyte)){
-  conclusions[[i]] <- con.auto(stns_param_summary, i)
-  cat(paste0("* *", i, "*: ", conclusions[[i]], "\n"))
-}
-# conclusions
-```
-
-<!-- * *Dissolved Oxygen*: `r conclusions.DO` -->
-<!-- * *E. coli*: `r conclusions.Ecoli` -->
-<!-- * *Enterococcus*: `r conclusions.Entero` -->
-<!-- * *pH*: `r conclusions.pH` -->
-<!-- * *Temperature*: `r conclusions.Temp` -->
-<!-- * *Total Phosphorus*: `r conclusions.TP` -->
-<!-- * *Total Suspended Solids*: `r conclusions.TSS` -->
+* *Dissolved Oxygen*: `r conclusions.DO`
+* *E. coli*: `r conclusions.Ecoli`
+* *Enterococcus*: `r conclusions.Entero'
+* *pH*: `r conclusions.pH` -->
+* *Temperature*: `r conclusions.Temp
+* *Total Phosphorus*: `r conclusions.TP'
+* *Total Suspended Solids*: `r conclusions.TSS`
 
 
 **Additional Conclusions:**
