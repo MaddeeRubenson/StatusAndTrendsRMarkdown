@@ -62,6 +62,7 @@ source("functions/funClean.R")
 source("functions/funSeaKen.R")
 source("functions/funPlots.R")
 source('functions/TualatinR_Allocations.R')
+source('functions/funConclusions.R')
 
 tbls  <- captioner(prefix="Table")
 figs <- captioner(prefix="\nFigure")
@@ -1764,14 +1765,33 @@ leaflet(agwqma_shp) %>%
 
 ```{r conclusions-setup}
 
-conclusions.DO <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "DO"), c("conclusion")]
-conclusions.Ecoli <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Ecoli"), c("conclusion")]
-conclusions.Entero <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Entero"), c("conclusion")]
-conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "pH"), c("conclusion")]
-conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Temp"), c("conclusion")]
-conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TP"), c("conclusion")]
-conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TSS"), c("conclusion")]
+colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
+                                      "DO_S", "DO_T",
+                                      "Ecoli_S", "Ecoli_T", 
+                                      "Entero_S", "Entero_T",
+                                      "pH_S", "pH_T", 
+                                      "Temp_S", "Temp_T",
+                                      "TP_S","TP_T", 
+                                      "TSS_S","TSS_T")
+
+conclusions.DO <- con.auto(df=stns_param_summary, status_column="DO_S", trend_column="DO_T")
+conclusions.Ecoli <- con.auto(df=stns_param_summary, status_column="Ecoli_S", trend_column="Ecoli_T")
+conclusions.Entero <- con.auto(df=stns_param_summary, status_column="Entero_S", trend_column="Entero_T")
+conclusions.pH <- con.auto(df=stns_param_summary, status_column="pH_S", trend_column="pH_T")
+conclusions.Temp <- con.auto(df=stns_param_summary, status_column="Temp_S", trend_column="Temp_T")
+conclusions.TP <- con.auto(df=stns_param_summary, status_column="TP_S", trend_column="TP_T")
+conclusions.TSS <- con.auto(df=stns_param_summary, status_column="TSS_S", trend_column="TSS_T")
+
 conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc"), c("conclusion")]
+
+# Update the Conclusions Lookup
+Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "DO"), c("conclusion")] <- conclusions.DO
+Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Ecoli"), c("conclusion")] <- conclusions.Ecoli
+Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Entero"), c("conclusion")] <- conclusions.Entero
+Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "pH"), c("conclusion")] <- conclusions.pH
+Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Temp"), c("conclusion")] <- conclusions.Temp
+Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TP"), c("conclusion")] <- conclusions.TP
+Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TSS"), c("conclusion")] <- conclusions.TSS
 
 ```
 
@@ -1779,10 +1799,10 @@ conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 
 
 * *Dissolved Oxygen*: `r conclusions.DO`
 * *E. coli*: `r conclusions.Ecoli`
-* *Enterococcus*: `r conclusions.Entero`
-* *pH*: `r conclusions.pH`
-* *Temperature*: `r conclusions.Temp`
-* *Total Phosphorus*: `r conclusions.TP`
+* *Enterococcus*: `r conclusions.Entero'
+* *pH*: `r conclusions.pH` -->
+* *Temperature*: `r conclusions.Temp
+* *Total Phosphorus*: `r conclusions.TP'
 * *Total Suspended Solids*: `r conclusions.TSS`
 
 
