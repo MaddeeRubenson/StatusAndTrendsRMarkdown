@@ -1,4 +1,5 @@
 combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
+  # A <- awqmsData
   # E <- elmData
   # L <- lasarData
   # W <- wqpData
@@ -28,6 +29,7 @@ combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
     A$Activity_Type <- ifelse(A$SamplingMethod == "Continuous Summary" & !is.na(A$SamplingMethod), A$Statistical_Base, A$Activity_Type)
     A$DATUM <- 'Assumed NAD83'
     A$Sampled <- paste(A$SampleStartDate, A$SampleStartTime)
+    A$Sampled <- as.POSIXct(A$Sampled, format='%Y-%m-%d %H:%M:%S')
     A$Detect <- NA
     A <- A[,c(names(AWQMS.map),'Sampled', 'DATUM', 'Detect')]
     A <- plyr::rename(A,AWQMS.map)
@@ -251,8 +253,11 @@ AWQMS_Query <- function(planArea = NULL,
   stations_channel <- odbcConnect(stations.Channel.Name)
   HUC_List <- HUClist[HUClist$PlanName == planArea, "HUC8"]
   stations_query <- paste0("SELECT * FROM VWStationsFinal WHERE HUC8 IN ('", paste(HUC_List, collapse = "', '"), "')")
-  paste(stations_query)
+  print(stations_query)
+  sTime <- Sys.time()
   stations <- sqlQuery(stations_channel, stations_query, na.strings = "NA")
+  eTime <- Sys.time()
+  print(eTime-sTime)
   
   agwqma_stations <- stations[stations$MLocID %in% Stations_in_poly_AWQMS(stations, area.Shp),]
   station_list <- unique(agwqma_stations$MLocID)
@@ -295,7 +300,12 @@ AWQMS_Query <- function(planArea = NULL,
                     "' AND MonLocType IN (", siteType, ")"
   )
   
+  print(paste('Querying', length(station_list), 'stations from AWQMS'))
+  
+  sTime <- Sys.time()
   AWQMS_data <- sqlQuery(channel, myQuery, errors = FALSE)
+  eTime <- Sys.time()
+  print(eTime-sTime)
   
   return(AWQMS_data)
 }
