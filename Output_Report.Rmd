@@ -827,21 +827,16 @@ if(length(entero_stns) > 0) {
   exc_list<- list()
   entero_plots <-list()
   
+  results_seaken <-SeaKen %>% filter(analyte == 'Enterococcus')
+  
   for(j in 1: length(entero_stns)) {
     new_data <- df.entero[df.entero$Station_ID == entero_stns[j],]
     entero_evaluate <- EvaluateEnteroWQS(new_data)
     entero_eval <- attr(entero_evaluate, 'ex_df')
     entero_list[[j]] <- entero_evaluate
     exc_list[[j]] <- entero_eval
-  }
-  
-  entero <-rbind.fill(entero_list[])
-  exc <-rbind.fill(exc_list[])
-  exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
-  
-  results_seaken <-SeaKen %>% filter(analyte == 'Enterococcus')
-  
-  trend_logic <- ifelse(grepl("Not Significant", 
+    
+    trend_logic <- ifelse(grepl("Not Significant", 
                                 results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
                           FALSE,
                           ifelse(grepl("Need at least 8 years", 
@@ -862,32 +857,12 @@ if(length(entero_stns) > 0) {
     cat(figs(name = paste0('Entero_', entero_stns[i]),
              caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and/or trends.')))
     cat('\n\n')
+    
+  }
   
-    # for (i in 1:length(entero_stns)) {
-    # new_data <- df.entero[df.entero$Station_ID == entero_stns[i],]
-    # 
-    # trend_logic <- ifelse(grepl("Not Significant", 
-    #                             results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
-    #                       FALSE,
-    #                       ifelse(grepl("Need at least 8 years", 
-    #                                    results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
-    #                              FALSE, TRUE))
-    # 
-    # 
-    # b <- plot.bacteria(new_data=new_data,
-    #                    sea_ken_table=results_seaken ,
-    #                    plot_trend = trend_logic,
-    #                    plot_log = FALSE,
-    #                    parm = unique(new_data$Analyte))
-    # 
-    # entero_plots[[i]] <- b
-    # 
-    # print(entero_plots[[i]])
-    # 
-    # cat(figs(name = paste0('Entero_', entero_stns[i]),
-    #          caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and/or trends.')))
-    # cat('\n\n')
-  # }
+  entero <-rbind.fill(entero_list[])
+  exc <-rbind.fill(exc_list[])
+  exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
   
   colnames(exc) <- c("Station ID", "Station Description", "Criteria", "Observations", "Exceedances", "Percent Exceedance")
   
@@ -1160,14 +1135,13 @@ if(length(pH_stns) > 0) {
     new_data <- df.pH[df.pH$Station_ID == pH_stns[j],]
     
     pH_evaluate <- EvaluatepHWQS(new_data = new_data,
-                                 ph_crit_min = unique(tmp_df$pH_low),
-                                 ph_crit_max = unique(tmp_df$pH_high),
+                                 ph_crit_min = unique(new_data$pH_low),
+                                 ph_crit_max = unique(new_data$pH_high),
                                  analyte_column = 'Analyte',
                                  station_id_column = 'Station_ID',
                                  station_desc_column = 'Station_Description',
                                  datetime_column = 'Sampled',
-                                 result_column = 'Result',
-                                 datetime_format = '%Y-%m-%d %H:%M:%S')
+                                 result_column = 'Result')
 
     pH_eval <- attr(pH_evaluate, 'ex_df')
     pH_list[[j]] <- pH_evaluate
@@ -1266,7 +1240,7 @@ if(length(temp_stn) > 0) {
     Temp_Benuse <- as.character((Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[j], 'Temp_Benuse']))
     spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[j], 'spwn_time'])
     
-    tmp_df$date <- as.Date(new_data$Sampled)
+    new_data$date <- as.Date(new_data$Sampled)
             
     temp_evaluate <- EvaluateTempWQS(sdadm_df = new_data,
                                      selectUse = Temp_Benuse[1],
@@ -1380,8 +1354,8 @@ if(length(DO_stns) > 0) {
 
     DO_evaluate <- EvaluateDOWQS(new_data = new_data,
                                  DOsat = DO_sat_data,
-                                 selectUseDO = unique(tmp_df$DO_use),
-                                 selectSpawning = unique(tmp_df$spwn_time),
+                                 selectUseDO = unique(new_data$DO_use),
+                                 selectSpawning = unique(new_data$spwn_time),
                                  analyte_column = 'Analyte',
                                  station_id_column = 'Station_ID',
                                  station_desc_column = 'Station_Description',

@@ -813,11 +813,7 @@ EvaluatepHWQS <- function(new_data,
                           station_id_column = 'Station_ID',
                           station_desc_column = 'Station_Description',
                           datetime_column = 'Sampled',
-                          result_column = 'Result',
-                          datetime_format = '%Y-%m-%d %H:%M:%S') {
-  
-  new_data[, datetime_column] <- as.POSIXct(new_data[, datetime_column],
-                                            format = datetime_format)
+                          result_column = 'Result') {
   
   new_data$exceed <- ifelse((new_data[, result_column] < ph_crit_min | new_data[, result_column] > ph_crit_max), 
                             1, 0)
@@ -887,14 +883,12 @@ EvaluateDOWQS<-function(new_data,
                         station_desc_column = 'Station_Description',
                         datetime_column = 'Sampled',
                         result_column = 'Result',
-                        datetime_format = '%Y-%m-%d %H:%M:%S'){
+                        datetime_format){
   
 
   library(dplyr)
   
   new_data[, result_column] <- as.numeric(new_data[, result_column])
-  new_data[, datetime_column] <- as.POSIXct(new_data[, datetime_column],
-                                            format = datetime_format)
   new_data$year<-as.numeric(format(new_data[, datetime_column], format="%Y"))
   
   
