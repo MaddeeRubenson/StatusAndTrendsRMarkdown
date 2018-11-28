@@ -759,14 +759,7 @@ if(length(ecoli_stns) > 0) {
   
   for(j in 1: length(ecoli_stns)) {
     new_data <- df.ecoli[df.ecoli$Station_ID == ecoli_stns[j],]
-    tmp_df <- new_data
-    # tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    # tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    # sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    # tmp_df_MRL <- tmp_df[sub,]
-    # tmp_df <- remove.dups(tmp_df_MRL, max)
-    
-    ecoli_evaluate <- EvaluateEColiWQS(tmp_df)
+    ecoli_evaluate <- EvaluateEColiWQS(new_data)
     ecoli_eval <- attr(ecoli_evaluate, 'ex_df')
     ecoli_list[[j]] <- ecoli_evaluate
     exc_list[[j]] <- ecoli_eval
@@ -836,13 +829,6 @@ if(length(entero_stns) > 0) {
   
   for(j in 1: length(entero_stns)) {
     new_data <- df.entero[df.entero$Station_ID == entero_stns[j],]
-    # tmp_df <- new_data
-    # tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    # tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    # sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    # tmp_df_MRL <- tmp_df[sub,]
-    # tmp_df <- remove.dups(tmp_df_MRL, max)
-    
     entero_evaluate <- EvaluateEnteroWQS(new_data)
     entero_eval <- attr(entero_evaluate, 'ex_df')
     entero_list[[j]] <- entero_evaluate
@@ -953,15 +939,7 @@ if(length(tp_stn) > 0) {
   for(j in 1: length(tp_stn)) {
     
     new_data <- df.tp[df.tp$Station_ID == tp_stn[j],]
-    # 
-    # tmp_df <- new_data
-    # tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    # tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    # sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    # tmp_df_MRL <- tmp_df[sub,]
-    # tmp_df <- remove.dups(tmp_df_MRL, max)
-    
-    
+
     if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
       # Snake River - Hells Canyon TMDL
       TP_evaluate <- EvaluateTP_SRHC(new_data, 
@@ -1067,12 +1045,7 @@ if(length(tss_stn) > 0){
     new_data <- df.tss[df.tss$Station_ID == tss_stn[j],]
     
     tmp_df <- new_data
-    # tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    # tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    # sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    # tmp_df_MRL <- tmp_df[sub,]
-    # tmp_df <- remove.dups(tmp_df_MRL, max)
-    
+
     if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
       
     # Snake River - Hells Canyon TMDL
@@ -1186,13 +1159,6 @@ if(length(pH_stns) > 0) {
   for(j in 1: length(pH_stns)) {
     new_data <- df.pH[df.pH$Station_ID == pH_stns[j],]
     
-    # tmp_df <- new_data
-    # tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    # tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    # sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    # tmp_df_MRL <- tmp_df[sub,]
-    # tmp_df <- remove.dups(tmp_df_MRL, max)
-
     pH_evaluate <- EvaluatepHWQS(new_data = new_data,
                                  ph_crit_min = unique(tmp_df$pH_low),
                                  ph_crit_max = unique(tmp_df$pH_high),
@@ -1297,20 +1263,12 @@ if(length(temp_stn) > 0) {
   for(j in 1: length(temp_stn)) {
     
     new_data <- df.temp[df.temp$Station_ID == temp_stn[j],]
-    
-    tmp_df <- new_data
-    #tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    #tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    #sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    #tmp_df_MRL <- tmp_df[sub,]
-    #tmp_df <- remove.dups(tmp_df_MRL, max)
-    
     Temp_Benuse <- as.character((Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[j], 'Temp_Benuse']))
     spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[j], 'spwn_time'])
     
     tmp_df$date <- as.Date(new_data$Sampled)
             
-    temp_evaluate <- EvaluateTempWQS(sdadm_df = tmp_df,
+    temp_evaluate <- EvaluateTempWQS(sdadm_df = new_data,
                                      selectUse = Temp_Benuse[1],
                                      selectSpawning = spwn_time[1],
                                      station_id_column = 'Station_ID')
@@ -1419,15 +1377,8 @@ if(length(DO_stns) > 0) {
     DO_sat_data <-df.all %>% 
       dplyr::filter(Analyte == 'Dissolved oxygen saturation') %>%
       dplyr::filter(Station_ID == DO_stns[j])
-    
-    tmp_df <- new_data
-    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    tmp_df_MRL <- tmp_df[sub,]
-    tmp_df <- remove.dups(tmp_df_MRL, max)
 
-    DO_evaluate <- EvaluateDOWQS(new_data = tmp_df,
+    DO_evaluate <- EvaluateDOWQS(new_data = new_data,
                                  DOsat = DO_sat_data,
                                  selectUseDO = unique(tmp_df$DO_use),
                                  selectSpawning = unique(tmp_df$spwn_time),
