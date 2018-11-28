@@ -72,9 +72,9 @@ figs <- captioner(prefix="\nFigure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
-agwqma <- "Generic"
+agwqma <- "Clackamas"
 query_dates <- c("2000-01-01", "2018-11-01")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Enhancement-Branches/enhancement-awqms-query"
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Issue-Branches/issue-remove-dups"
 
 # Set to TRUE if knitting a word document
 word_output <- TRUE
@@ -222,8 +222,13 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # remove stations outside the agwqma
   df.all <- clipToPlanArea(df.all, agwqma_all_shp, input$select)
 
+  # Convert AWQMS analyte names to existing code language
+  df.all[grep('Dissolved oxygen', df.all$Analyte),]$Analyte <- 'Dissolved Oxygen'
+  df.all[grep('Phosphorus', df.all$Analyte),]$Analyte <- 'Total Phosphorus'
+  df.all[grep('Total suspended solids', df.all$Analyte),]$Analyte <- 'Total Suspended Solids'
+  
   # Remove all Dissolved Oxygen summary statistics from analysis except for 'minimum' 
-  df.all <- df.all %>% filter(!(Analyte == "Dissolved oxygen (DO)" & Statistical_Base %in% c('7DADM', 'Maximum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
+  df.all <- df.all %>% filter(!(Analyte == "Dissolved Oxygen" & Statistical_Base %in% c('7DADM', 'Maximum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
   
   # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
   # The Station ID will be named the same as LASAR
@@ -248,20 +253,15 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   colnames(df.all)[2] <- 'Station_Description'
   df.all$Station_Description.y <- NULL
   
-  # Remove obervations that are the same from two databases
-  # Same is defined as having the same station ID, Sample Date/time, and Analyte
-  # Note the WQP field 'StatisticalBaseCode' is a code that identifies if the result 
-  # is a calculated value like Daily Max or 7DADM. This needs to be incorporated somehow.
-  df.all$IDSA <- paste(df.all$Station_ID,df.all$Sampled,df.all$Analyte, sep=" ")
-  df.all <- df.all[!duplicated(df.all[c("IDSA")] ), ]
-  
-  ## Add snapped stations
-  #df.all <- Snapped_Stations(df.all)
+  # Remove obervations that are the same
+  # Same is defined as having the same station ID, Sample Date/time, Analyte, and Statistical_Base
+  # Note the field 'Statistical_Base' is a code that identifies if the result 
+  # is a calculated value like Daily Max or 7DADM.
+  df.all <- remove.dups(df.all)
   
   df.all$Result <- clean(df.all$Result)
   df.all$Result <- suppressWarnings(as.numeric(df.all$Result))
   df.all <- MRLhandling(df.all)
-  
   
   if ("Fecal Coliform" %in% df.all$Analyte) {
     fc2ec.stations <-Stations_in_poly(df.all[df.all$Analyte == "Fecal Coliform", ], bacteria_nonfreshwater_shp, outside=TRUE)
@@ -288,14 +288,6 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   }
   
   df.all <- remove_QAfail(df.all)
-  
-  # Remove duplicate samples based on station ID, datetime, analyte, and IDSA (in case of a analyte conversion)
-  df.all$code <- paste(df.all$Station_ID, df.all$Sampled, df.all$Analyte, df.all$IDSA)
-  duplicates <- df.all[duplicated(df.all$code),]
-  df.all <- df.all[!duplicated(df.all$code),]
-  
-  # Store duplicate list for reference
-  save(duplicates, file=paste0(Rdata_dir,"/",duplicates_file))
   
   # Run temperature sufficiency tests
   if (any('Temperature' %in% df.all$Analyte)) {
@@ -770,11 +762,11 @@ if(length(ecoli_stns) > 0) {
   for(j in 1: length(ecoli_stns)) {
     new_data <- df.ecoli[df.ecoli$Station_ID == ecoli_stns[j],]
     tmp_df <- new_data
-    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    tmp_df_MRL <- tmp_df[sub,]
-    tmp_df <- remove.dups(tmp_df_MRL, max)
+    # tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+    # tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+    # sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+    # tmp_df_MRL <- tmp_df[sub,]
+    # tmp_df <- remove.dups(tmp_df_MRL, max)
     
     ecoli_evaluate <- EvaluateEColiWQS(tmp_df)
     ecoli_eval <- attr(ecoli_evaluate, 'ex_df')
@@ -789,7 +781,7 @@ if(length(ecoli_stns) > 0) {
                                  FALSE, 
                                  TRUE))
     
-    b <- plot.bacteria(new_data=new_data,
+    b <- plot.bacteria(new_data=ecoli_evaluate,
                        sea_ken_table=results_seaken ,
                        plot_trend = trend_logic,
                        plot_log = FALSE,
@@ -842,17 +834,18 @@ if(length(entero_stns) > 0) {
   
   entero_list<- list()
   exc_list<- list()
+  entero_plots <-list()
   
   for(j in 1: length(entero_stns)) {
     new_data <- df.entero[df.entero$Station_ID == entero_stns[j],]
-    tmp_df <- new_data
-    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    tmp_df_MRL <- tmp_df[sub,]
-    tmp_df <- remove.dups(tmp_df_MRL, max)
+    # tmp_df <- new_data
+    # tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+    # tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+    # sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+    # tmp_df_MRL <- tmp_df[sub,]
+    # tmp_df <- remove.dups(tmp_df_MRL, max)
     
-    entero_evaluate <- EvaluateEnteroWQS(tmp_df)
+    entero_evaluate <- EvaluateEnteroWQS(new_data)
     entero_eval <- attr(entero_evaluate, 'ex_df')
     entero_list[[j]] <- entero_evaluate
     exc_list[[j]] <- entero_eval
@@ -864,12 +857,7 @@ if(length(entero_stns) > 0) {
   
   results_seaken <-SeaKen %>% filter(analyte == 'Enterococcus')
   
-  entero_plots <-list()
-  
-  for (i in 1:length(entero_stns)) {
-    new_data <- df.entero[df.entero$Station_ID == entero_stns[i],]
-    
-    trend_logic <- ifelse(grepl("Not Significant", 
+  trend_logic <- ifelse(grepl("Not Significant", 
                                 results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
                           FALSE,
                           ifelse(grepl("Need at least 8 years", 
@@ -890,7 +878,32 @@ if(length(entero_stns) > 0) {
     cat(figs(name = paste0('Entero_', entero_stns[i]),
              caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and/or trends.')))
     cat('\n\n')
-  }
+  
+    # for (i in 1:length(entero_stns)) {
+    # new_data <- df.entero[df.entero$Station_ID == entero_stns[i],]
+    # 
+    # trend_logic <- ifelse(grepl("Not Significant", 
+    #                             results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
+    #                       FALSE,
+    #                       ifelse(grepl("Need at least 8 years", 
+    #                                    results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
+    #                              FALSE, TRUE))
+    # 
+    # 
+    # b <- plot.bacteria(new_data=new_data,
+    #                    sea_ken_table=results_seaken ,
+    #                    plot_trend = trend_logic,
+    #                    plot_log = FALSE,
+    #                    parm = unique(new_data$Analyte))
+    # 
+    # entero_plots[[i]] <- b
+    # 
+    # print(entero_plots[[i]])
+    # 
+    # cat(figs(name = paste0('Entero_', entero_stns[i]),
+    #          caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and/or trends.')))
+    # cat('\n\n')
+  # }
   
   colnames(exc) <- c("Station ID", "Station Description", "Criteria", "Observations", "Exceedances", "Percent Exceedance")
   
@@ -942,22 +955,22 @@ if(length(tp_stn) > 0) {
   for(j in 1: length(tp_stn)) {
     
     new_data <- df.tp[df.tp$Station_ID == tp_stn[j],]
-    
-    tmp_df <- new_data
-    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    tmp_df_MRL <- tmp_df[sub,]
-    tmp_df <- remove.dups(tmp_df_MRL, max)
+    # 
+    # tmp_df <- new_data
+    # tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+    # tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+    # sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+    # tmp_df_MRL <- tmp_df[sub,]
+    # tmp_df <- remove.dups(tmp_df_MRL, max)
     
     
     if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
       # Snake River - Hells Canyon TMDL
-      TP_evaluate <- EvaluateTP_SRHC(tmp_df, 
+      TP_evaluate <- EvaluateTP_SRHC(new_data, 
                                      selectWQSTP = 0.07)
     } else {
       
-      TP_evaluate <- EvaluateTPWQS(tmp_df, 
+      TP_evaluate <- EvaluateTPWQS(new_data, 
                                    selectWQSTP = 0)
     }
     
@@ -1056,11 +1069,11 @@ if(length(tss_stn) > 0){
     new_data <- df.tss[df.tss$Station_ID == tss_stn[j],]
     
     tmp_df <- new_data
-    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    tmp_df_MRL <- tmp_df[sub,]
-    tmp_df <- remove.dups(tmp_df_MRL, max)
+    # tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+    # tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+    # sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+    # tmp_df_MRL <- tmp_df[sub,]
+    # tmp_df <- remove.dups(tmp_df_MRL, max)
     
     if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
       
@@ -1162,7 +1175,7 @@ if(length(pH_stns) > 0) {
   
   df.pH <- merge(df.pH,in_bentable, by.x = "Station_ID", by.y = "Station_ID")
   
-  if(any(is.na(df.pH$pH_benuse) | is.na(df.pH$pH_low) | is.na(df.pH$pH_high))) {
+  if(any(is.na(df.pH$pH_benuse) | is.na(df.pH$pH_low) | is.na(df.pH$pH_high)) | NROW(df.pH) == 0) {
     print("In order to assess against water quality standard, need to add pH beneficial uses to stations.csv for stations:")
       print(unique(df.pH[(is.na(df.pH$pH_benuse) | is.na(df.pH$pH_low) | is.na(df.pH$pH_high)),c("Station_ID")]))
     break
@@ -1175,14 +1188,14 @@ if(length(pH_stns) > 0) {
   for(j in 1: length(pH_stns)) {
     new_data <- df.pH[df.pH$Station_ID == pH_stns[j],]
     
-    tmp_df <- new_data
-    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    tmp_df_MRL <- tmp_df[sub,]
-    tmp_df <- remove.dups(tmp_df_MRL, max)
+    # tmp_df <- new_data
+    # tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
+    # tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
+    # sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
+    # tmp_df_MRL <- tmp_df[sub,]
+    # tmp_df <- remove.dups(tmp_df_MRL, max)
 
-    pH_evaluate <- EvaluatepHWQS(new_data = tmp_df,
+    pH_evaluate <- EvaluatepHWQS(new_data = new_data,
                                  ph_crit_min = unique(tmp_df$pH_low),
                                  ph_crit_max = unique(tmp_df$pH_high),
                                  analyte_column = 'Analyte',

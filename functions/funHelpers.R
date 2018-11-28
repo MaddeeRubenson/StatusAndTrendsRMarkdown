@@ -1383,17 +1383,19 @@ resolveMRLs <- function(ids, dnd, results){
   return(i0 | i1 | i2)
 }
 
-remove.dups <- function(tname, fun_type) {
+remove.dups <- function(tname) {
   
-  
+  tname$code <- paste(tname$Station_ID, tname$Analyte, tname$Sampled, tname$Statistical_Base, sep=" ")
   #Code should be a concatenation of station, analyte and day (for most parameters)
-  no.dups <- aggregate(Result ~ code, data = tname, FUN = fun_type)
+  # no.dups <- aggregate(Result ~ code, data = tname, FUN = fun_type)
   tname <- tname[!duplicated(tname$code),]
-  tname <- merge(no.dups, tname, by = 'code')
+  # tname <- merge(no.dups, tname, by = 'code')
   #tname$tResult <- round(tname$tResult.x, 2)
-  tname$Result <- tname$Result.x
-  tname <- within(tname, rm(Result.x, Result.y))
-
+  # tname$Result <- tname$Result.x
+  # tname <- within(tname, rm(Result.x, Result.y))
+  tname <- tname %>% filter(!SampleType %in% c("Quality Control Sample-Field Replicate", "Quality Control Field Replicate Msr/Obs"))
+  
+  return(tname)
   }
 
 landUseAnalysis <- function(all.sp, cats, nlcd) {
@@ -1442,7 +1444,8 @@ temp_sufficiency_analysis <- function(df.all) {
     print(paste(i, ": ", stns[i]))
     tmp <- df.all[df.all$Station_ID == stns[i], ]
     
-    tmp$datetime <- as.POSIXct(strptime(tmp$Sampled, format = "%Y-%m-%d %H:%M:%OS"))
+    # tmp$datetime <- as.POSIXct(strptime(tmp$Sampled, format = "%Y-%m-%d %H:%M:%OS"))
+    tmp$datetime <- tmp$Sampled
     tmp$date <- date(tmp$datetime)
     tmp$month <- month(tmp$datetime)
     tmp$year <- year(tmp$datetime)

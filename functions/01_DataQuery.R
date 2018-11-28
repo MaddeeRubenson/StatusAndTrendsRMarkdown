@@ -28,6 +28,7 @@ combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
     A$Activity_Type <- ifelse(A$SamplingMethod == "Continuous Summary" & !is.na(A$SamplingMethod), A$Statistical_Base, A$Activity_Type)
     A$DATUM <- 'Assumed NAD83'
     A$Sampled <- paste(A$SampleStartDate, A$SampleStartTime)
+    A$Sampled <- as.POSIXct(A$Sampled, format='%Y-%m-%d %H:%M:%S')
     A$Detect <- NA
     A <- A[,c(names(AWQMS.map),'Sampled', 'DATUM', 'Detect')]
     A <- plyr::rename(A,AWQMS.map)
