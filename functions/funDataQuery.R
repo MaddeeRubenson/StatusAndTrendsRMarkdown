@@ -1,9 +1,10 @@
 combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
- # E <- elmData
- # L <- lasarData
- # W <- wqpData
- # N <- nwisData
-
+  # A <- AWQMS
+  # E <- elmData
+  # L <- lasarData
+  # W <- wqpData
+  # N <- nwisData
+  
   if(is.data.frame(A)){
     AWQMS.map <- c('MLocID' = 'Station_ID',
                    'OrganizationID' = 'Client',
@@ -24,7 +25,7 @@ combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
                    'Result_status' = 'StatusIdentifier',
                    'HUC8' = 'HUC',
                    'Statistical_Base' = 'Statistical_Base'
-                   )
+    )
     A$Activity_Type <- ifelse(A$SamplingMethod == "Continuous Summary" & !is.na(A$SamplingMethod), A$Statistical_Base, A$Activity_Type)
     A$DATUM <- 'Assumed NAD83'
     A$Sampled <- paste(A$SampleStartDate, A$SampleStartTime)
@@ -169,29 +170,169 @@ combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
 }
 
 
+Stations_in_poly_AWQMS <- function(df.all, poly_shp, outside=FALSE) {
+  #### Redefine Stations_in_poly lat/lon columns ####
+  # Returns a vector of stations that fall within or outside a polygon boundary
+  # Arguments:
+  # df.all = data frame of data with column names "Station_ID", "DATUM", "DECIMAL_LAT", "DECIMAL_LONG"
+  # poly = polygon shapefile
+  # Outside = TRUE if the stations outside the polygon should be returned instead, default is FALSE
+  
+  library(sp)
+  
+  # make a spatial object
+  df.shp <- df.all[,c("MLocID", "Datum", "Lat_DD", "Long_DD")]         
+  coordinates(df.shp)=~Long_DD+Lat_DD
+  
+  # Datums to search for
+  # NAD83 : EPSG:4269 <- This is assumed if it is not one of the other two
+  # NAD27 : EPSG:4267
+  # WGS84 : EPSG:4326
+  
+  df.nad83 <- df.shp[!grepl("NAD27|4267|WGS84|4326",toupper(df.shp$Datum)), ]
+  df.nad27 <- df.shp[grepl("NAD27|4267",toupper(df.shp$Datum)), ]
+  df.wgs84 <- df.shp[grepl("WGS84|4326",toupper(df.shp$Datum)), ]
+  
+  proj4string(df.nad27) <- CRS("+init=epsg:4267")
+  proj4string(df.nad83) <- CRS("+init=epsg:4269")
+  proj4string(df.wgs84) <- CRS("+init=epsg:4326")
+  
+  # convert to NAD 83
+  if (nrow(df.nad27)>0) {
+    df.nad.27.nad83 <- spTransform(df.nad27, CRS("+init=epsg:4269")) 
+    df.nad83 <- rbind(df.nad83, df.nad.27.nad83)
+  }
+  
+  if (nrow(df.wgs84)>0) {
+    df.wgs84.nad83 <- spTransform(df.wgs84, CRS("+init=epsg:4269")) 
+    df.nad83 <- rbind(df.nad83, df.wgs84.nad83)
+  }
+  
+  poly.nad83 <- spTransform(poly_shp, CRS("+init=epsg:4269"))
+  
+  
+  if(outside) {
+    # stations outside polygon
+    df.out <- df.nad83[!complete.cases(over(df.nad83, poly.nad83)),]@data
+    stations.out <- unique(df.out$MLocID)
+    return(stations.out)
+  } else {
+    stations.in <- unique(df.nad83[poly.nad83,]@data$MLocID)
+    return(stations.in)
+  }
+}
+
+AWQMS_Query <- function(planArea = NULL, 
+                        area.Shp = agwqma_shp, 
+                        inParms, 
+                        luParms, 
+                        startDate,
+                        endDate,
+                        stations.Channel.Name = "STATIONS") {
+  library(RCurl)
+  library(XML)
+  library(dataRetrieval)
+  library(plyr)
+  library(sp)
+  library(rgdal)
+  library(raster)
+  library(rgeos)
+  library(RODBC)
+  
+  # planArea <- agwqma
+  # area.Shp <- agwqma_shp
+  # inParms <- input$parms
+  # luParms <- lu_parms
+  # startDate <- paste(min(input$dates))
+  # endDate <- paste(max(input$dates))
+  # stations.Channel.Name <- "STATIONS"
+  
+  options(stringsAsFactors = FALSE)
+  
+  # Get Stations within Hucs from station database
+  stations_channel <- odbcConnect(stations.Channel.Name)
+  HUC_List <- HUClist[HUClist$PlanName == planArea, "HUC8"]
+  stations_query <- paste0("SELECT * FROM VWStationsFinal WHERE HUC8 IN ('", paste(HUC_List, collapse = "', '"), "')")
+  print(stations_query)
+  sTime <- Sys.time()
+  stations <- sqlQuery(stations_channel, stations_query, na.strings = "NA")
+  eTime <- Sys.time()
+  print(eTime-sTime)
+  
+  agwqma_stations <- stations[stations$MLocID %in% Stations_in_poly_AWQMS(stations, area.Shp),]
+  station_list <- unique(agwqma_stations$MLocID)
+  
+  ## connect to element and get data (must set up ODBC connection first)
+  channel <- odbcConnect("AWQMS")
+  table <- "VW_AWQMS_Results"
+  ## get the names of all the tables in the database
+  TableNames <- sqlTables(channel,errors = FALSE)
+  columnNames <- sqlColumns(channel, table, errors = FALSE)
+  
+  #Separate each value with the URL encoded semi-colon '%3B'. For values with commas use the URL encoded value '%2C+'
+  siteType = "'River/Stream', 'Lake', 'Other-Surface Water', 'Reservoir'"
+  
+  #### Get characteristics ####
+  # The entire list of parameters that match to a criteria
+  parms <- luParms
+  
+  # Take the inputs and write them to another vector for editing
+  myParms <- inParms
+  
+  # Expand bacteria to include fecal and enterococcus
+  if(any(inParms == 'Bacteria')) {
+    myParms <- c(myParms, c('E. coli','Fecal coliform','Enterococci'))
+    myParms <- myParms[-which(myParms == "Bacteria")] 
+  }
+  
+  # Grab just the parameters we want
+  characteristics <- paste(parms[parms$DEQ.Table.name %in% myParms,'AWQMS.Name'],collapse="', '")
+  
+  #### Define sample media to query ####
+  sampleMedia <- 'Water'
+  
+  #### Pass the query to AWQMS ####
+  
+  myQuery <- paste0("SELECT * FROM VW_AWQMS_Results WHERE MLocID IN ('", paste(station_list, collapse = "', '"),
+                    "') AND Char_Name IN ('", paste(characteristics, collapse = "', '"),
+                    "') AND SampleStartDate BETWEEN '", startDate, "' AND '", endDate,
+                    "' AND SampleMedia='", sampleMedia,
+                    "' AND MonLocType IN (", siteType, ")"
+  )
+  
+  print(paste('Querying', length(station_list), 'stations from AWQMS'))
+  
+  sTime <- Sys.time()
+  AWQMS_data <- sqlQuery(channel, myQuery, errors = FALSE)
+  eTime <- Sys.time()
+  print(eTime-sTime)
+  
+  return(AWQMS_data)
+}
+
 elementQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate,
                          stations_wbd = stations_huc) {
   library(RODBC)
   
   options(stringsAsFactors = FALSE)
   
-    #For testing
-    # library(sp)
-    # library(rgdal)
-    # library(rgeos)
-    # agwqma <- readOGR(dsn = 'AgWQMA_DataRetrieval/data/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
-    # agwqma <- spTransform(agwqma, CRS("+proj=longlat +datum=NAD83"))
-    # HUC <- readOGR(dsn = 'AgWQMA_DataRetrieval/data/GIS', layer = 'huc250k_a_or', verbose = FALSE)
-    # HUC <- spTransform(HUC, CRS("+proj=longlat +datum=NAD83"))
-    # HUClist <- lapply(as.list(agwqma$PlanName),function(x) {HUC[agwqma[agwqma$PlanName == x,],]})
-    # names(HUClist) <- agwqma$PlanName
-    # 
-    # planArea <- 'South Santiam'
-    # startDate <- "2000-03-01 00:00:00.000"
-    # endDate <- "2017-03-01 00:00:00.000"
-    # inParms <- c('Total Phosphorus')
-    # input <- data.frame(select = rep(planArea, 3), parms = inParms, dates = c(startDate, endDate, startDate))
-    # parms <- read.csv('AgWQMA_DataRetrieval/data/WQP_Table3040_Names.csv', stringsAsFactors = FALSE)
+  #For testing
+  # library(sp)
+  # library(rgdal)
+  # library(rgeos)
+  # agwqma <- readOGR(dsn = 'AgWQMA_DataRetrieval/data/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
+  # agwqma <- spTransform(agwqma, CRS("+proj=longlat +datum=NAD83"))
+  # HUC <- readOGR(dsn = 'AgWQMA_DataRetrieval/data/GIS', layer = 'huc250k_a_or', verbose = FALSE)
+  # HUC <- spTransform(HUC, CRS("+proj=longlat +datum=NAD83"))
+  # HUClist <- lapply(as.list(agwqma$PlanName),function(x) {HUC[agwqma[agwqma$PlanName == x,],]})
+  # names(HUClist) <- agwqma$PlanName
+  # 
+  # planArea <- 'South Santiam'
+  # startDate <- "2000-03-01 00:00:00.000"
+  # endDate <- "2017-03-01 00:00:00.000"
+  # inParms <- c('Total Phosphorus')
+  # input <- data.frame(select = rep(planArea, 3), parms = inParms, dates = c(startDate, endDate, startDate))
+  # parms <- read.csv('AgWQMA_DataRetrieval/data/WQP_Table3040_Names.csv', stringsAsFactors = FALSE)
   
   #### Define Geographic Area using myArea from 01_DataQueryUI.R ####
   
@@ -202,7 +343,7 @@ elementQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate,
   } else {
     myHUCs <- HUClist[HUClist$PlanName == planArea,'HUC8']
   }
-
+  
   elm <- odbcConnect('ELEMENT')
   
   st <- stations_wbd[stations_wbd$HUC8 %in% myHUCs,]
@@ -252,7 +393,7 @@ elementQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate,
                   by.x = 'Station_ID', by.y = 'STATION_KEY', all.x = TRUE)
   
   odbcCloseAll()
-
+  
   return(myData)
 }
 
@@ -262,18 +403,18 @@ lasarQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate,
   
   options(stringsAsFactors = FALSE)
   
-#   #For testing
-# library(sp)
-# library(rgdal)
-# library(rgeos)
-# agwqma <- readOGR(dsn = 'app/data/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
-# hucs <- readOGR(dsn = 'app/data/GIS', layer = 'WBD_HU8', verbose = FALSE)
-# HUClist <- read.csv('app/data/PlanHUC_LU.csv')
-# stations_huc <- read.csv('app/data/station_wbd_12132016.csv')
-# planArea <- 'Tualatin River Subbasin'
-# startDate <- "2000-01-01 00:00:00.000"
-# endDate <- "2010-03-01 00:00:00.000"
-# inParms <- c('Total Nitrogen')
+  #   #For testing
+  # library(sp)
+  # library(rgdal)
+  # library(rgeos)
+  # agwqma <- readOGR(dsn = 'app/data/GIS', layer = 'ODA_AgWQMA', verbose = FALSE)
+  # hucs <- readOGR(dsn = 'app/data/GIS', layer = 'WBD_HU8', verbose = FALSE)
+  # HUClist <- read.csv('app/data/PlanHUC_LU.csv')
+  # stations_huc <- read.csv('app/data/station_wbd_12132016.csv')
+  # planArea <- 'Tualatin River Subbasin'
+  # startDate <- "2000-01-01 00:00:00.000"
+  # endDate <- "2010-03-01 00:00:00.000"
+  # inParms <- c('Total Nitrogen')
   
   #### Establish connection to database ####
   channel <- odbcConnect('DEQLEAD-LIMS')
@@ -308,7 +449,7 @@ lasarQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate,
     qryParms <- c(qryParms, unique(AllParms[grep('[Tt]emperature',AllParms$PARAMETER_NM),'PARAMETER_NM']))
   }
   if(any(inParms == 'Bacteria')) {
-   qryParms <-  c(qryParms, unique(AllParms[grep('E. [Cc]oli|Fecal [Cc]oliform|[Ee]nterococcus',AllParms$PARAMETER_NM),'PARAMETER_NM']))
+    qryParms <-  c(qryParms, unique(AllParms[grep('E. [Cc]oli|Fecal [Cc]oliform|[Ee]nterococcus',AllParms$PARAMETER_NM),'PARAMETER_NM']))
   }
   if (any(inParms == 'pH')) {
     qryParms <- c(qryParms, 'pH')
@@ -336,8 +477,8 @@ lasarQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate,
   #               pm3.ABBREVIATION as PARAMETER_SUFFIX_1,
   #               pm4.ABBREVIATION as PARAMETER_SUFFIX_2")
   # qry <- gsub('\n','',qry)  
-
-qry <- paste0("SELECT r.RESULT_KEY,
+  
+  qry <- paste0("SELECT r.RESULT_KEY,
                      r.STATION,
                s.LOCATION_DESCRIPTION,
                s.DECIMAL_LAT,
@@ -649,11 +790,11 @@ nwisQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate) {
   if('Total Suspended Solids' %in% inParms) {
     parmatercode<-c('00530', '70293', '70299')
     TSS_data <- readNWISdata(service = "iv",
-                            huc=myHUCs,
-                            siteTypeCd=siteTypeCd,
-                            startDate=startDate,
-                            endDate=endDate,
-                            parameterCd = parmatercode)
+                             huc=myHUCs,
+                             siteTypeCd=siteTypeCd,
+                             startDate=startDate,
+                             endDate=endDate,
+                             parameterCd = parmatercode)
     if (nrow(TSS_data) > 0) {
       TSS_sites <- attr(TSS_data, 'siteInfo')
       TSS_data <- TSS_data[,names(TSS_data) != 'tz_cd']
@@ -671,11 +812,11 @@ nwisQuery <- function(planArea = NULL, HUClist, inParms, startDate, endDate) {
   if('Total Phosphorus' %in% inParms) {
     parmatercode<-c('99891', '99893')
     TP_data <- readNWISdata(service = "iv",
-                             huc=myHUCs,
-                             siteTypeCd=siteTypeCd,
-                             startDate=startDate,
-                             endDate=endDate,
-                             parameterCd = parmatercode)
+                            huc=myHUCs,
+                            siteTypeCd=siteTypeCd,
+                            startDate=startDate,
+                            endDate=endDate,
+                            parameterCd = parmatercode)
     if (nrow(TP_data) > 0) {
       TP_sites <- attr(TP_data, 'siteInfo')
       TP_data <- TP_data[,names(TP_data) != 'tz_cd']
