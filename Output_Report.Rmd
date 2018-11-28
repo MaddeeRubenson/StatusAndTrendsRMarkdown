@@ -72,9 +72,9 @@ figs <- captioner(prefix="\nFigure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
-agwqma <- "Clackamas"
+agwqma <- "Generic"
 query_dates <- c("2000-01-01", "2018-11-01")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Issue-Branches/issue-remove-dups"
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/Generic"
 
 # Set to TRUE if knitting a word document
 word_output <- TRUE
