@@ -55,8 +55,7 @@ library(plyr)
 library(tidyr)
 library(leaflet)
 
-source('functions/Rmarkdown_query.R')
-source('functions/01_DataQuery.R')
+source('functions/funDataQuery.R')
 source("functions/funHelpers.R")
 source("functions/funClean.R")
 source("functions/funSeaKen.R")
@@ -178,7 +177,6 @@ load(paste0(support_files_dir,'/OR_cats.Rdata'))
 ```
 
 ```{r AWQMS-Query, include=FALSE}
-source('functions/AWQMS_Query.R')
 
 if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
@@ -488,9 +486,9 @@ knitr::kable(BC_table,
 
 ## Data Sources
 
-Water quality data were retrieved from [DEQ][2.1.1] (LASAR and ELEMENT), U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) U.S. Geological Survey [NWIS][2.1.3] (USGS 2016), and [Water Quality Portal][2.1.4]) databases. Many other organizations provided data that were queried and evaluated for use in this report (see Appendix for a complete list). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). ** REMOVE IF NOT NEEDED. Stations located within the Confederated Tribes of Umatilla Indian Reservation were not included in this report. The Confederated Tribes of Umatilla administer Clean Water Act programs on the reservation.**
+Water quality data were retrieved from DEQ's [AWQMS Database][2.1.1] which may include data submitted to DEQ from many other organizations (see Appendix for a complete list). Data were also retrieved from the U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) and U.S. Geological Survey [NWIS][2.1.3] (USGS 2016) databases via the [Water Quality Portal][2.1.4]). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). ** REMOVE IF NOT NEEDED. Stations located within the Confederated Tribes of Umatilla Indian Reservation were not included in this report. The Confederated Tribes of Umatilla administer Clean Water Act programs on the reservation.**
 
-The data returned were evaluated for quality. Data retrieved from DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual][2.1.5] (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data.
+The data returned were evaluated for quality. Data that was rated under the [DEQ's Laboratory Quality Manual][2.1.5] (ODEQ 2013) guidelines were rated `r unique(df.all[!is.na(df.all$Status), 'Status'])`. EPA and USGS data were included unless result comments indicated problems with the data.
 
 [2.1.1]: http://www.oregon.gov/deq/wq/Pages/WQdata.aspx
 [2.1.2]: https://www.epa.gov/waterdata/water-quality-data-wqx

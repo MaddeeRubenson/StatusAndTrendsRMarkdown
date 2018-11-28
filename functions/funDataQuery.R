@@ -1,5 +1,5 @@
 combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
-  # A <- AWQMS
+  # A <- awqmsData
   # E <- elmData
   # L <- lasarData
   # W <- wqpData
