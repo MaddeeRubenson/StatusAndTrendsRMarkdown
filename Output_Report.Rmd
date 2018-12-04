@@ -80,7 +80,7 @@ project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Clackamas/
 word_output <- TRUE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
-split_param_summary <- FALSE
+split_param_summary <- TRUE
 
 # Everything below here should not change
 support_files_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files"
