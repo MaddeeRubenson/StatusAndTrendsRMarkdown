@@ -174,7 +174,7 @@ plot.Temperature <- function(new_data,
   } else {
     10
   }
-  y.max <- ceiling(max(new_data$Result, na.rm = TRUE)) 
+  y.max <- ceiling(max(new_data$Result, na.rm = TRUE))
   if (y.max < 20 & selectUse %in% c('Salmon and Steelhead Migration Corridors',
                                     'Redband and Lanhontan Cutthroat Trout')) {
     y.max <- 21
@@ -182,6 +182,8 @@ plot.Temperature <- function(new_data,
     y.max <- 19
   } else if (y.max < 16 & selectUse == 'Core Cold Water Habitat') {
     y.max <- 17
+  } else if (y.max < 28 & selectUse == 'Cool Water Species (Klamath Benchmark)'){
+    y.max <- 29
   } else if (y.max < 13) {
     y.max <- 14
   }
@@ -1550,7 +1552,7 @@ plot.TSS<-function(new_data,
   #result_column <- 'Result'
   #datetime_format <- '%Y-%m-%d %H:%M:%S'
   
-  new_data$exceed <- ifelse(new_data$exceed == 0, "Meets", "Exceeds")
+  new_data$exceed <- ifelse(new_data$exceed == 0 | selectWQSTSS == 0, "Meets", "Exceeds")
   
   x.min <- min(new_data$Sampled) 
   x.max <- max(new_data$Sampled) 
@@ -1647,7 +1649,7 @@ plot.TSS<-function(new_data,
     
   } else { 
     # No TMDL Target
-    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) +
+    g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = "Observation")) +
       geom_point() + 
       xlim(x.lim) +
       ylim(y.lim) +
@@ -1678,15 +1680,25 @@ plot.TSS<-function(new_data,
     # trend line
     if ('Exceeds' %in% unique(new_data$exceed)) { 
       # with exceedances
-      meet<-new_data %>% filter(exceed == 'Meets') 
+      meet<-new_data %>% filter(exceed == 'Meets')
       if (nrow(meet) < 1) {
-        # Trend + All Exceed
-        g <-g + scale_color_manual("", values = c('red','blue', 'black'),
-                                   labels = c('Exceeds', 'Trend line', 
-                                              'TSS TMDL Target'),
-                                   guide = guide_legend(override.aes = list(
-                                     linetype = c('blank','solid','dashed'),
-                                     shape=c(16,NA,NA)))) 
+        if (selectWQSTSS == 0) {
+          # Trend + All Exceed + No Standard
+          g <- g + scale_color_manual("", values = c('black','blue'),
+                                     labels = c('Observation', 'Trend line', 
+                                                'TSS TMDL Target'),
+                                     guide = guide_legend(override.aes = list(
+                                       linetype = c('blank','solid'),
+                                       shape=c(16,NA))))
+        } else {
+          # Trend + All Exceed + With Standard
+          g <- g + scale_color_manual("", values = c('red','blue', 'black'),
+                                     labels = c('Exceeds', 'Trend line', 
+                                                'TSS TMDL Target'),
+                                     guide = guide_legend(override.aes = list(
+                                       linetype = c('blank','solid','dashed'),
+                                       shape=c(16,NA,NA))))
+        }
       } else {
         # Trend + Exceeds + Meets
         g <- g + scale_color_manual("", values = c('red', 'black', 'blue', 'black'),
@@ -1721,7 +1733,7 @@ plot.TSS<-function(new_data,
       meet<-new_data %>% filter(exceed == 'Meets')
       if(nrow(meet) < 1) {
         # No Trend,  All Exceed
-        g <-g + scale_color_manual("", values = c('red', 'black'),
+        g <- g + scale_color_manual("", values = c('red', 'black'),
                                    labels = c('Exceeds',
                                               'TSS TMDL Target'),
                                    guide = guide_legend(override.aes = list(

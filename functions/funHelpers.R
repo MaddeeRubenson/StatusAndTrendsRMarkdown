@@ -716,6 +716,7 @@ EvaluateTempWQS <- function(sdadm_df,
     'Salmon and Steelhead Migration Corridors' = 20,
     'Redband and Lanhontan Cutthroat Trout' = 20,
     'Cool water species' = NA,
+    'Cool Water Species (Klamath Benchmark)' = 28,
     'No Salmonid Use/Out of State' = NA
   ))
   )
@@ -1951,7 +1952,7 @@ parm_summary <- function(stns,
   #trend Ecoli
   if(length(e_trend_stns) > 0) {
     for(j in 1:length(e_trend_stns)) {
-      print(e_trend_stns[j])
+      # print(e_trend_stns[j])
       e_seaken <- SeaKen %>% filter(analyte == 'E. Coli')
       e_seaken <- e_seaken[e_seaken$Station_ID == e_trend_stns[j],]
       
@@ -2231,7 +2232,7 @@ parm_summary <- function(stns,
     #trend tp
     if(length(tp_trend_stns) > 0 ) {
       for(j in 1:length(tp_trend_stns)) {
-        print(tp_trend_stns[j])
+        # print(tp_trend_stns[j])
         tp_seaken <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Need at least 8 years')
         tp_seaken <- tp_seaken[tp_seaken$Station_ID == tp_trend_stns[j],]
         
