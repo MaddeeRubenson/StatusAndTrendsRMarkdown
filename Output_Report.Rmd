@@ -1,7 +1,7 @@
 ---
-title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report'
+title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Southern Willamette Valley Agricultural Water Quality Management Area Water Quality Status and Trends Report'
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: September 2018
+date: February 2019
 output:
   word_document:
     fig_caption: yes
@@ -72,15 +72,15 @@ figs <- captioner(prefix="\nFigure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
-agwqma <- "Generic"
+agwqma <- "Southern Willamette Valley"
 query_dates <- c("2000-01-01", "2018-11-01")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/Generic"
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Southern Willamette Valley/2018-Southern-Willamette-Valley"
 
 # Set to TRUE if knitting a word document
 word_output <- TRUE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
-split_param_summary <- FALSE
+split_param_summary <- TRUE
 
 # Everything below here should not change
 support_files_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files"
