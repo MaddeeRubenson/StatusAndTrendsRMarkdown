@@ -28,6 +28,7 @@ combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
     )
     A$Activity_Type <- ifelse(A$SamplingMethod == "Continuous Summary" & !is.na(A$SamplingMethod), A$Statistical_Base, A$Activity_Type)
     A$DATUM <- 'Assumed NAD83'
+    A$SampleStartTime <- ifelse(!is.na(A$Statistical_Base) & is.na(A$SampleStartTime), "00:00:00", A$SampleStartTime)
     A$Sampled <- paste(A$SampleStartDate, A$SampleStartTime)
     A$Sampled <- as.POSIXct(A$Sampled, format='%Y-%m-%d %H:%M:%S')
     A$Detect <- NA
@@ -228,7 +229,8 @@ AWQMS_Query <- function(planArea = NULL,
                         luParms, 
                         startDate,
                         endDate,
-                        stations.Channel.Name = "STATIONS") {
+                        stations.channel.name = "STATIONS_DEQLEAD-LIMS",
+                        AWQMS.channel.name) {
   library(RCurl)
   library(XML)
   library(dataRetrieval)
@@ -250,7 +252,7 @@ AWQMS_Query <- function(planArea = NULL,
   options(stringsAsFactors = FALSE)
   
   # Get Stations within Hucs from station database
-  stations_channel <- odbcConnect(stations.Channel.Name)
+  stations_channel <- odbcConnect(stations.channel.name)
   HUC_List <- HUClist[HUClist$PlanName == planArea, "HUC8"]
   stations_query <- paste0("SELECT * FROM VWStationsFinal WHERE HUC8 IN ('", paste(HUC_List, collapse = "', '"), "')")
   print(stations_query)
@@ -263,7 +265,7 @@ AWQMS_Query <- function(planArea = NULL,
   station_list <- unique(agwqma_stations$MLocID)
   
   ## connect to element and get data (must set up ODBC connection first)
-  channel <- odbcConnect("AWQMS")
+  channel <- odbcConnect(AWQMS.channel.name)
   table <- "VW_AWQMS_Results"
   ## get the names of all the tables in the database
   TableNames <- sqlTables(channel,errors = FALSE)

@@ -1,7 +1,7 @@
 ---
-title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report'
+title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Upper Grande Ronde Agricultural Water Quality Management Area Water Quality Status and Trends Report'
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: September 2018
+date: December 2018
 output:
   word_document:
     fig_caption: yes
@@ -72,9 +72,9 @@ figs <- captioner(prefix="\nFigure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
-agwqma <- "Generic"
-query_dates <- c("2000-01-01", "2018-11-01")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/Generic"
+agwqma <- "Upper Grande Ronde"
+query_dates <- c("2000-01-01", "2018-12-01")
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Upper Grande Ronde/2018-Upper-Grande-Ronde"
 
 # Set to TRUE if knitting a word document
 word_output <- TRUE
@@ -191,7 +191,8 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
                             luParms = lu_parms,
                             startDate = min(input$dates),
                             endDate = max(input$dates),
-                            stations.Channel.Name = "STATIONS")
+                            stations.channel.name = "STATIONS",
+                            AWQMS.channel.name = "AWQMS")
   
   df.all <- tryCatch(combine(A=AWQMS_Data),
                      error = function(err) 
