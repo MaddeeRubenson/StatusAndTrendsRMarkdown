@@ -230,9 +230,9 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
   # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
   # The Station ID will be named the same as LASAR
-  df.all$Station_ID <- gsub("OREGONDEQ-", "", df.all$Station_ID)
-  df.all$Station_ID <- gsub("-ORDEQ", "", df.all$Station_ID)
-  df.all$Station_ID <- gsub("21ORBCH-", "", df.all$Station_ID)
+  #df.all$Station_ID <- gsub("OREGONDEQ-", "", df.all$Station_ID)
+  #df.all$Station_ID <- gsub("-ORDEQ", "", df.all$Station_ID)
+  #df.all$Station_ID <- gsub("21ORBCH-", "", df.all$Station_ID)
   
   # Reconcile Stations with the same ID but have different Lat/Longs 
   df.all <- remove_stn_dups(df.all)
