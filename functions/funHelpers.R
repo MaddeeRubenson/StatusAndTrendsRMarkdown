@@ -325,7 +325,7 @@ Stations_Status <- function(df.all, status.years) {
       filter(year %in% status.years) %>%
       group_by(Station_ID)%>%
       dplyr::summarise(n_years=length(unique(year))) %>%
-      filter(n_years>2)
+      filter(n_years>=2)
     stns<-c(as.character(unique(status$Station_ID)))
     #trend[trend$Station_ID %in% stns, ]
     dta_stns<-sub_data%>%
@@ -813,11 +813,7 @@ EvaluatepHWQS <- function(new_data,
                           station_id_column = 'Station_ID',
                           station_desc_column = 'Station_Description',
                           datetime_column = 'Sampled',
-                          result_column = 'Result',
-                          datetime_format = '%Y-%m-%d %H:%M:%S') {
-  
-  new_data[, datetime_column] <- as.POSIXct(new_data[, datetime_column],
-                                            format = datetime_format)
+                          result_column = 'Result') {
   
   new_data$exceed <- ifelse((new_data[, result_column] < ph_crit_min | new_data[, result_column] > ph_crit_max), 
                             1, 0)
@@ -887,14 +883,12 @@ EvaluateDOWQS<-function(new_data,
                         station_desc_column = 'Station_Description',
                         datetime_column = 'Sampled',
                         result_column = 'Result',
-                        datetime_format = '%Y-%m-%d %H:%M:%S'){
+                        datetime_format){
   
 
   library(dplyr)
   
   new_data[, result_column] <- as.numeric(new_data[, result_column])
-  new_data[, datetime_column] <- as.POSIXct(new_data[, datetime_column],
-                                            format = datetime_format)
   new_data$year<-as.numeric(format(new_data[, datetime_column], format="%Y"))
   
   
@@ -1383,17 +1377,19 @@ resolveMRLs <- function(ids, dnd, results){
   return(i0 | i1 | i2)
 }
 
-remove.dups <- function(tname, fun_type) {
+remove.dups <- function(tname) {
   
-  
+  tname$code <- paste(tname$Station_ID, tname$Analyte, tname$Sampled, tname$Statistical_Base, sep=" ")
   #Code should be a concatenation of station, analyte and day (for most parameters)
-  no.dups <- aggregate(Result ~ code, data = tname, FUN = fun_type)
+  # no.dups <- aggregate(Result ~ code, data = tname, FUN = fun_type)
   tname <- tname[!duplicated(tname$code),]
-  tname <- merge(no.dups, tname, by = 'code')
+  # tname <- merge(no.dups, tname, by = 'code')
   #tname$tResult <- round(tname$tResult.x, 2)
-  tname$Result <- tname$Result.x
-  tname <- within(tname, rm(Result.x, Result.y))
-
+  # tname$Result <- tname$Result.x
+  # tname <- within(tname, rm(Result.x, Result.y))
+  tname <- tname %>% filter(!SampleType %in% c("Quality Control Sample-Field Replicate", "Quality Control Field Replicate Msr/Obs"))
+  
+  return(tname)
   }
 
 landUseAnalysis <- function(all.sp, cats, nlcd) {
@@ -1432,8 +1428,8 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
 }
 
 temp_sufficiency_analysis <- function(df.all) {
-  df.all <- filter(df.all, Analyte == "Temperature")
-  df.all$isMax <- ifelse(df.all$SampleType == "Maximum", TRUE, FALSE)
+  df.all <- filter(df.all, Analyte == "Temperature", Statistical_Base != '7DADM')
+  df.all$isMax <- ifelse(df.all$Statistical_Base == "Maximum", TRUE, FALSE)
   stns <- unique(df.all$Station_ID)
   qc.results.1 <- NULL
   qc.results.2 <- NULL
@@ -1442,7 +1438,8 @@ temp_sufficiency_analysis <- function(df.all) {
     print(paste(i, ": ", stns[i]))
     tmp <- df.all[df.all$Station_ID == stns[i], ]
     
-    tmp$datetime <- as.POSIXct(strptime(tmp$Sampled, format = "%Y-%m-%d %H:%M:%OS"))
+    # tmp$datetime <- as.POSIXct(strptime(tmp$Sampled, format = "%Y-%m-%d %H:%M:%OS"))
+    tmp$datetime <- tmp$Sampled
     tmp$date <- date(tmp$datetime)
     tmp$month <- month(tmp$datetime)
     tmp$year <- year(tmp$datetime)
@@ -2296,7 +2293,9 @@ remove_stn_dups <- function(df.all) {
   
   df <- df.all %>%
     dplyr::select(Station_ID, DECIMAL_LAT, DECIMAL_LONG) %>%
-    dplyr::distinct(Station_ID, DECIMAL_LAT, DECIMAL_LONG)
+    dplyr::distinct(Station_ID, DECIMAL_LAT, DECIMAL_LONG) %>% 
+    group_by(Station_ID) %>% summarise(DECIMAL_LAT = dplyr::first(DECIMAL_LAT),
+    DECIMAL_LONG = dplyr::first(DECIMAL_LONG))
   
   #stn_list <- list()
   #stn <- unique(df.all$Station_ID)

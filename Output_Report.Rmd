@@ -55,13 +55,13 @@ library(plyr)
 library(tidyr)
 library(leaflet)
 
-source('functions/Rmarkdown_query.R')
-source('functions/01_DataQuery.R')
+source('functions/funDataQuery.R')
 source("functions/funHelpers.R")
 source("functions/funClean.R")
 source("functions/funSeaKen.R")
 source("functions/funPlots.R")
 source('functions/TualatinR_Allocations.R')
+source('functions/funConclusions.R')
 
 tbls  <- captioner(prefix="Table")
 figs <- captioner(prefix="\nFigure")
@@ -73,8 +73,8 @@ figs <- captioner(prefix="\nFigure")
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
 agwqma <- "Generic"
-query_dates <- c("2000-01-01", "2018-07-01")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/2018-Generic"
+query_dates <- c("2000-01-01", "2018-11-01")
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/Generic"
 
 # Set to TRUE if knitting a word document
 word_output <- TRUE
@@ -94,7 +94,6 @@ station_map_file <- paste0(gsub(" ", "_", agwqma), "_station_map.png")
 station_summary_map1_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map1.png")
 station_summary_map2_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map2.png")
 
-
 station_summary_map_DO_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_DO.png")
 station_summary_map_pH_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_pH.png")
 station_summary_map_temp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_temp.png")
@@ -106,6 +105,7 @@ station_summary_map_tp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_
 # Name of output files
 df_all_raw_file <- paste0(gsub(" ", "_", agwqma), "_df_all_raw_",paste(query_dates, collapse = "."), ".Rdata")
 df_all_clean_file <- paste0(gsub(" ", "_", agwqma), "_df_all_clean_",paste(query_dates, collapse = "."), ".Rdata")
+duplicates_file <- paste0(gsub(" ", "_", agwqma), "_duplicates_",paste(query_dates, collapse = "."), ".Rdata")
 landuse_file <- paste0(gsub(" ", "_", agwqma), "_landuse.Rdata")
 stns_file <- paste0(gsub(" ", "_", agwqma), "_stns.Rdata")
 status_file <- paste0(gsub(" ", "_", agwqma), "_status.Rdata")
@@ -121,10 +121,10 @@ input$parms <- c('Total Phosphorus',
                  'Bacteria',
                  'Temperature',
                  'pH',
-                 'Dissolved Oxygen',
-                 'Total Nitrogen')
-
-input$db <- c('DEQ', 'Water Quality Portal')
+                 'Dissolved Oxygen'
+                 # ,
+                 # 'Total Nitrogen'
+                 )
 
 # Check if the local GIS directory exists
 if (!file.exists(paste0(project_dir,"/GIS"))) {
@@ -176,7 +176,7 @@ load(paste0(support_files_dir,'/OR_cats.Rdata'))
 
 ```
 
-```{r Query, include=FALSE}
+```{r AWQMS-Query, include=FALSE}
 
 if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
@@ -185,14 +185,20 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
 } else {
   
-  df.all <- query(select =  input$select,
-                  parms = input$parms,
-                  dates = input$dates,
-                  db = input$db)
+  AWQMS_Data <- AWQMS_Query(planArea = agwqma,
+                            area.Shp = agwqma_shp,
+                            inParms = input$parms,
+                            luParms = lu_parms,
+                            startDate = min(input$dates),
+                            endDate = max(input$dates),
+                            stations.Channel.Name = "STATIONS")
+  
+  df.all <- tryCatch(combine(A=AWQMS_Data),
+                     error = function(err) 
+                     {err <- geterrmessage()})
   
   save(df.all, file=paste0(Rdata_dir,"/",df_all_raw_file))
 }
-
 
 ```
 
@@ -214,6 +220,13 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # remove stations outside the agwqma
   df.all <- clipToPlanArea(df.all, agwqma_all_shp, input$select)
 
+  # Convert AWQMS analyte names to existing code language
+  df.all[grep('Dissolved oxygen', df.all$Analyte),]$Analyte <- 'Dissolved Oxygen'
+  df.all[grep('Phosphorus', df.all$Analyte),]$Analyte <- 'Total Phosphorus'
+  df.all[grep('Total suspended solids', df.all$Analyte),]$Analyte <- 'Total Suspended Solids'
+  
+  # Remove all Dissolved Oxygen summary statistics from analysis except for 'minimum' 
+  df.all <- df.all %>% filter(!(Analyte == "Dissolved Oxygen" & Statistical_Base %in% c('7DADM', 'Maximum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
   
   # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
   # The Station ID will be named the same as LASAR
@@ -238,20 +251,15 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   colnames(df.all)[2] <- 'Station_Description'
   df.all$Station_Description.y <- NULL
   
-  # Remove obervations that are the same from two databases
-  # Same is defined as having the same station ID, Sample Date/time, and Analyte
-  # Note the WQP field 'StatisticalBaseCode' is a code that identifies if the result 
-  # is a calculated value like Daily Max or 7DADM. This needs to be incorporated somehow.
-  df.all$IDSA <- paste(df.all$Station_ID,df.all$Sampled,df.all$Analyte, sep=" ")
-  df.all <- df.all[!duplicated(df.all[c("IDSA")] ), ]
-  
-  ## Add snapped stations
-  #df.all <- Snapped_Stations(df.all)
+  # Remove obervations that are the same
+  # Same is defined as having the same station ID, Sample Date/time, Analyte, and Statistical_Base
+  # Note the field 'Statistical_Base' is a code that identifies if the result 
+  # is a calculated value like Daily Max or 7DADM.
+  df.all <- remove.dups(df.all)
   
   df.all$Result <- clean(df.all$Result)
   df.all$Result <- suppressWarnings(as.numeric(df.all$Result))
   df.all <- MRLhandling(df.all)
-  
   
   if ("Fecal Coliform" %in% df.all$Analyte) {
     fc2ec.stations <-Stations_in_poly(df.all[df.all$Analyte == "Fecal Coliform", ], bacteria_nonfreshwater_shp, outside=TRUE)
@@ -279,8 +287,9 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
   df.all <- remove_QAfail(df.all)
   
+  # Run temperature sufficiency tests
   if (any('Temperature' %in% df.all$Analyte)) {
-    
+    df.all <- df.all %>% filter(!(Analyte == "Temperature" & Statistical_Base %in% c('7DADM', 'Minimum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
     tempStns <- temp_sufficiency_analysis(df.all)
     
     qc.1.pass <- filter(attributes(tempStns)$day_test, result == "pass")
@@ -343,6 +352,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   }
 
   save(df.all, file=paste0(Rdata_dir,"/",df_all_clean_file))
+  # save(df.all, file=paste0(Rdata_dir,"/", gsub(" ", "_", agwqma), "_df_all_clean_",paste(query_dates, collapse = "."), "_old.Rdata"))
   
 }
 
@@ -476,9 +486,9 @@ knitr::kable(BC_table,
 
 ## Data Sources
 
-Water quality data were retrieved from [DEQ][2.1.1] (LASAR and ELEMENT), U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) U.S. Geological Survey [NWIS][2.1.3] (USGS 2016), and [Water Quality Portal][2.1.4]) databases. Many other organizations provided data that were queried and evaluated for use in this report (see Appendix for a complete list). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). ** REMOVE IF NOT NEEDED. Stations located within the Confederated Tribes of Umatilla Indian Reservation were not included in this report. The Confederated Tribes of Umatilla administer Clean Water Act programs on the reservation.**
+Water quality data were retrieved from DEQ's [AWQMS Database][2.1.1] which may include data submitted to DEQ from many other organizations (see Appendix for a complete list). Data were also retrieved from the U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) and U.S. Geological Survey [NWIS][2.1.3] (USGS 2016) databases via the [Water Quality Portal][2.1.4]). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). ** REMOVE IF NOT NEEDED. Stations located within the Confederated Tribes of Umatilla Indian Reservation were not included in this report. The Confederated Tribes of Umatilla administer Clean Water Act programs on the reservation.**
 
-The data returned were evaluated for quality. Data retrieved from DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual][2.1.5] (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data.
+The data returned were evaluated for quality. Data that was rated under the [DEQ's Laboratory Quality Manual][2.1.5] (ODEQ 2013) guidelines were rated `r unique(df.all[!is.na(df.all$Status), 'Status'])`. EPA and USGS data were included unless result comments indicated problems with the data.
 
 [2.1.1]: http://www.oregon.gov/deq/wq/Pages/WQdata.aspx
 [2.1.2]: https://www.epa.gov/waterdata/water-quality-data-wqx
@@ -488,7 +498,7 @@ The data returned were evaluated for quality. Data retrieved from DEQ's database
 
 ## Analysis
 
-The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids and total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters. A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(round_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. 
+The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids and total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters. A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(floor_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. 
 
 Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p <= 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median. A trend assessment was made at a monitoring station if data were available in a minimum of eight different years for any year in the period from `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. The observations must have beeen made with an underlying regularity (e.g. samples were taken in the same months for at least eight years).
 
@@ -749,14 +759,7 @@ if(length(ecoli_stns) > 0) {
   
   for(j in 1: length(ecoli_stns)) {
     new_data <- df.ecoli[df.ecoli$Station_ID == ecoli_stns[j],]
-    tmp_df <- new_data
-    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    tmp_df_MRL <- tmp_df[sub,]
-    tmp_df <- remove.dups(tmp_df_MRL, max)
-    
-    ecoli_evaluate <- EvaluateEColiWQS(tmp_df)
+    ecoli_evaluate <- EvaluateEColiWQS(new_data)
     ecoli_eval <- attr(ecoli_evaluate, 'ex_df')
     ecoli_list[[j]] <- ecoli_evaluate
     exc_list[[j]] <- ecoli_eval
@@ -769,7 +772,7 @@ if(length(ecoli_stns) > 0) {
                                  FALSE, 
                                  TRUE))
     
-    b <- plot.bacteria(new_data=new_data,
+    b <- plot.bacteria(new_data=ecoli_evaluate,
                        sea_ken_table=results_seaken ,
                        plot_trend = trend_logic,
                        plot_log = FALSE,
@@ -822,32 +825,16 @@ if(length(entero_stns) > 0) {
   
   entero_list<- list()
   exc_list<- list()
-  
-  for(j in 1: length(entero_stns)) {
-    new_data <- df.entero[df.entero$Station_ID == entero_stns[j],]
-    tmp_df <- new_data
-    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    tmp_df_MRL <- tmp_df[sub,]
-    tmp_df <- remove.dups(tmp_df_MRL, max)
-    
-    entero_evaluate <- EvaluateEnteroWQS(tmp_df)
-    entero_eval <- attr(entero_evaluate, 'ex_df')
-    entero_list[[j]] <- entero_evaluate
-    exc_list[[j]] <- entero_eval
-  }
-  
-  entero <-rbind.fill(entero_list[])
-  exc <-rbind.fill(exc_list[])
-  exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
+  entero_plots <-list()
   
   results_seaken <-SeaKen %>% filter(analyte == 'Enterococcus')
   
-  entero_plots <-list()
-  
-  for (i in 1:length(entero_stns)) {
-    new_data <- df.entero[df.entero$Station_ID == entero_stns[i],]
+  for(j in 1: length(entero_stns)) {
+    new_data <- df.entero[df.entero$Station_ID == entero_stns[j],]
+    entero_evaluate <- EvaluateEnteroWQS(new_data)
+    entero_eval <- attr(entero_evaluate, 'ex_df')
+    entero_list[[j]] <- entero_evaluate
+    exc_list[[j]] <- entero_eval
     
     trend_logic <- ifelse(grepl("Not Significant", 
                                 results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
@@ -870,7 +857,12 @@ if(length(entero_stns) > 0) {
     cat(figs(name = paste0('Entero_', entero_stns[i]),
              caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and/or trends.')))
     cat('\n\n')
+    
   }
+  
+  entero <-rbind.fill(entero_list[])
+  exc <-rbind.fill(exc_list[])
+  exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
   
   colnames(exc) <- c("Station ID", "Station Description", "Criteria", "Observations", "Exceedances", "Percent Exceedance")
   
@@ -922,22 +914,14 @@ if(length(tp_stn) > 0) {
   for(j in 1: length(tp_stn)) {
     
     new_data <- df.tp[df.tp$Station_ID == tp_stn[j],]
-    
-    tmp_df <- new_data
-    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    tmp_df_MRL <- tmp_df[sub,]
-    tmp_df <- remove.dups(tmp_df_MRL, max)
-    
-    
+
     if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
       # Snake River - Hells Canyon TMDL
-      TP_evaluate <- EvaluateTP_SRHC(tmp_df, 
+      TP_evaluate <- EvaluateTP_SRHC(new_data, 
                                      selectWQSTP = 0.07)
     } else {
       
-      TP_evaluate <- EvaluateTPWQS(tmp_df, 
+      TP_evaluate <- EvaluateTPWQS(new_data, 
                                    selectWQSTP = 0)
     }
     
@@ -1036,12 +1020,7 @@ if(length(tss_stn) > 0){
     new_data <- df.tss[df.tss$Station_ID == tss_stn[j],]
     
     tmp_df <- new_data
-    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    tmp_df_MRL <- tmp_df[sub,]
-    tmp_df <- remove.dups(tmp_df_MRL, max)
-    
+
     if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
       
     # Snake River - Hells Canyon TMDL
@@ -1142,7 +1121,7 @@ if(length(pH_stns) > 0) {
   
   df.pH <- merge(df.pH,in_bentable, by.x = "Station_ID", by.y = "Station_ID")
   
-  if(any(is.na(df.pH$pH_benuse) | is.na(df.pH$pH_low) | is.na(df.pH$pH_high))) {
+  if(any(is.na(df.pH$pH_benuse) | is.na(df.pH$pH_low) | is.na(df.pH$pH_high)) | NROW(df.pH) == 0) {
     print("In order to assess against water quality standard, need to add pH beneficial uses to stations.csv for stations:")
       print(unique(df.pH[(is.na(df.pH$pH_benuse) | is.na(df.pH$pH_low) | is.na(df.pH$pH_high)),c("Station_ID")]))
     break
@@ -1155,22 +1134,14 @@ if(length(pH_stns) > 0) {
   for(j in 1: length(pH_stns)) {
     new_data <- df.pH[df.pH$Station_ID == pH_stns[j],]
     
-    tmp_df <- new_data
-    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    tmp_df_MRL <- tmp_df[sub,]
-    tmp_df <- remove.dups(tmp_df_MRL, max)
-
-    pH_evaluate <- EvaluatepHWQS(new_data = tmp_df,
-                                 ph_crit_min = unique(tmp_df$pH_low),
-                                 ph_crit_max = unique(tmp_df$pH_high),
+    pH_evaluate <- EvaluatepHWQS(new_data = new_data,
+                                 ph_crit_min = unique(new_data$pH_low),
+                                 ph_crit_max = unique(new_data$pH_high),
                                  analyte_column = 'Analyte',
                                  station_id_column = 'Station_ID',
                                  station_desc_column = 'Station_Description',
                                  datetime_column = 'Sampled',
-                                 result_column = 'Result',
-                                 datetime_format = '%Y-%m-%d %H:%M:%S')
+                                 result_column = 'Result')
 
     pH_eval <- attr(pH_evaluate, 'ex_df')
     pH_list[[j]] <- pH_evaluate
@@ -1266,20 +1237,12 @@ if(length(temp_stn) > 0) {
   for(j in 1: length(temp_stn)) {
     
     new_data <- df.temp[df.temp$Station_ID == temp_stn[j],]
-    
-    tmp_df <- new_data
-    #tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    #tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    #sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    #tmp_df_MRL <- tmp_df[sub,]
-    #tmp_df <- remove.dups(tmp_df_MRL, max)
-    
     Temp_Benuse <- as.character((Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[j], 'Temp_Benuse']))
     spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[j], 'spwn_time'])
     
-    tmp_df$date <- as.Date(new_data$Sampled)
+    new_data$date <- as.Date(new_data$Sampled)
             
-    temp_evaluate <- EvaluateTempWQS(sdadm_df = tmp_df,
+    temp_evaluate <- EvaluateTempWQS(sdadm_df = new_data,
                                      selectUse = Temp_Benuse[1],
                                      selectSpawning = spwn_time[1],
                                      station_id_column = 'Station_ID')
@@ -1388,18 +1351,11 @@ if(length(DO_stns) > 0) {
     DO_sat_data <-df.all %>% 
       dplyr::filter(Analyte == 'Dissolved oxygen saturation') %>%
       dplyr::filter(Station_ID == DO_stns[j])
-    
-    tmp_df <- new_data
-    tmp_df$day <- substr(tmp_df$Sampled, 1, 10)
-    tmp_df$code <- paste(tmp_df$Station_ID, tmp_df$Analyte, tmp_df$day)
-    sub <- with(tmp_df, resolveMRLs(code, Detect, Result))
-    tmp_df_MRL <- tmp_df[sub,]
-    tmp_df <- remove.dups(tmp_df_MRL, max)
 
-    DO_evaluate <- EvaluateDOWQS(new_data = tmp_df,
+    DO_evaluate <- EvaluateDOWQS(new_data = new_data,
                                  DOsat = DO_sat_data,
-                                 selectUseDO = unique(tmp_df$DO_use),
-                                 selectSpawning = unique(tmp_df$spwn_time),
+                                 selectUseDO = unique(new_data$DO_use),
+                                 selectSpawning = unique(new_data$spwn_time),
                                  analyte_column = 'Analyte',
                                  station_id_column = 'Station_ID',
                                  station_desc_column = 'Station_Description',
@@ -1754,14 +1710,52 @@ leaflet(agwqma_shp) %>%
 
 ```{r conclusions-setup}
 
-conclusions.DO <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "DO"), c("conclusion")]
-conclusions.Ecoli <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Ecoli"), c("conclusion")]
-conclusions.Entero <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Entero"), c("conclusion")]
-conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "pH"), c("conclusion")]
-conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Temp"), c("conclusion")]
-conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TP"), c("conclusion")]
-conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "TSS"), c("conclusion")]
-conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc"), c("conclusion")]
+colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
+                                  "DO_S", "DO_T",
+                                  "Ecoli_S", "Ecoli_T", 
+                                  "Entero_S", "Entero_T",
+                                  "pH_S", "pH_T", 
+                                  "Temp_S", "Temp_T",
+                                  "TP_S","TP_T", 
+                                  "TSS_S","TSS_T")
+
+# Text for conclusions. Use auto conclusion function or make your own text
+conclusions.DO <- con.auto(df=stns_param_summary, status_column="DO_S", trend_column="DO_T")
+conclusions.Ecoli <- con.auto(df=stns_param_summary, status_column="Ecoli_S", trend_column="Ecoli_T")
+conclusions.Entero <- con.auto(df=stns_param_summary, status_column="Entero_S", trend_column="Entero_T")
+conclusions.pH <- con.auto(df=stns_param_summary, status_column="pH_S", trend_column="pH_T")
+conclusions.Temp <- con.auto(df=stns_param_summary, status_column="Temp_S", trend_column="Temp_T")
+conclusions.TP <- con.auto(df=stns_param_summary, status_column="TP_S", trend_column="TP_T")
+conclusions.TSS <- con.auto(df=stns_param_summary, status_column="TSS_S", trend_column="TSS_T")
+
+# Text for additional conclusions
+conclusions.add.txt <- c("The text for an additional conclusions goes here.",
+                         "The text for a second additional conclusions goes here.",
+                         "third, etc.")
+
+# Put everything together into a dataframe
+conclusions.param.df <- data.frame(AgArea=rep(input$select,7),
+                                   topic=c("DO","Ecoli","Entero","pH","Temp","TP","TSS"),
+                                   conclusion=c(conclusions.DO,
+                                                conclusions.Ecoli,
+                                                conclusions.Entero,
+                                                conclusions.pH, 
+                                                conclusions.Temp, 
+                                                conclusions.TP, 
+                                                conclusions.TSS))
+
+conclusions.add.df <- data.frame(AgArea=rep(input$select,length(conclusions.add.txt)),
+                                 topic=rep("Add_conc", length(conclusions.add.txt)), 
+                                 conclusion=conclusions.add.txt)
+
+# Remove any existing conclusions
+Conc_LU <- Conc_LU[!(Conc_LU$AgArea %in% input$select),]
+
+# Update the Conclusions Lookup
+Conc_LU <- rbind(Conc_LU, conclusions.param.df, conclusions.add.df)
+
+# Write to csv (overwrites existing)
+write.table(Conc_LU, file = paste0(project_dir,"/Lookups/Conclusions_LU.csv"), row.names = FALSE, sep = ",")
 
 ```
 
@@ -1769,10 +1763,10 @@ conclusions.add <- Conc_LU[(Conc_LU$AgArea %in% input$select & Conc_LU$topic == 
 
 * *Dissolved Oxygen*: `r conclusions.DO`
 * *E. coli*: `r conclusions.Ecoli`
-* *Enterococcus*: `r conclusions.Entero`
-* *pH*: `r conclusions.pH`
-* *Temperature*: `r conclusions.Temp`
-* *Total Phosphorus*: `r conclusions.TP`
+* *Enterococcus*: `r conclusions.Entero'
+* *pH*: `r conclusions.pH` -->
+* *Temperature*: `r conclusions.Temp
+* *Total Phosphorus*: `r conclusions.TP'
 * *Total Suspended Solids*: `r conclusions.TSS`
 
 
