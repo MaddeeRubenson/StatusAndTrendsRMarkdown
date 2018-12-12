@@ -167,47 +167,52 @@ plot.Temperature <- function(new_data,
   }
   y.lim <- c(y.min,y.max)
   y.median <- median(new_data$Result)
-  slope <- suppressWarnings(
-    as.numeric(
-      sea_ken_table[sea_ken_table$Station_ID == 
-                      unique(new_data[, station_id_column]) & 
-                      sea_ken_table$analyte == 
-                      unique(new_data[, analyte_column]), 'slope']
-    )
-  )
-  median <- sea_ken_table[sea_ken_table$Station_ID == 
-                            unique(new_data[,station_id_column]) & 
-                            sea_ken_table$analyte == 
-                            unique(new_data[,analyte_column]),'median']
-  p.value <- suppressWarnings(
-    as.numeric(
-      sea_ken_table[sea_ken_table$Station_ID == 
-                      unique(new_data[,station_id_column]) & 
-                      sea_ken_table$analyte == 
-                      unique(new_data[,analyte_column]),'pvalue']
-    )
-  )
-  p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
-                                   unique(new_data[,station_id_column]) & 
-                                   sea_ken_table$analyte == 
-                                   unique(new_data[,analyte_column]),'signif']
-  x.delta <- as.numeric((x.max-x.min)/2)####average date
-  SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
-  SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
-  sub.text <- paste0("p value = " ,
-                     round(p.value, digits=3),
-                     ", ",  
-                     p.value.label, 
-                     ", slope = ", 
-                     round(slope, digits=2), 
-                     ", n = ", 
-                     nrow(new_data),
-                     ", median = ", 
-                     median)
   
-  df_trend_line <- data.frame(x = c(x.min, x.max),
-                              y = c(SK.min, SK.max),
-                              variable = rep('Trend line', 2))
+  if(plot_trend){
+    slope <- suppressWarnings(
+      as.numeric(
+        sea_ken_table[sea_ken_table$Station_ID == 
+                        unique(new_data[, station_id_column]) & 
+                        sea_ken_table$analyte == 
+                        unique(new_data[, analyte_column]), 'slope']
+      )
+    )
+    median <- sea_ken_table[sea_ken_table$Station_ID == 
+                              unique(new_data[,station_id_column]) & 
+                              sea_ken_table$analyte == 
+                              unique(new_data[,analyte_column]),'median']
+    p.value <- suppressWarnings(
+      as.numeric(
+        sea_ken_table[sea_ken_table$Station_ID == 
+                        unique(new_data[,station_id_column]) & 
+                        sea_ken_table$analyte == 
+                        unique(new_data[,analyte_column]),'pvalue']
+      )
+    )
+    p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
+                                     unique(new_data[,station_id_column]) & 
+                                     sea_ken_table$analyte == 
+                                     unique(new_data[,analyte_column]),'signif']
+    x.delta <- as.numeric((x.max-x.min)/2)####average date
+    SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
+    SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
+    sub.text <- paste0("p value = " ,
+                       round(p.value, digits=3),
+                       ", ",  
+                       p.value.label, 
+                       ", slope = ", 
+                       round(slope, digits=2), 
+                       ", n = ", 
+                       nrow(new_data),
+                       ", median = ", 
+                       median)
+    
+    df_trend_line <- data.frame(x = c(x.min, x.max),
+                                y = c(SK.min, SK.max),
+                                variable = rep('Trend line', 2))
+  } else {
+    sub.text <- paste0("n = ", nrow(new_data))
+  }
   
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
                   min(new_data[, station_id_column]))

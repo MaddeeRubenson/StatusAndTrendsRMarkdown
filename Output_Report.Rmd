@@ -217,10 +217,15 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # remove data collected on tribal nation land or tribal trust land
   df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands_shp, outside=TRUE),]
   
-  
   # remove stations outside the agwqma
   df.all <- clipToPlanArea(df.all, agwqma_all_shp, input$select)
 
+  # Combine McCoy stations 1:5
+  df.all[df.all$Station_ID %in% c("5123", "5124", "5125", "5126"),"Station_ID"] <- "5122"
+  df.all[df.all$Station_ID =="5122", "Station_Description"] <- "McCoy Stations 1-5"
+  df.all[df.all$Station_ID =="5122", "DECIMAL_LAT"] <- 45.26371
+  df.all[df.all$Station_ID =="5122", "DECIMAL_LONG"] <- -118.4014
+  
   # Convert AWQMS analyte names to existing code language
   df.all[grep('Dissolved oxygen', df.all$Analyte),]$Analyte <- 'Dissolved Oxygen'
   df.all[grep('Phosphorus', df.all$Analyte),]$Analyte <- 'Total Phosphorus'
@@ -344,7 +349,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
       qc.3.pass$Analyte <- "Temperature"
       df.all$month <- month(df.all$Sampled)
       qc.3.pass <- dplyr::rename(qc.3.pass, monTest = result)
-      df.all <- merge(df.all, qc.3.pass[,c("Station_ID", "month", "monTest", "Analyte")], 
+      df.all <- merge(df.all, qc.3.pass[,c("Station_ID", "month", "result", "Analyte")], 
                       by=c("Station_ID", "Analyte", "month"), all.x = TRUE, all.y = FALSE)
     } else {
        df.all$monTest <- "NA"
@@ -499,7 +504,7 @@ The data returned were evaluated for quality. Data that was rated under the [DEQ
 
 ## Analysis
 
-The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids and total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters. A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(round_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. 
+The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids and total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters. A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(floor_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. 
 
 Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p <= 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median. A trend assessment was made at a monitoring station if data were available in a minimum of eight different years for any year in the period from `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. The observations must have beeen made with an underlying regularity (e.g. samples were taken in the same months for at least eight years).
 
@@ -1216,7 +1221,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
 }
 
 temp_stat<-status %>%
-  dplyr::filter(Analyte == "Temperatures")
+  dplyr::filter(Analyte == "Temperature")
 temp_stat <- c(as.character(unique(temp_stat$Station_ID)))
 
 if(!is.null(temp_stn)){
@@ -1227,6 +1232,13 @@ if(!is.null(temp_stn)){
 }
 
 if(length(temp_stn) > 0) {
+  
+  if(!any(temp_stn %in% Ben_use_LU$Station_ID)){
+    print("Before continuing, beneficial uses must be added for the following stations")
+    print(temp_stn[!temp_stn %in% Ben_use_LU$Station_ID])
+    View(stns[stns$Station_ID %in% temp_stn[!temp_stn %in% Ben_use_LU$Station_ID],])
+    break
+  }
   
   df.temp <- df.all[df.all$Analyte == 'Temperature',]
   results_seaken <-SeaKen %>% filter(analyte == 'Temperature')
@@ -1256,15 +1268,15 @@ if(length(temp_stn) > 0) {
     temp_list[[j]] <- temp_evaluate
     temp_exclist[[j]] <- temp_eval
     
-    trend_logic <-ifelse(grepl("Not Significant", 
+    trend_logic <-if(NROW(results_seaken[results_seaken$Station_ID == temp_stn[j],])>0){
+      ifelse(grepl("Not Significant", 
                                  results_seaken[results_seaken$Station_ID == temp_stn[j],'signif']), 
                            FALSE,
                            ifelse(grepl("Need at least 8 years", 
                                         results_seaken[results_seaken$Station_ID == temp_stn[j],'signif']),
                                   FALSE,
                                   TRUE))
-    
-
+    } else {FALSE}
     
     b <- plot.Temperature(new_data = temp_evaluate,
                           sea_ken_table = results_seaken,
@@ -1764,16 +1776,16 @@ write.table(Conc_LU, file = paste0(project_dir,"/Lookups/Conclusions_LU.csv"), r
 
 * *Dissolved Oxygen*: `r conclusions.DO`
 * *E. coli*: `r conclusions.Ecoli`
-* *Enterococcus*: `r conclusions.Entero'
-* *pH*: `r conclusions.pH` -->
-* *Temperature*: `r conclusions.Temp
-* *Total Phosphorus*: `r conclusions.TP'
+* *Enterococcus*: `r conclusions.Entero`
+* *pH*: `r conclusions.pH`
+* *Temperature*: `r conclusions.Temp`
+* *Total Phosphorus*: `r conclusions.TP`
 * *Total Suspended Solids*: `r conclusions.TSS`
 
 
 **Additional Conclusions:**
 
-`r paste0("* ",conclusions.add,"\n", collapse="")`
+`r paste0("* ",conclusions.add.txt,"\n", collapse="")`
 
 
 # Citations
