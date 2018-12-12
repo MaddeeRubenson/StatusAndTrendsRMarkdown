@@ -143,6 +143,15 @@ con.auto <- function(df, status_column, trend_column, station_id_column="Station
   analyte <- al[[status_column]][1]
   conc <- al[[status_column]][2]
   
+  s2a <-""
+  s2b <-""
+  t2a <-""
+  t2b <-""
+  t2c <-""
+  t2d <-""
+  t3 <-""
+  t4 <-""
+  
   if(n_status == 0) {
     # No status results
     s1a <- "Data were not available in sufficient quantity to assess status."
