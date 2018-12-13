@@ -1,0 +1,210 @@
+---
+title: Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report
+subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
+date: September 2018
+output: 
+  word_document:
+    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+---
+
+# Executive Summary
+
+## Purpose
+
+This report presents data and analysis that will help DEQ fulfill its role in the biennial review process described in the [Memorandum of Agreement](https://www.oregon.gov/ODA/shared/Documents/Publications/NaturalResources/DEQODAmoa.pdf) between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. The DEQ will use available water quality data to answer the first three questions below. For the fourth bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources of pollution:
+
+*	What is the status of water quality? 
+*	What is the trend in water quality? 
+*	Where applicable, are TMDL targets for total phosphorus achieved?
+* Can water quality status and trends be attributed to a pollution source or sources?
+
+
+## Methods
+
+Water quality data were retrieved from DEQ, EPA and USGS databases. DEQ's volunteer monitoring database was not included, however some volunteer data is queried from EPA's database. Many organizations provided data used in this report (see Appendix for a complete list). Data collected between `r format(ymd(query_dates[1]), format="%B %d, %Y")` and `r format(ymd(query_dates[2]), format="%B %d, %Y")` within the `r agwqma` agricultural water quality management area were included in this report. Parameters included in the data query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). 
+
+The data returned were evaluated for quality. Data retrieved from the DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf) (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data. Data was evaluated against the applicable Oregon water quality criterion. 
+
+## Land Use
+
+Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. The map below shows station locations in relation to the 2011 National Land Cover dataset (Homer et al. 2015).
+
+```{r landuse-exec}
+
+library(knitr)
+library(dplyr)
+library(plyr)
+
+stn_to_use <-c(unique(stns$Station_ID))
+load(paste0(Rdata_dir, "/", landuse_file))
+
+knitr::kable(landuse, digits = 0, padding = 2, caption = tbls(name = "exec-landuse", caption = "Land use and land cover for upstream catchments of stations used in this analysis, stations which fit the decision criteria and have >20% Agriculture and Range coverage are included. Land use and land cover for all stations used in analysis can be found in full report"))
+
+```
+
+## Results Summary
+
+Within the `r agwqma` Agricultural Water Quality Management Area, data from `r length(unique(stns$Station_ID))` monitoring stations were sufficient to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations. 
+
+```{r exec-results-summary}
+
+station_summary_tbl <- data.frame(Analyte=c("_Ecoli_","_Enterococcus_","Dissolved Oxygen","pH","Temperature","Total Phosphorus","Total Suspended Solids"),
+                                  status=c(nrow(unique(status[status$Analyte == "E. Coli", ])),
+                                           nrow(unique(status[status$Analyte == "Enterococcus", ])),
+                                           nrow(unique(status[status$Analyte == "Dissolved Oxygen", ])),
+                                           nrow(unique(status[status$Analyte == "pH", ])),
+                                           nrow(unique(status[status$Analyte == "Temperature", ])),
+                                           nrow(unique(status[status$Analyte == "Total Phosphorus", ])),
+                                           nrow(unique(status[status$Analyte == "Total Suspended Solids", ]))
+                                  ),
+                                  trends=c(nrow(unique(trend[trend$Analyte == "E. Coli", ])),
+                                           nrow(unique(trend[trend$Analyte == "Enterococcus", ])),
+                                           nrow(unique(trend[trend$Analyte == "Dissolved Oxygen", ])),
+                                           nrow(unique(trend[trend$Analyte == "pH",])),
+                                           nrow(unique(trend[trend$Analyte == "Temperature", ])),
+                                           nrow(unique(trend[trend$Analyte == "Total Phosphorus", ])),
+                                           nrow(unique(trend[trend$Analyte == "Total Suspended Solids", ]))
+                                  ))
+colnames(station_summary_tbl) <- c("Analyte", "Number of stations w/ sufficient data for status analysis", "Number of stations w/ sufficient data for trend analysis")                                  
+
+knitr::kable(station_summary_tbl, digits = 0, padding = 2, row.names = FALSE, 
+             caption = tbls(name = "exec-StnSumTable", caption = "Summary of stations with sufficient data for status or trend analysis**"))                                 
+```
+
+
+```{r exec-parm-summary-table, results='asis'}
+
+load(paste0(Rdata_dir, "/", stns_param_summary_file))
+
+stns_param_summary_tbl <- dplyr::select(stns_param_summary, -c(DECIMAL_LAT, DECIMAL_LONG))
+
+colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
+                                      "DO Status", "DO Trend",
+                                      "_E. coli_  Status", "_E. coli_ Trend", 
+                                      "_Enterococcus_ Status", "_Enterococcus_ Trend",
+                                      "pH Status", "pH Trend", 
+                                      "Temperature Status", "Temperature Trend",
+                                      "TP Status","TP Trend", 
+                                      "TSS Status","TSS Trend")
+
+knitr::kable(stns_param_summary_tbl[,c(1:2,5:10)],
+             padding = 2, digits = 3,
+             row.names = FALSE,
+             caption = tbls(name = "exec_parmSumTable1", 
+                            caption = "Summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years."))
+cat("\n\n")
+knitr::kable(stns_param_summary_tbl[,c(1:4,11:16)],
+             padding = 2, digits = 3,
+             row.names = FALSE,
+             caption = tbls(name = "exec_parmSumTable2", 
+                            caption = paste0("Continued summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. See Table ", tbls("exec_parmSumTable1", display = 'num'), " Note: DO = dissolved oxygen, TSS = total suspended solids, TP = total phosphorus.")))
+
+```
+
+
+```{r exec-Summary-map1, results = 'asis', eval = word_output & !(split_param_summary), fig.cap=figs(name="exec-Summary-map1", caption="Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two whole years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets."), fig.height=8}
+
+knitr::include_graphics(paste0("Figures/",station_summary_map1_file))
+
+```
+
+
+```{r exec-Summary-map2, results = 'asis', eval = word_output & !(split_param_summary), fig.cap=figs(name="exec-Summary-map2", caption="Summary of stations that fit the criteria for status and trend analysis. One or more exceedances within the last two whole years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets."), fig.height=8}
+
+knitr::include_graphics(paste0("Figures/",station_summary_map2_file))
+
+```
+
+
+```{r exec-DO-summary-map, results = 'asis', eval = word_output & split_param_summary, fig.cap=figs(name="exec-DO-summary-map", caption="Summary of stations that fit the criteria for status and trend analysis for dissolved oxygen. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+
+knitr::include_graphics(paste0("Figures/",station_summary_map_DO_file))
+
+```
+
+
+```{r exec-Ecoli-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="exec-Ecoli-summary-map", caption="Summary of stations that fit the criteria for status and trend analysis for _E coli_. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_ecoli_file))
+
+```
+
+```{r exec-Entero-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="exec-Entero-summary-map", caption="Summary of stations that fit the criteria for status and trend analysis for _Enterococcus_. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_entero_file))
+
+```
+
+
+```{r exec-Temp-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="exec-Temp-summary-map", caption="Summary of stations that fit the criteria for status and trend analysis for temperature. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_temp_file))
+
+```
+
+```{r exec-ph-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="exec-ph-summary-map", caption="Summary of stations that fit the criteria for status and trend analysis for pH. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_pH_file))
+
+```
+
+
+```{r exec-TP-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="exec-TP-summary-map", caption="Summary of stations that fit the criteria for status and trend analysis for total phosphorus. One or more exceedances of the TMDL target within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets.")}
+
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_tp_file))
+
+```
+
+```{r exec-TSS-summary-map, results = 'asis', eval = word_output & split_param_summary, fig.cap=figs(name="exec-TSS-summary-map", caption='Summary of stations that fit the criteria for trend analysis for Total Suspended Solids. Without applicable targets or criteria, all stations with sufficient data to assess status were categorized as "Meeting". Trend was determined by significant trends associated with long-term datasets.')}
+
+knitr::include_graphics(path = paste0("Figures/",station_summary_map_tss_file))
+
+```
+
+## Conclusions
+
+```{r exec-conclusions-setup}
+
+colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
+                                  "DO_S", "DO_T",
+                                  "Ecoli_S", "Ecoli_T", 
+                                  "Entero_S", "Entero_T",
+                                  "pH_S", "pH_T", 
+                                  "Temp_S", "Temp_T",
+                                  "TP_S","TP_T", 
+                                  "TSS_S","TSS_T")
+
+# Text for conclusions. Use auto conclusion function or make your own text
+conclusions.DO <- con.auto(df=stns_param_summary, status_column="DO_S", trend_column="DO_T")
+conclusions.Ecoli <- con.auto(df=stns_param_summary, status_column="Ecoli_S", trend_column="Ecoli_T")
+conclusions.Entero <- con.auto(df=stns_param_summary, status_column="Entero_S", trend_column="Entero_T")
+conclusions.pH <- con.auto(df=stns_param_summary, status_column="pH_S", trend_column="pH_T")
+conclusions.Temp <- con.auto(df=stns_param_summary, status_column="Temp_S", trend_column="Temp_T")
+conclusions.TP <- con.auto(df=stns_param_summary, status_column="TP_S", trend_column="TP_T")
+conclusions.TSS <- con.auto(df=stns_param_summary, status_column="TSS_S", trend_column="TSS_T")
+
+# Text for additional conclusions from lookup
+if(NROW(Conc_LU[Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc",]) > 0){
+  conclusions.add.txt <- Conc_LU[Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc",]$conclusion
+  add_conc <- TRUE
+} else {
+  conclusions.add.txt <- NULL
+  add_conc <- FALSE
+}
+```
+
+**What is the overall status or trends in water quality?**
+
+* *Dissolved Oxygen*: `r conclusions.DO`
+* *E. coli*: `r conclusions.Ecoli`
+* *Enterococcus*: `r conclusions.Entero`
+* *pH*: `r conclusions.pH`
+* *Temperature*: `r conclusions.Temp`
+* *Total Phosphorus*: `r conclusions.TP`
+* *Total Suspended Solids*: `r conclusions.TSS`
+
+```{r exec-add-conclusions, eval = add_conc}
+cat(paste0("**Additional Conclusions:** \n\n"))
+
+cat(paste0("* ",conclusions.add.txt,"\n", collapse=""))
+```
