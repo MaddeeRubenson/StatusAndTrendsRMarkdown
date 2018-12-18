@@ -73,7 +73,7 @@ figs <- captioner(prefix="\nFigure")
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
 agwqma <- "Generic"
-query_dates <- c("2000-01-01", "2018-11-01")
+query_dates <- c("2000-01-01", "2018-12-01")
 project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/Generic"
 
 # Set to TRUE if knitting a word document
@@ -111,6 +111,9 @@ stns_file <- paste0(gsub(" ", "_", agwqma), "_stns.Rdata")
 status_file <- paste0(gsub(" ", "_", agwqma), "_status.Rdata")
 trend_file <- paste0(gsub(" ", "_", agwqma), "_trend.Rdata")
 stns_param_summary_file <- paste0(gsub(" ", "_", agwqma), "_station_param_summary.Rdata")
+
+# Sets up checks for Executive Summary generation
+Executive_Summary_check <- Reduce("&", file.exists(paste0(Rdata_dir,"/", landuse_file), paste0(Rdata_dir,"/", stns_param_summary_file)))
 
 input <- list(action_button = c(0))
 input$select <- agwqma
@@ -430,19 +433,9 @@ save(trend, file = paste0(Rdata_dir,"/", trend_file))
 ```
 
 
-```{r exec-summary-placeholder}
-
-if (word_output) {
-  
-  tbls(name="tbl1_lu", display=FALSE)
-  tbls(name="tbl2_results_summary", display=FALSE)
-  figs(name="fig1_result_map1", display=FALSE)
-  figs(name="fig2_result_map2", display=FALSE)
-  tbls(name="tbl3_station_summary", display=FALSE)
-}
+```{r exec-summary, child='Exec_Summary_Child.Rmd', eval = Executive_Summary_check & word_output}
 
 ```
-
 
 # Introduction
 
@@ -1763,16 +1756,16 @@ write.table(Conc_LU, file = paste0(project_dir,"/Lookups/Conclusions_LU.csv"), r
 
 * *Dissolved Oxygen*: `r conclusions.DO`
 * *E. coli*: `r conclusions.Ecoli`
-* *Enterococcus*: `r conclusions.Entero'
-* *pH*: `r conclusions.pH` -->
-* *Temperature*: `r conclusions.Temp
-* *Total Phosphorus*: `r conclusions.TP'
+* *Enterococcus*: `r conclusions.Entero`
+* *pH*: `r conclusions.pH`
+* *Temperature*: `r conclusions.Temp`
+* *Total Phosphorus*: `r conclusions.TP`
 * *Total Suspended Solids*: `r conclusions.TSS`
 
 
 **Additional Conclusions:**
 
-`r paste0("* ",conclusions.add,"\n", collapse="")`
+`r paste0("* ",conclusions.add.txt,"\n", collapse="")`
 
 
 # Citations
