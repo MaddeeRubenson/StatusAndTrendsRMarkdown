@@ -723,11 +723,13 @@ if(nrow(SK) > 0) {
 
 ## _E. coli_
 
-```{r Ecoli, fig.height=6, fig.width=7, results='asis'}
+```{r Ecoli, fig.height=6, fig.width=7, results='asis', eval.after="fig.cap", fig.cap=mapply(figs, cap.names, ecoli_captions)}
 
 exc <- NULL
 ecoli_stns <- NULL
 ecoli <- NULL
+cap.names <- list()
+ecoli_captions <- list()
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   ecoli_trend <- trend %>%
@@ -772,9 +774,9 @@ if(length(ecoli_stns) > 0) {
                        parm = unique(new_data$Analyte))
     
     print(b)
-    cat(figs(name = paste0('E_', ecoli_stns[j]), caption = paste0('Station ', ecoli_stns[j], ' _E. coli_ water quality status and/or trends.')))
+    ecoli_captions[[j]] <- paste0('Station ', ecoli_stns[j], ' _E. coli_ water quality status and/or trends.')
+    cap.names[[j]] <- paste0("ecoli.",ecoli_stns[j])
     cat('\n\n')
-    
   }
   
   ecoli <- rbind.fill(ecoli_list[])
@@ -794,11 +796,13 @@ if(length(ecoli_stns) > 0) {
 
 ## _Enterococcus_ 
 
-```{r Enterococcus, fig.height=6, fig.width=7, results='asis'}
+```{r Enterococcus, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, entero_captions), eval.after="fig.cap"}
 
 exc <- NULL
 entero_stns <- NULL
 entero <- NULL
+cap.names <- list()
+entero_captions <- list()
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   entero_trend <- trend %>%
@@ -843,12 +847,12 @@ if(length(entero_stns) > 0) {
                        plot_log = FALSE,
                        parm = unique(new_data$Analyte))
     
-    entero_plots[[i]] <- b
+    entero_plots[[j]] <- b
     
-    print(entero_plots[[i]])
-    
-    cat(figs(name = paste0('Entero_', entero_stns[i]),
-             caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and/or trends.')))
+    print(entero_plots[[j]])
+
+    entero_captions[[j]] <- paste0('Station ', entero_stns[j], ' _Enterococcus_ water quality status and/or trends.')
+    cap.names[[j]] <- paste0("entero.",entero_stns[j])
     cat('\n\n')
     
   }
@@ -864,18 +868,20 @@ if(length(entero_stns) > 0) {
                               caption = "_Enterococcus_ status. If sufficient data exists to calculate the geometric mean, it is included in this table."))
 }  else {
   
-  cat(paste0("A status and trend assessment was not made for_Enterococcus_ because the marine water contact recreation use criteria do not apply in the ",agwqma,".")) 
+  cat(paste0("A status and trend assessment was not made for *Enterococcus* because the marine water contact recreation use criteria do not apply in the ",agwqma,".")) 
 } 
 
 ```
 
 ## Total Phosphorus
 
-```{r Total-Phosphorus, fig.height=6, fig.width=7, results='asis'}
+```{r Total-Phosphorus, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, tp_captions), eval.after="fig.cap"}
 
 exc <- NULL
 tp_stn <- NULL
 TP <- NULL
+cap.names <- list()
+tp_captions <- list()
 
 if(!(trend == "No Stations Meet Trend Criteria")) {
   tp_stn<-trend %>%
@@ -951,12 +957,10 @@ if(length(tp_stn) > 0) {
     tp_plots[[j]]<-b
     
     print(tp_plots[[j]])
-    cat(figs(name = paste0('TP_', tp_stn[j]), 
-             caption = paste0('Station ', tp_stn[j], 
-                              ' Total Phosphorus water quality status and/or trends.')))
+    
+    tp_captions[[j]] <- paste0('Station ', tp_stn[j], ' Total Phosphorus water quality status and/or trends.')
+    cap.names[[j]] <- paste0("tp.",tp_stn[j])
     cat('\n\n')
-    
-    
   }
   
   TP <- rbind.fill(TP_list[])
@@ -978,11 +982,13 @@ tp_exc <- exc
 
 ## Total Suspended Solids
 
-```{r TSS, results = 'asis', fig.width = 7, fig.height = 6}
+```{r TSS, results = 'asis', fig.width = 7, fig.height = 6, fig.cap=mapply(figs, cap.names, tss_captions), eval.after="fig.cap"}
 
 exc <- NULL
 tss_stn <- NULL
 TSS <- NULL
+cap.names <- list()
+tss_captions <- list()
 
 if(!(trend == "No Stations Meet Trend Criteria")) {
   tss_stn<-trend %>%
@@ -1060,12 +1066,11 @@ if(length(tss_stn) > 0){
     tss_plots[[j]]<-b
     
     print(tss_plots[[j]])
-    cat(figs(name = paste0('TSS_', tss_stn[j]), 
-             caption = paste0('Station ', tss_stn[j], 
-                              ' Total Suspended Solids water quality status and trends.')))
+
+    tss_captions[[j]] <- paste0('Station ', tss_stn[j], 
+                              ' Total Suspended Solids water quality status and trends.')
+    cap.names[[j]] <- paste0("tss.",tss_stn[j])
     cat('\n\n')
-    
-    
   }
   
   TSS<-rbind.fill(TSS_list[])
@@ -1087,11 +1092,13 @@ tss_exc <- exc
 
 ## pH
 
-```{r pH, fig.height=6, fig.width=7, results='asis'}
+```{r pH, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, pH_captions), eval.after="fig.cap"}
 
 exc <- NULL
 pH_stns <- NULL
 pH <- NULL
+cap.names <- list()
+pH_captions <- list()
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   pH_trend <- trend %>%
@@ -1168,12 +1175,10 @@ if(length(pH_stns) > 0) {
     pH_plots[[j]]<-b
     
     print(pH_plots[[j]])
-    
-    cat(figs(name = paste0('pH_', pH_stns[j]), 
-             caption = paste0('Station ', pH_stns[j],
-                              ' pH water quality status and/or trends.')))
+
+    pH_captions[[j]] <- paste0('Station ', pH_stns[j], ' pH water quality status and/or trends.')
+    cap.names[[j]] <- paste0("pH.",pH_stns[j])
     cat('\n\n')
-    
   }
   
   pH <-rbind.fill(pH_list[])
@@ -1195,11 +1200,13 @@ pH_exc <- exc
 
 ## Temperature
 
-```{r Temperature, fig.height=6, fig.width=7, results='asis'}
+```{r Temperature, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, temp_captions), eval.after="fig.cap"}
 
 exc <- NULL
 temp_stn <- NULL
 temp <- NULL
+cap.names <- list()
+temp_captions <- list()
 
 if(!(trend == "No Stations Meet Trend Criteria")) {
   temp_stn<-trend %>%
@@ -1208,7 +1215,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
 }
 
 temp_stat<-status %>%
-  dplyr::filter(Analyte == "Temperatures")
+  dplyr::filter(Analyte == "Temperature")
 temp_stat <- c(as.character(unique(temp_stat$Station_ID)))
 
 if(!is.null(temp_stn)){
@@ -1219,6 +1226,13 @@ if(!is.null(temp_stn)){
 }
 
 if(length(temp_stn) > 0) {
+  
+  if(!any(temp_stn %in% Ben_use_LU$Station_ID)){
+    print("Before continuing, beneficial uses must be added for the following stations")
+    print(temp_stn[!temp_stn %in% Ben_use_LU$Station_ID])
+    View(stns[stns$Station_ID %in% temp_stn[!temp_stn %in% Ben_use_LU$Station_ID],])
+    break
+  }
   
   df.temp <- df.all[df.all$Analyte == 'Temperature',]
   results_seaken <-SeaKen %>% filter(analyte == 'Temperature')
@@ -1248,15 +1262,15 @@ if(length(temp_stn) > 0) {
     temp_list[[j]] <- temp_evaluate
     temp_exclist[[j]] <- temp_eval
     
-    trend_logic <-ifelse(grepl("Not Significant", 
+    trend_logic <-if(NROW(results_seaken[results_seaken$Station_ID == temp_stn[j],])>0){
+      ifelse(grepl("Not Significant", 
                                  results_seaken[results_seaken$Station_ID == temp_stn[j],'signif']), 
                            FALSE,
                            ifelse(grepl("Need at least 8 years", 
                                         results_seaken[results_seaken$Station_ID == temp_stn[j],'signif']),
                                   FALSE,
                                   TRUE))
-    
-
+    } else {FALSE}
     
     b <- plot.Temperature(new_data = temp_evaluate,
                           sea_ken_table = results_seaken,
@@ -1271,11 +1285,11 @@ if(length(temp_stn) > 0) {
     temp_plots[[j]]<-b
     
     print(temp_plots[[j]])
-    cat(figs(name = paste0('temp_', temp_stn[j]), 
-             caption = paste0('Station ', temp_stn[j], 
-                              ' Temperature water quality status and/or trends.')))
-    
-    
+
+    temp_captions[[j]] <- paste0('Station ', temp_stn[j], 
+                              ' Temperature water quality status and/or trends.')
+    cap.names[[j]] <- paste0("temp.",temp_stn[j])
+    cat("\n\n")
   }
   
   temp <- rbind.fill(temp_list[])
@@ -1301,11 +1315,13 @@ temp_exc <- exc
 
 ## Dissolved Oxygen
 
-```{r Dissolved-Oxygen, fig.height=6, fig.width=7, results='asis'}
+```{r Dissolved-Oxygen, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, DO_captions), eval.after="fig.cap"}
 
 exc <- NULL
 DO_stns <- NULL
 DO <- NULL
+cap.names <- list()
+DO_captions <- list()
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   DO_trend <- trend %>%
@@ -1391,12 +1407,10 @@ if(length(DO_stns) > 0) {
     DO_plots[[j]]<-b
     
     print(DO_plots[[j]])
-    
-    cat(figs(name = paste0('DO_', DO_stns[j]), 
-             caption = paste0('Station ', DO_stns[j],
-                              ' Dissolved Oxygen water quality status and/or trends.')))
+
+    DO_captions[[j]] <- paste0('Station ', DO_stns[j], ' Dissolved Oxygen water quality status and/or trends.')
+    cap.names[[j]] <- paste0("DO.",DO_stns[j])
     cat('\n\n')
-    
   }
   
   DO <-rbind.fill(DO_list[])
