@@ -167,9 +167,11 @@ plot.Temperature <- function(new_data,
   }
   y.lim <- c(y.min,y.max)
   y.median <- median(new_data$Result)
-  slope <- suppressWarnings(
-    as.numeric(
-      sea_ken_table[sea_ken_table$Station_ID == 
+  
+  if(plot_trend){
+    slope <- suppressWarnings(
+      as.numeric(
+        sea_ken_table[sea_ken_table$Station_ID == 
                       unique(new_data[, station_id_column]) & 
                       sea_ken_table$analyte == 
                       unique(new_data[, analyte_column]), 'slope']
@@ -185,7 +187,7 @@ plot.Temperature <- function(new_data,
                       unique(new_data[,station_id_column]) & 
                       sea_ken_table$analyte == 
                       unique(new_data[,analyte_column]),'pvalue']
-    )
+   )
   )
   p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
                                    unique(new_data[,station_id_column]) & 
@@ -208,6 +210,9 @@ plot.Temperature <- function(new_data,
   df_trend_line <- data.frame(x = c(x.min, x.max),
                               y = c(SK.min, SK.max),
                               variable = rep('Trend line', 2))
+  } else {
+    sub.text <- paste0("n = ", nrow(new_data))
+  }
   
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
                   min(new_data[, station_id_column]))
