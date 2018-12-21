@@ -216,10 +216,33 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # remove data collected on tribal nation land or tribal trust land
   df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands_shp, outside=TRUE),]
   
-  
   # remove stations outside the agwqma
   df.all <- clipToPlanArea(df.all, agwqma_all_shp, input$select)
-
+  
+  # Combine stations at Jack Creek
+  df.all[df.all$Station_ID %in% c("FWNF-077", "FWNF-080"),"Station_ID"] <- "FWNF-085"
+  df.all[df.all$Station_ID =="FWNF-085", "Station_Description"] <- "JK Group 4A_LT"
+  df.all[df.all$Station_ID =="FWNF-085", "DECIMAL_LAT"] <- 43.23447
+  df.all[df.all$Station_ID =="FWNF-085", "DECIMAL_LONG"] <- -121.6119
+  
+  # # Combine stations at Upper Klamath Lake Middle Lake North
+  # df.all[df.all$Station_ID %in% c("422622122004003"),"Station_ID"] <- "KL0008"
+  # df.all[df.all$Station_ID =="KL0008", "Station_Description"] <- "UPPER KLAMATH LAKE AT MIDDLE LAKE NORTH"
+  # df.all[df.all$Station_ID =="KL0008", "DECIMAL_LAT"] <- 42.44136
+  # df.all[df.all$Station_ID =="KL0008", "DECIMAL_LONG"] <- -121.9988
+  
+  # Combine stations on Threemile Creek
+  df.all[df.all$Station_ID %in% c("FWNF-162"),"Station_ID"] <- "FWNF-161"
+  df.all[df.all$Station_ID =="FWNF-161", "Station_Description"] <- "ThreemileCr_TM4900_LTWT"
+  df.all[df.all$Station_ID =="FWNF-161", "DECIMAL_LAT"] <- 42.63556
+  df.all[df.all$Station_ID =="FWNF-161", "DECIMAL_LONG"] <- -122.1100
+  
+  # Combine stations on Threemile Creek
+  df.all[df.all$Station_ID %in% c("11504115"),"Station_ID"] <- "WR4000"
+  df.all[df.all$Station_ID =="WR4000", "Station_Description"] <- "WOOD RIVER AT DIKE ROAD"
+  df.all[df.all$Station_ID =="WR4000", "DECIMAL_LAT"] <- 42.58158
+  df.all[df.all$Station_ID =="WR4000", "DECIMAL_LONG"] <- -121.9404
+  
   # Convert AWQMS analyte names to existing code language
   df.all[grep('Dissolved oxygen', df.all$Analyte),]$Analyte <- 'Dissolved Oxygen'
   df.all[grep('Phosphorus', df.all$Analyte),]$Analyte <- 'Total Phosphorus'
@@ -589,9 +612,9 @@ map <- leaflet(agwqma_shp) %>%
                                                          rnames = FALSE)
                                   })),
              group = 'Stations That Fit Criteria') %>%
-  addMarkers(data = all_stn_sp, 
-             lng = all_stn_sp@coords[,1], 
-             lat = all_stn_sp@coords[,2], 
+  addMarkers(data = all_stn_sp,
+             lng = all_stn_sp@coords[,1],
+             lat = all_stn_sp@coords[,2],
              popup = paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
                            lapply(rownames(all_stn_sp@data),
                                   function(row) {
@@ -607,22 +630,26 @@ map <- leaflet(agwqma_shp) %>%
               layers = '33',
               options = WMSTileOptions(format = 'image/png',
                                        version = '1.3.0',
-                                       transparent = TRUE)) %>% 
-  addWMSTiles(GetURL("USGSTopo"), 
+                                       transparent = TRUE)) %>%
+  addWMSTiles(GetURL("USGSTopo"),
               attribution = paste0("<a href='https://www.usgs.gov/'>",
                                    "U.S. Geological Survey</a> | ",
                                    "<ahref='https://www.usgs.gov/laws/policies_notices.html'>",
                                    "Policies</a>"),
               group = "USGS Topo", layers = "0") %>%
-  addWMSTiles(GetURL("USGSHydroCached"), 
-              group = "Hydrography", 
-              options = WMSTileOptions(format = "image/png", 
+  addWMSTiles(GetURL("USGSHydroCached"),
+              group = "Hydrography",
+              options = WMSTileOptions(format = "image/png",
                                        transparent = TRUE),
               layers = "0") %>%
   hideGroup("Hydrography") %>%
   addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
-  addLayersControl(baseGroups = c('Land Use (NLCD 2011)', 'USGS Topo', 'ESRI NatGEO World Map'),
-                   overlayGroups = c('Stations That Fit Criteria', 'All Stations Queried', 'Hydrography'),
+  addLayersControl(baseGroups = c(
+    'Land Use (NLCD 2011)', 'USGS Topo',
+    'ESRI NatGEO World Map'),
+                   overlayGroups = c('Stations That Fit Criteria'
+                                     , 'All Stations Queried', 'Hydrography'
+                                     ),
                    options = layersControlOptions(collapsed = FALSE)) %>%
   addEasyButton(easyButton(
     icon = "fa-globe",
@@ -1157,7 +1184,6 @@ if(length(pH_stns) > 0) {
     
     # Tualatin stations that are not supposed to have trend
     if(pH_stns[j] %in% c('USGS-14202980', 'USGS-14206694', 'USGS-453004122510301', 'USGS-453030122560101', 'USGS-453040123065201')) {
-      
       trend_logic <- FALSE }
     
     b <- plot.ph(new_data = pH_evaluate,
@@ -1168,7 +1194,7 @@ if(length(pH_stns) > 0) {
                  station_desc_column = 'Station_Description',
                  datetime_column = 'Sampled',
                  result_column = 'Result',
-                 datetime_format = '%Y-%m-%d %H:%M:%S',
+                 # datetime_format = '%Y-%m-%d %H:%M:%S',
                  ph_crit_min = unique(pH_evaluate$pH_low), 
                  ph_crit_max = unique(pH_evaluate$pH_high))
     
@@ -1711,6 +1737,7 @@ leaflet(agwqma_shp) %>%
 ```{r conclusions-setup}
 
 colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
+                                  "DEC_LAT", "DEC_LONG",
                                   "DO_S", "DO_T",
                                   "Ecoli_S", "Ecoli_T", 
                                   "Entero_S", "Entero_T",

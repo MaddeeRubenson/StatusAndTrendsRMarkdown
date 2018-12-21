@@ -5,14 +5,14 @@ plot.ph <- function(new_data,
                     station_id_column = 'Station_ID',
                     station_desc_column = 'Station_Description',
                     datetime_column = 'Sampled', 
-                    datetime_format = '%Y-%m-%d %H:%M:%S', 
+                    # datetime_format = '%Y-%m-%d %H:%M:%S', 
                     plot_trend = FALSE,
                     ph_crit_min = NULL,
                     ph_crit_max = NULL)
 {
   library(ggplot2)
  
-  new_data[, datetime_column] <- as.POSIXct(strptime(new_data[, datetime_column], format = datetime_format))  
+  # new_data[, datetime_column] <- as.POSIXct(strptime(new_data[, datetime_column], format = datetime_format))  
   
   x.min <- min(new_data[, datetime_column])
   x.max <- max(new_data[, datetime_column])

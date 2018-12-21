@@ -28,6 +28,8 @@ combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
     )
     A$Activity_Type <- ifelse(A$SamplingMethod == "Continuous Summary" & !is.na(A$SamplingMethod), A$Statistical_Base, A$Activity_Type)
     A$DATUM <- 'Assumed NAD83'
+    A$SampleStartTime <- ifelse(!is.na(A$Statistical_Base) & is.na(A$SampleStartTime), "00:00:00", A$SampleStartTime)
+    A <- A[!is.na(A$SampleStartTime),]
     A$Sampled <- paste(A$SampleStartDate, A$SampleStartTime)
     A$Sampled <- as.POSIXct(A$Sampled, format='%Y-%m-%d %H:%M:%S')
     A$Detect <- NA
