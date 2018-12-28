@@ -21,9 +21,11 @@ This report presents data and analysis that will help DEQ fulfill its role in th
 
 ## Methods
 
-Water quality data were retrieved from DEQ, EPA and USGS databases. DEQ's volunteer monitoring database was not included, however some volunteer data is queried from EPA's database. Many organizations provided data used in this report (see Appendix for a complete list). Data collected between `r format(ymd(query_dates[1]), format="%B %d, %Y")` and `r format(ymd(query_dates[2]), format="%B %d, %Y")` within the `r agwqma` agricultural water quality management area were included in this report. Parameters included in the data query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). 
+Water quality data were retrieved from DEQ, EPA, and USGS databases. Many organizations provided data used in this report (see Appendix for a complete list). Data collected between `r format(ymd(query_dates[1]), format="%B %d, %Y")` and `r format(ymd(query_dates[2]), format="%B %d, %Y")` within the `r agwqma` agricultural water quality management area were included in this report. Parameters included in the data query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). 
 
-The data returned were evaluated for quality. Data retrieved from the DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf) (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data. Data was evaluated against the applicable Oregon water quality criterion. 
+The data returned were evaluated for quality. Data that was rated under the [DEQ's Laboratory Quality Manual][2.1.5] (ODEQ 2013) guidelines were rated `r unique(df.all[!is.na(df.all$Status), 'Status'])`. EPA and USGS data were included unless result comments indicated problems with the data. Data was evaluated against the applicable Oregon water quality criterion. 
+
+[2.1.5]: http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf 
 
 ## Land Use
 
