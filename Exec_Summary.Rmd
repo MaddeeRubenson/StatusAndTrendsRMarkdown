@@ -1,7 +1,7 @@
 ---
-title: Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report
+title: Clackamas Agricultural Water Quality Management Area Water Quality Status and Trends Report
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: September 2018
+date: January 2019
 output: 
   word_document:
     reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
@@ -42,12 +42,12 @@ figs <- captioner(prefix="  \nFigure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
-agwqma <- "Generic"
-query_dates <- c("2000-01-01", "2018-07-01")
-project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/2018-Generic"
+agwqma <- "Clackamas"
+query_dates <- c("2000-01-01", "2018-10-01")
+project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Clackamas/2018-Clackamas"
 
 word_output <- TRUE
-split_param_summary <- FALSE
+split_param_summary <- TRUE
 
 # Everything below here should not change
 Rdata_dir <- paste0(project_dir,"/RData")
@@ -103,7 +103,7 @@ This report presents data and analysis that will help DEQ fulfill its role in th
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
-*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being acheived?
+*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being achieved?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 
