@@ -3,16 +3,16 @@ title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px;
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
 date: January 2019
 output:
-  word_document:
-    fig_caption: yes
-    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
-    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
+  word_document:
+    fig_caption: yes
+    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+    toc: yes
 always_allow_html: yes
 ---
 
@@ -77,7 +77,7 @@ query_dates <- c("2000-01-01", "2018-10-01")
 project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Clackamas/2018-Clackamas"
 
 # Set to TRUE if knitting a word document
-word_output <- TRUE
+word_output <- FALSE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
 split_param_summary <- TRUE
@@ -440,11 +440,10 @@ if (word_output) {
 
 The Oregon Department of Agriculture (ODA) has adopted area rules (OAR `r OAR_LU[OAR_LU$AgArea %in% input$select,'OAR']`) and plans for the `r input$select` agricultural water quality management area. Oregon statute and administrative rules require ODA to consult with the Oregon Department of Environmental Quality (DEQ) during the biennial review of Agricultural Water Quality Management Area Rules and Plans [ORS 568.930][1.1].  DEQ Total Maximum Daily Load (TMDLs) and Nonpoint Source (NPS) program staff conduct these reviews based on ODA's biennial review schedule of their area rules and plans. ODA's Agriculture Water Quality Program is outcome based, explicitly describing prohibited conditions, similar to DEQ's TMDL and NPS programs which explicitly define water quality targets and goals.  The analysis of landscape conditions and water quality data is used for implementing these programs as well as identifying data gaps. 
 
-This report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the [Memorandum of Agreement](https://www.oregon.gov/ODA/shared/Documents/Publications/NaturalResources/DEQODAmoa.pdf) between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Dependent on data availability, DEQ will use the available water quality data to answer the first three questions below. For the fourth bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources of pollution:
+This report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the [Memorandum of Agreement](https://www.oregon.gov/ODA/shared/Documents/Publications/NaturalResources/DEQODAmoa.pdf) between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Dependent on data availability, DEQ will use the available water quality data to answer the first two questions below. For the third bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources of pollution:
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
-*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 DEQ basin coordinators review pertinent information including this report as part of ODA's biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL load allocations through ODA's survey. 
