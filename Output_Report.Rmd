@@ -1,7 +1,7 @@
 ---
 title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report'
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: September 2018
+date: January 2019
 output:
   word_document:
     fig_caption: yes
@@ -1717,7 +1717,8 @@ leaflet(agwqma_shp) %>%
 
 ```{r conclusions-setup}
 
-colnames(stns_param_summary_tbl) <- c("Station_ID", "Station_Description",
+colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
+                                  "DEC_LAT","DEC_LONG",
                                   "DO_S", "DO_T",
                                   "Ecoli_S", "Ecoli_T", 
                                   "Entero_S", "Entero_T",
@@ -1727,13 +1728,13 @@ colnames(stns_param_summary_tbl) <- c("Station_ID", "Station_Description",
                                   "TSS_S","TSS_T")
 
 # Text for conclusions. Use auto conclusion function or make your own text
-conclusions.DO <- con.auto(df=stns_param_summary_tbl, status_column="DO_S", trend_column="DO_T")
-conclusions.Ecoli <- con.auto(df=stns_param_summary_tbl, status_column="Ecoli_S", trend_column="Ecoli_T")
-conclusions.Entero <- con.auto(df=stns_param_summary_tbl, status_column="Entero_S", trend_column="Entero_T")
-conclusions.pH <- con.auto(df=stns_param_summary_tbl, status_column="pH_S", trend_column="pH_T")
-conclusions.Temp <- con.auto(df=stns_param_summary_tbl, status_column="Temp_S", trend_column="Temp_T")
-conclusions.TP <- con.auto(df=stns_param_summary_tbl, status_column="TP_S", trend_column="TP_T")
-conclusions.TSS <- con.auto(df=stns_param_summary_tbl, status_column="TSS_S", trend_column="TSS_T")
+conclusions.DO <- con.auto(df=stns_param_summary, status_column="DO_S", trend_column="DO_T")
+conclusions.Ecoli <- con.auto(df=stns_param_summary, status_column="Ecoli_S", trend_column="Ecoli_T")
+conclusions.Entero <- con.auto(df=stns_param_summary, status_column="Entero_S", trend_column="Entero_T")
+conclusions.pH <- con.auto(df=stns_param_summary, status_column="pH_S", trend_column="pH_T")
+conclusions.Temp <- con.auto(df=stns_param_summary, status_column="Temp_S", trend_column="Temp_T")
+conclusions.TP <- con.auto(df=stns_param_summary, status_column="TP_S", trend_column="TP_T")
+conclusions.TSS <- con.auto(df=stns_param_summary, status_column="TSS_S", trend_column="TSS_T")
 
 # Text for additional conclusions
 conclusions.add.txt <- c("The text for an additional conclusions goes here.",
