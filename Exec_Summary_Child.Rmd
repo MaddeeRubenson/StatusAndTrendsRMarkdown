@@ -1,7 +1,7 @@
 ---
 title: Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: September 2018
+date: January 2019
 output: 
   word_document:
     reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
@@ -167,28 +167,22 @@ knitr::include_graphics(path = paste0("Figures/",station_summary_map_tss_file))
 
 ```{r exec-conclusions-setup}
 
-colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
-                                  "DO_S", "DO_T",
-                                  "Ecoli_S", "Ecoli_T", 
-                                  "Entero_S", "Entero_T",
-                                  "pH_S", "pH_T", 
-                                  "Temp_S", "Temp_T",
-                                  "TP_S","TP_T", 
-                                  "TSS_S","TSS_T")
+Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
 
-# Text for conclusions. Use auto conclusion function or make your own text
-conclusions.DO <- con.auto(df=stns_param_summary, status_column="DO_S", trend_column="DO_T")
-conclusions.Ecoli <- con.auto(df=stns_param_summary, status_column="Ecoli_S", trend_column="Ecoli_T")
-conclusions.Entero <- con.auto(df=stns_param_summary, status_column="Entero_S", trend_column="Entero_T")
-conclusions.pH <- con.auto(df=stns_param_summary, status_column="pH_S", trend_column="pH_T")
-conclusions.Temp <- con.auto(df=stns_param_summary, status_column="Temp_S", trend_column="Temp_T")
-conclusions.TP <- con.auto(df=stns_param_summary, status_column="TP_S", trend_column="TP_T")
-conclusions.TSS <- con.auto(df=stns_param_summary, status_column="TSS_S", trend_column="TSS_T")
+# Text for conclusions from lookup. Don't use auto conclusions here in case some text is hardwired.
+conclusions.DO <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "DO"), c("conclusion")]
+conclusions.Ecoli <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Ecoli"), c("conclusion")]
+conclusions.Entero <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Entero"), c("conclusion")]
+conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "pH"), c("conclusion")]
+conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Temp"), c("conclusion")]
+conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "TP"), c("conclusion")]
+conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "TSS"), c("conclusion")]
 
 # Text for additional conclusions from lookup
-if(NROW(Conc_LU[Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc",]) > 0){
-  conclusions.add.txt <- Conc_LU[Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc",]$conclusion
+if(NROW(Conc_LU[Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Add_conc",]) > 0){
+  conclusions.add.txt <- Conc_LU[Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Add_conc",]$conclusion
 } else {conclusions.add.txt <- ""}
+
 ```
 
 **What is the overall status or trends in water quality?**

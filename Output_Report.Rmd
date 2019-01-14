@@ -1,7 +1,7 @@
 ---
 title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report'
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: September 2018
+date: January 2019
 output:
   word_document:
     fig_caption: yes
@@ -1718,6 +1718,7 @@ leaflet(agwqma_shp) %>%
 ```{r conclusions-setup}
 
 colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
+                                  "DEC_LAT","DEC_LONG",
                                   "DO_S", "DO_T",
                                   "Ecoli_S", "Ecoli_T", 
                                   "Entero_S", "Entero_T",
