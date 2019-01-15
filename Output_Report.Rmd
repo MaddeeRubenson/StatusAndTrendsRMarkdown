@@ -1826,6 +1826,18 @@ colnames(status)[1] <- "Station ID"
 colnames(trend)[1] <- "Station ID"
 colnames(stns_by_year)[1] <- "Station ID"
 
+# Add italics to E. coli and Enterococcus
+org_summary$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", org_summary$Analyte)
+org_summary$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", org_summary$Analyte)
+org_summary_station$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", org_summary_station$Analyte)
+org_summary_station$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", org_summary_station$Analyte)
+status$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", status$Analyte)
+status$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", status$Analyte)
+trend$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", trend$Analyte)
+trend$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", trend$Analyte)
+stns_by_year$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", stns_by_year$Analyte)
+stns_by_year$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", stns_by_year$Analyte)
+
 knitr::kable(org_summary, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixorgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report."))
 
 knitr::kable(org_summary_station, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixorgSumbyStation", caption = "Summary of all unique organizations that collected data at each station for each analyte that had a status and/or trend result."))
