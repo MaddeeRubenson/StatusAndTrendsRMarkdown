@@ -1736,9 +1736,8 @@ conclusions.TP <- con.auto(df=stns_param_summary, status_column="TP_S", trend_co
 conclusions.TSS <- con.auto(df=stns_param_summary, status_column="TSS_S", trend_column="TSS_T")
 
 # Text for additional conclusions
-conclusions.add.txt <- c("The text for an additional conclusions goes here.",
-                         "The text for a second additional conclusions goes here.",
-                         "third, etc.")
+conclusions.add.txt <- c("Grab samples may not provide a complete characterization of water quality for parameters that fluctuate on a daily basis                              (e.g., DO and pH). For this reason continuous data are preferred and should be considered when monitoring these parameters                             in the future.",
+                         "This report is best used as a summary and statistical analysis of the status and trends in water quality data collected                               throughout the Clackamas Agricultural Water Quality Management Area. Interpretation of results will require knowledge of                              local conditions known to affect the observed water quality conditions at individual sites.")
 
 # Put everything together into a dataframe
 conclusions.param.df <- data.frame(AgArea=rep(input$select,7),
