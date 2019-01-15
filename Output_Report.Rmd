@@ -834,10 +834,10 @@ if(length(entero_stns) > 0) {
     exc_list[[j]] <- entero_eval
     
     trend_logic <- ifelse(grepl("Not Significant", 
-                                results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
+                                results_seaken[results_seaken$Station_ID == entero_stns[j],'signif']),
                           FALSE,
                           ifelse(grepl("Need at least 8 years", 
-                                       results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
+                                       results_seaken[results_seaken$Station_ID == entero_stns[j],'signif']),
                                  FALSE, TRUE))
     
     
