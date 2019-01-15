@@ -1376,20 +1376,18 @@ resolveMRLs <- function(ids, dnd, results){
   return(i0 | i1 | i2)
 }
 
-remove.dups <- function(tname) {
+remove.dups <- function(tname, fun_type) {
   
-  tname$code <- paste(tname$Station_ID, tname$Analyte, tname$Sampled, tname$Statistical_Base, sep=" ")
+  
   #Code should be a concatenation of station, analyte and day (for most parameters)
-  # no.dups <- aggregate(Result ~ code, data = tname, FUN = fun_type)
+  no.dups <- aggregate(Result ~ code, data = tname, FUN = fun_type)
   tname <- tname[!duplicated(tname$code),]
-  # tname <- merge(no.dups, tname, by = 'code')
+  tname <- merge(no.dups, tname, by = 'code')
   #tname$tResult <- round(tname$tResult.x, 2)
-  # tname$Result <- tname$Result.x
-  # tname <- within(tname, rm(Result.x, Result.y))
-  tname <- tname %>% filter(!SampleType %in% c("Quality Control Sample-Field Replicate", "Quality Control Field Replicate Msr/Obs"))
+  tname$Result <- tname$Result.x
+  tname <- within(tname, rm(Result.x, Result.y))
   
-  return(tname)
-  }
+}
 
 landUseAnalysis <- function(all.sp, cats, nlcd) {
   all.sp <- spTransform(all.sp, CRS(proj4string(cats)))
@@ -1427,8 +1425,8 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
 }
 
 temp_sufficiency_analysis <- function(df.all) {
-  df.all <- filter(df.all, Analyte == "Temperature", Statistical_Base != '7DADM')
-  df.all$isMax <- ifelse(df.all$Statistical_Base == "Maximum", TRUE, FALSE)
+  df.all <- filter(df.all, Analyte == "Temperature")
+  df.all$isMax <- ifelse(df.all$SampleType == "Maximum", TRUE, FALSE)
   stns <- unique(df.all$Station_ID)
   qc.results.1 <- NULL
   qc.results.2 <- NULL
