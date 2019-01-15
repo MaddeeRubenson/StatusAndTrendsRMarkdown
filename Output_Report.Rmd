@@ -1810,11 +1810,25 @@ org_summary <- summarizeByOrg(df.all)
 # clean up column names
 colnames(org_summary) <- c("Organization",	"Observations",	"Unique Stations",	"NA observations",	"Unique Comments")
 
+# org summary by station and analyte
+fit_criteria <- rbind(status[,c("Station_ID", "Analyte")], trend[,c("Station_ID", "Analyte")])
+
+fit_criteria <- unique(fit_criteria[c("Station_ID", "Analyte")])
+
+org_summary_station <- fit_criteria %>%
+  dplyr::left_join(df.all,by=c("Station_ID", "Analyte"))  %>%
+  dplyr::group_by(Station_ID, Analyte) %>%
+  dplyr::summarise('Sampling Organizations' = paste(sort(unique(Client)), collapse = ", ")) %>%
+  as.data.frame()
+
+colnames(org_summary_station)[1] <- "Station ID"
 colnames(status)[1] <- "Station ID"
 colnames(trend)[1] <- "Station ID"
 colnames(stns_by_year)[1] <- "Station ID"
 
 knitr::kable(org_summary, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixorgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report."))
+
+knitr::kable(org_summary_station, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixorgSumbyStation", caption = "Summary of all unique organizations that collected data at each station for each analyte that had a status and/or trend result."))
 
 knitr::kable(status, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixstatusTable", caption = "Number of observations per year for monitoring stations that fit the criteria to assess status."))
 
