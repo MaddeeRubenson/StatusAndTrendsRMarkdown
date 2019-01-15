@@ -1826,8 +1826,8 @@ colnames(trend)[1] <- "Station ID"
 colnames(stns_by_year)[1] <- "Station ID"
 
 # Add italics to E. coli and Enterococcus
-org_summary$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", org_summary$Analyte)
-org_summary$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", org_summary$Analyte)
+fit_criteria$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", fit_criteria$Analyte)
+fit_criteria$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", fit_criteria$Analyte)
 org_summary_station$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", org_summary_station$Analyte)
 org_summary_station$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", org_summary_station$Analyte)
 status$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", status$Analyte)
