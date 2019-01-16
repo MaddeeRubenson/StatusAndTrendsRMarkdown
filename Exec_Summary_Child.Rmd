@@ -1,7 +1,7 @@
 ---
-title: Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report
+title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Coos-Coquille Agricultural Water Quality Management Area Water Quality Status and Trends Report'
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: January 2019
+date: October 2018
 output: 
   word_document:
     reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
@@ -15,7 +15,7 @@ This report presents data and analysis that will help DEQ fulfill its role in th
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
-*	Where applicable, are TMDL targets for total phosphorus achieved?
+* Are the Tenmile Lakes Watershed TMDL targets for total phosphorus being achieved?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 
