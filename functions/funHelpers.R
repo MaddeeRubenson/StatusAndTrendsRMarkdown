@@ -1105,6 +1105,40 @@ EvaluateTP_SRHC<-function(new_data, selectWQSTP) {
   
 }
 
+EvaluateTP_Tenmile <- function(new_data, selectWQSTP) {
+  
+  # function to evaluate 0.0071 mg/L TP target in Tenmile Lakes TMDL
+  # applies as an annual average
+  
+  new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
+  new_data$Sampled<-as.Date(new_data$Sampled)
+  new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
+  
+  new_data <- new_data %>%
+    mutate(Sampled=floor_date(Sampled, "year")) %>%
+    group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled, year) %>%
+    summarize(Result=mean(Result)) %>%
+    as.data.frame()
+  
+  # May - Sept TP target in Snake Hells Canyon TMDL
+  new_data$exceed<- ifelse(new_data$Result > selectWQSTP, "Exceeds", "Meets")
+  
+  exc<-new_data%>%
+    filter(exceed == "Exceeds")
+  
+  ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
+                      "Station_Description" = (unique(new_data$Station_Description)),
+                      "Min_Date" = min(new_data$year),
+                      "Max_Date" = max(new_data$year),
+                      "Obs" = c(nrow(new_data)),
+                      "Exceedances" = c(nrow(exc)))
+  
+  attr(new_data, "ex_df") <-ex_df
+  return(new_data)
+  
+}
+
+
 generate_exceed_df <- function(new_data, 
                                df.all,
                                parm, 
