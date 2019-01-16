@@ -3,16 +3,16 @@ title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px;
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
 date: October 2018
 output:
-  word_document:
-    fig_caption: yes
-    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
-    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
+  word_document:
+    fig_caption: yes
+    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+    toc: yes
 always_allow_html: yes
 ---
 
@@ -77,7 +77,7 @@ query_dates <- c("2000-01-01", "2018-06-01")
 project_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Coos-Coquille/2018-Coos-Coquille-Revision"
 
 # Set to TRUE if knitting a word document
-word_output <- TRUE
+word_output <- FALSE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
 split_param_summary <- FALSE
@@ -93,14 +93,6 @@ station_map_file <- paste0(gsub(" ", "_", agwqma), "_station_map.png")
 
 station_summary_map1_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map1.png")
 station_summary_map2_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map2.png")
-
-station_summary_map_DO_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_DO.png")
-station_summary_map_pH_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_pH.png")
-station_summary_map_temp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_temp.png")
-station_summary_map_ecoli_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_ecoli.png")
-station_summary_map_entero_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_entero.png")
-station_summary_map_tss_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_tss.png")
-station_summary_map_tp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_tp.png")
 
 # Name of output files
 df_all_raw_file <- paste0(gsub(" ", "_", agwqma), "_df_all_raw_",paste(query_dates, collapse = "."), ".Rdata")
@@ -229,7 +221,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   df.all[grep('Total suspended solids', df.all$Analyte),]$Analyte <- 'Total Suspended Solids'
   
   # Remove all Dissolved Oxygen summary statistics from analysis except for 'minimum' 
-  df.all <- df.all %>% filter(!(Analyte == "Dissolved Oxygen" & Statistical_Base %in% c('7DADM', 'Maximum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
+  #df.all <- df.all %>% filter(!(Analyte == "Dissolved Oxygen" & Statistical_Base %in% c('7DADM', 'Maximum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
   
   # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
   # The Station ID will be named the same as LASAR
@@ -258,7 +250,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # Same is defined as having the same station ID, Sample Date/time, Analyte, and Statistical_Base
   # Note the field 'Statistical_Base' is a code that identifies if the result 
   # is a calculated value like Daily Max or 7DADM.
-  df.all <- remove.dups(df.all)
+  #df.all <- remove.dups(df.all)
   
   df.all$Result <- clean(df.all$Result)
   df.all$Result <- suppressWarnings(as.numeric(df.all$Result))
@@ -292,7 +284,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
   # Run temperature sufficiency tests
   if (any('Temperature' %in% df.all$Analyte)) {
-    df.all <- df.all %>% filter(!(Analyte == "Temperature" & Statistical_Base %in% c('7DADM', 'Minimum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
+    df.all <- df.all %>% filter(!(Analyte == "Temperature"))
     tempStns <- temp_sufficiency_analysis(df.all)
     
     qc.1.pass <- filter(attributes(tempStns)$day_test, result == "pass")
@@ -443,10 +435,11 @@ save(trend, file = paste0(Rdata_dir,"/", trend_file))
 
 The Oregon Department of Agriculture (ODA) has adopted area rules (OAR `r OAR_LU[OAR_LU$AgArea %in% input$select,'OAR']`) and plans for the `r input$select` agricultural water quality management area. Oregon statute and administrative rules require ODA to consult with the Oregon Department of Environmental Quality (DEQ) during the biennial review of Agricultural Water Quality Management Area Rules and Plans [ORS 568.930][1.1].  DEQ Total Maximum Daily Load (TMDLs) and Nonpoint Source (NPS) program staff conduct these reviews based on ODA's biennial review schedule of their area rules and plans. ODA's Agriculture Water Quality Program is outcome based, explicitly describing prohibited conditions, similar to DEQ's TMDL and NPS programs which explicitly define water quality targets and goals.  The analysis of landscape conditions and water quality data is used for implementing these programs as well as identifying data gaps. 
 
-This report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the [Memorandum of Agreement](https://www.oregon.gov/ODA/shared/Documents/Publications/NaturalResources/DEQODAmoa.pdf) between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Dependent on data availability, DEQ will use the available water quality data to answer the first two questions below. For the third, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources of pollution:
+This report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the [Memorandum of Agreement](https://www.oregon.gov/ODA/shared/Documents/Publications/NaturalResources/DEQODAmoa.pdf) between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Dependent on data availability, DEQ will use the available water quality data to answer the first three questions below. For the fourth, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources of pollution:
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
+* Are the Tenmile Lakes Watershed TMDL targets for total phosphorus being achieved?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 DEQ basin coordinators review pertinent information including this report as part of ODA's biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL load allocations through ODA's survey. 
@@ -478,7 +471,7 @@ knitr::kable(BC_table,
 
 ## Data Sources
 
-Water quality data were retrieved from DEQ's [AWQMS Database][2.1.1] which may include data submitted to DEQ from many other organizations (see Appendix for a complete list). Data were also retrieved from the U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) and U.S. Geological Survey [NWIS][2.1.3] (USGS 2016) databases via the [Water Quality Portal][2.1.4]). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). ** REMOVE IF NOT NEEDED. Stations located within the Confederated Tribes of Umatilla Indian Reservation were not included in this report. The Confederated Tribes of Umatilla administer Clean Water Act programs on the reservation.**
+Water quality data were retrieved from [DEQ](http://www.oregon.gov/deq/wq/Pages/WQdata.aspx) (LASAR and ELEMENT), U.S. Environmental Protection Agency ([WQX/Storet](https://www.epa.gov/waterdata/water-quality-data-wqx)), U.S. Geological Survey [NWIS](https://qwwebservices.usgs.gov/) (USGS 2016), and [Water Quality Portal](https://www.waterqualitydata.us/)) databases. Many other organizations provided data that were queried and evaluated for use in this report (see Appendix). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*).
 
 The data returned were evaluated for quality. Data that was rated under the [DEQ's Laboratory Quality Manual][2.1.5] (ODEQ 2013) guidelines were rated `r unique(df.all[!is.na(df.all$Status), 'Status'])`. EPA and USGS data were included unless result comments indicated problems with the data.
 
@@ -490,7 +483,7 @@ The data returned were evaluated for quality. Data that was rated under the [DEQ
 
 ## Analysis
 
-The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids and total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters. A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(floor_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. 
+The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids samples because there is no applicable water quality criteria or concentration based TMDL target. Status for total phosphorus data collected in Tenmile Lake were based on a comparison to the the 0.0071 mg/L total phosphorus concentration target established in the [Tenmile Lakes Watershed TMDL][2.2.5]. A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(floor_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. 
 
 Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p <= 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median. A trend assessment was made at a monitoring station if data were available in a minimum of eight different years for any year in the period from `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. The observations must have beeen made with an underlying regularity (e.g. samples were taken in the same months for at least eight years).
 
@@ -504,12 +497,15 @@ Dissolved oxygen status was assessed by comparing the observed concentration val
 
 Results for continuous temperature data were compared against the applicable temperature criteria found in [OAR 340-041-0028][2.2.4]. The applicable temperature criteria is based on the seven day average daily maximum (7DADM) stream temperature metric. In order to ensure there was sufficient continuous data to calculate 7DADM, at least one observation per hour from noon to midnight must have been recorded. In addition, each month can have no more than one day of missing observations to ensure that no more than 10% of the 7DADM results in that month were missing.
 
+Total phosphorus results for stations in Tenmile Lake were compared against the lake water column 0.0071 mg/L total phosphorus concentration target established in the [Tenmile Lakes Watershed TMDL][2.2.5]. The target is expressed as an annual mean so data were also summarized as annual means. 
+
 A land use summary was developed for all monitoring stations that fit the criteria to assess water quality status and/or trends. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. A map was made showing station locations in relation to 2011 national land cover dataset (Homer et al. 2015).
 
 [2.2.1]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68713
 [2.2.2]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68695
 [2.2.3]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68706
 [2.2.4]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=244176
+[2.2.5]: https://www.oregon.gov/deq/FilterDocs/scTenmiletmdl.pdf
 
 # Results
 
@@ -542,7 +538,7 @@ knitr::kable(station_summary_tbl, digits = 0, padding = 2, row.names = FALSE, ca
 
 ## Station Locations
 
-The map in `r figs("stationsmap", display="cite")` shows the general location of monitoring stations that fit the status and/or trend data requirements along with the distribution of federal and non-federal lands. 
+The map below shows the general location of monitoring stations that fit the status and/or trend data requirements along with the distribution of federal and non-federal lands. 
 
 
 ```{r stations-map-word, eval = word_output, results = "asis", fig.cap=figs(name="stationsmap", caption=paste0("Monitoring station locations within the ", agwqma, " Agricultural Water Quality Management Area."))}
@@ -594,11 +590,11 @@ map <- leaflet(agwqma_shp) %>%
                                   })),
              group = 'All Stations Queried') %>%
   hideGroup('All Stations Queried') %>%
-  addWMSTiles('https://www.mrlc.gov/arcgis/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer/WMSServer?',
+  addWMSTiles(baseUrl = 'https://smallscale.nationalmap.gov/arcgis/services/LandCover/MapServer/WMSServer?',
               group = "Land Use (NLCD 2011)",
-              layers = '33',
-              options = WMSTileOptions(format = 'image/png',
-                                       version = '1.3.0',
+              layers = "1",
+              options = WMSTileOptions(version = '1.3.0',
+                                       format = 'image/png',
                                        transparent = TRUE)) %>% 
   addWMSTiles(GetURL("USGSTopo"), 
               attribution = paste0("<a href='https://www.usgs.gov/'>",
@@ -833,10 +829,10 @@ if(length(entero_stns) > 0) {
     exc_list[[j]] <- entero_eval
     
     trend_logic <- ifelse(grepl("Not Significant", 
-                                results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
+                                results_seaken[results_seaken$Station_ID == entero_stns[j],'signif']),
                           FALSE,
                           ifelse(grepl("Need at least 8 years", 
-                                       results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
+                                       results_seaken[results_seaken$Station_ID == entero_stns[j],'signif']),
                                  FALSE, TRUE))
     
     
@@ -913,10 +909,10 @@ if(length(tp_stn) > 0) {
     
     new_data <- df.tp[df.tp$Station_ID == tp_stn[j],]
 
-    if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
-      # Snake River - Hells Canyon TMDL
-      TP_evaluate <- EvaluateTP_SRHC(new_data, 
-                                     selectWQSTP = 0.07)
+    if (tp_stn[j] %in% c('14018','34828','34829','34830','CTCLUSI_WQX-CTCTDWQ')) {
+      # Tenmile Lakes TMDL
+      TP_evaluate <- EvaluateTP_Tenmile(new_data,
+                                        selectWQSTP = 0.0071) # mg/L
     } else {
       
       TP_evaluate <- EvaluateTPWQS(new_data, 
@@ -935,13 +931,13 @@ if(length(tp_stn) > 0) {
                                   FALSE,
                                   TRUE))
     
-    if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
+    if (tp_stn[j] %in% c('14018','34828','34829','34830','CTCLUSI_WQX-CTCTDWQ')) {
       
-      # Snake River - Hells Canyon TMDL
+      # Tenmile Lakes TMDL
       b <- plot.TP(new_data=TP_evaluate,
                    sea_ken_table=results_seaken,
                    plot_trend = trend_logic,
-                   selectWQSTP = 0.07,
+                   selectWQSTP = 0.0071,
                    parm = unique(TP_evaluate$Analyte))
     } else {
       
@@ -1511,7 +1507,7 @@ stns_param_summary <-  parm_summary(stns = stns[,c(1:4)],
 
 # create a shapefile
 stns_param_summary_shp <- stns_param_summary %>%
-                  dplyr::select(-c(TP_S, TSS_S)) %>%
+                  dplyr::select(-c(TSS_S)) %>%
                   dplyr::rename(Name=Station_Description, 
                                 Latitude=DECIMAL_LAT, 
                                 Longitude=DECIMAL_LONG)
@@ -1528,7 +1524,7 @@ stns_param_summary_shp <- stns_param_summary_shp[order(stns_param_summary_shp$St
 writeOGR(obj=stns_param_summary_shp, dsn=GIS_dir, layer="station_param_summary", driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 # format for table
-stns_param_summary_tbl <- dplyr::select(stns_param_summary, -c(DECIMAL_LAT, DECIMAL_LONG, TP_S, TSS_S))
+stns_param_summary_tbl <- dplyr::select(stns_param_summary, -c(DECIMAL_LAT, DECIMAL_LONG, TSS_S))
 
 colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
                                       "DO Status", "DO Trend",
@@ -1536,7 +1532,7 @@ colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
                                       "_Enterococcus_ Status", "_Enterococcus_ Trend",
                                       "pH Status", "pH Trend", 
                                       "Temperature Status", "Temperature Trend",
-                                      "TP Trend", 
+                                      "TP Status", "TP Trend", 
                                       "TSS Trend")
 
 
@@ -1733,13 +1729,14 @@ conclusions.Ecoli <- con.auto(df=stns_param_summary, status_column="Ecoli_S", tr
 conclusions.Entero <- con.auto(df=stns_param_summary, status_column="Entero_S", trend_column="Entero_T")
 conclusions.pH <- con.auto(df=stns_param_summary, status_column="pH_S", trend_column="pH_T")
 conclusions.Temp <- con.auto(df=stns_param_summary, status_column="Temp_S", trend_column="Temp_T")
-conclusions.TP <- con.auto(df=stns_param_summary, status_column="TP_S", trend_column="TP_T")
-conclusions.TSS <- con.auto(df=stns_param_summary, status_column="TSS_S", trend_column="TSS_T")
+
+conclusions.TP <- "Data were not available in sufficient quantity to assess status within the last two whole years, including stations located on Tenmile Lakes.  Data collected at nine stations were sufficient to assess trends. Four of the nine stations (10393, 10596, 13570, 13574) had a steady trend. The remaining five stations (11485, 11486, 14018, 34829, 34830) did not have statistically significant trends."
+
+conclusions.TSS <- "Data collected at six stations were sufficient to assess trends. Three of the six stations (10393, 11485, 11486) had a degrading trend. The remaining three stations (10596, 13570, 13574) did not have statistically significant trends."
 
 # Text for additional conclusions
-conclusions.add.txt <- c("The text for an additional conclusions goes here.",
-                         "The text for a second additional conclusions goes here.",
-                         "third, etc.")
+conclusions.add.txt <- c("Grab samples may not provide a complete characterization of water quality for parameters that fluctuate on a daily basis (e.g., DO and pH). For this reason continuous data are preferred and should be considered when monitoring these parameters in the future.",
+                         "This report is best used as a summary and statistical analysis of the status and trends in water quality data collected throughout the Coos-Coquille AgWQ Management Area. Interpretation of results will require knowledge of local conditions known to affect the observed water quality conditions at individual sites.")
 
 # Put everything together into a dataframe
 conclusions.param.df <- data.frame(AgArea=rep(input$select,7),
@@ -1827,8 +1824,6 @@ colnames(trend)[1] <- "Station ID"
 colnames(stns_by_year)[1] <- "Station ID"
 
 # Add italics to E. coli and Enterococcus
-org_summary$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", org_summary$Analyte)
-org_summary$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", org_summary$Analyte)
 org_summary_station$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", org_summary_station$Analyte)
 org_summary_station$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", org_summary_station$Analyte)
 status$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", status$Analyte)
