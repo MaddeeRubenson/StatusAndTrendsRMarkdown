@@ -875,6 +875,8 @@ if(length(entero_stns) > 0) {
 
 ## Total Phosphorus
 
+The available data was not sufficient to determine any status or trends for total phosphorus.
+
 ```{r Total-Phosphorus, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, tp_captions), eval.after="fig.cap"}
 
 exc <- NULL
@@ -1542,11 +1544,23 @@ colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
 
 save(stns_param_summary, file=paste0(Rdata_dir,"/", stns_param_summary_file))
 
-knitr::kable(stns_param_summary_tbl, 
+knitr::kable(stns_param_summary_tbl[,c(1,2,5:10)],
              padding = 2, digits = 3,
              row.names = FALSE,
-             caption = tbls(name = "parmSumTable", 
-                            caption = "Summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. Note: DO = dissolved oxygen, TP = total phosphorus, TSS = total suspended solids."))
+             caption = tbls(name = "parmSumTable1", 
+                            caption = "Summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years."))
+cat("\n\n")
+knitr::kable(stns_param_summary_tbl[,c(1:4,11:16)],
+             padding = 2, digits = 3,
+             row.names = FALSE,
+             caption = tbls(name = "parmSumTable2", 
+                            caption = paste0("Continued summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. See ", tbls("parmSumTable1", cite = ), " Note: DO = dissolved oxygen, TP = total phosphorus, TSS = total suspended solids.")))
+# 
+# knitr::kable(stns_param_summary_tbl, 
+#              padding = 2, digits = 3,
+#              row.names = FALSE,
+#              caption = tbls(name = "parmSumTable", 
+#                             caption = "Summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. Note: DO = dissolved oxygen, TP = total phosphorus, TSS = total suspended solids."))
 
 ```
 
@@ -1737,9 +1751,10 @@ conclusions.TP <- con.auto(df=stns_param_summary, status_column="TP_S", trend_co
 conclusions.TSS <- con.auto(df=stns_param_summary, status_column="TSS_S", trend_column="TSS_T")
 
 # Text for additional conclusions
-conclusions.add.txt <- c("The text for an additional conclusions goes here.",
-                         "The text for a second additional conclusions goes here.",
-                         "third, etc.")
+# conclusions.add.txt <- c("The text for an additional conclusions goes here.",
+#                          "The text for a second additional conclusions goes here.",
+#                          "third, etc.")
+conclusions.add.txt <- NULL
 
 # Put everything together into a dataframe
 conclusions.param.df <- data.frame(AgArea=rep(input$select,7),
