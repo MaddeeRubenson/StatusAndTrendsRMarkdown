@@ -1011,7 +1011,7 @@ EvaluateTSSWQS<-function(new_data,
                       "Min_Date" = min(new_data$year),
                       "Max_Date" = max(new_data$year),
                       "Obs" = c(nrow(new_data)),
-                      "Exceedances" = c(nrow(exc)))
+                      "Exceedances" = ifelse(all(new_data$exceed == 'No Status'),NA,nrow(exc)))
   
   attr(new_data, "ex_df") <-ex_df
   return(new_data)
@@ -1072,7 +1072,7 @@ EvaluateTPWQS<-function(new_data,
                       "Min_Date" = min(new_data$year),
                       "Max_Date" = max(new_data$year),
                       "Obs" = c(nrow(new_data)),
-                      "Exceedances" = c(nrow(exc)))
+                      "Exceedances" = ifelse(all(new_data$exceed == 'No Status'),NA,nrow(exc)))
   
   attr(new_data, "ex_df") <-ex_df
   return(new_data)

@@ -72,9 +72,9 @@ figs <- captioner(prefix="\nFigure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
-agwqma <- "Generic"
+agwqma <- "Upper Grande Ronde"
 query_dates <- c("2000-01-01", "2018-12-01")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/Generic"
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Issue-Branches/issue-tp-tss-exceedance-reporting"
 
 # Set to TRUE if knitting a word document
 word_output <- TRUE
@@ -970,6 +970,10 @@ if(length(tp_stn) > 0) {
   colnames(exc) <- c("Station ID","Station Description", "Min Year", "Max Year", 
                      "Observations", "Exceedances", "Percent Exceedance")
   
+  if(all(is.na(exc$Exceedances))){
+    exc <- exc[,1:5]
+  }
+  
   knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, 
                caption = tbls(name = "tpExcTable", caption = " Total Phosphorus water quality trends."))
   
@@ -1080,6 +1084,10 @@ if(length(tss_stn) > 0){
   colnames(exc) <- c("Station ID","Station Description", "Min Year", "Max Year", 
                      "Observations", "Exceedances", "Percent Exceedance")
 
+  if(all(is.na(exc$Exceedances))){
+    exc <- exc[,1:5]
+  }
+  
   knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, 
                caption = tbls(name = "tssExcTable", caption = "Total Suspended Solids observations."))
 
