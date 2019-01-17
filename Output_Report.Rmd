@@ -1,18 +1,18 @@
 ---
-title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report'
+title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Umpqua River Agricultural Water Quality Management Area Water Quality Status and Trends Report'
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
 date: January 2019
 output:
-  word_document:
-    fig_caption: yes
-    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
-    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
+  word_document:
+    fig_caption: yes
+    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+    toc: yes
 always_allow_html: yes
 ---
 
@@ -72,12 +72,12 @@ figs <- captioner(prefix="\nFigure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
-agwqma <- "Generic"
-query_dates <- c("2000-01-01", "2018-12-01")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/Generic"
+agwqma <- "Umpqua River"
+query_dates <- c("2000-01-01", "2018-12-30")
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Umpqua River/2019-Umpqua-River"
 
 # Set to TRUE if knitting a word document
-word_output <- TRUE
+word_output <- FALSE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
 split_param_summary <- FALSE
@@ -1113,14 +1113,14 @@ pH_stat <- c(unique(pH_stat$Station_ID))
 pH_stns <- unique(append(pH_trend, pH_stat))
 
 if(length(pH_stns) > 0) {
-  
+
   df.pH <- df.all[df.all$Analyte == 'pH',]
   results_seaken <- SeaKen %>% filter(analyte == 'pH')
 
   in_bentable <- (Ben_use_LU[Ben_use_LU$Station_ID %in% pH_stns, c('Station_ID', 'pH_benuse', 'pH_low', 'pH_high')])
-  
+
   df.pH <- merge(df.pH,in_bentable, by.x = "Station_ID", by.y = "Station_ID")
-  
+
   if(any(is.na(df.pH$pH_benuse) | is.na(df.pH$pH_low) | is.na(df.pH$pH_high)) | NROW(df.pH) == 0) {
     print("In order to assess against water quality standard, need to add pH beneficial uses to stations.csv for stations:")
       print(unique(df.pH[(is.na(df.pH$pH_benuse) | is.na(df.pH$pH_low) | is.na(df.pH$pH_high)),c("Station_ID")]))
@@ -1133,7 +1133,7 @@ if(length(pH_stns) > 0) {
 
   for(j in 1: length(pH_stns)) {
     new_data <- df.pH[df.pH$Station_ID == pH_stns[j],]
-    
+
     pH_evaluate <- EvaluatepHWQS(new_data = new_data,
                                  ph_crit_min = unique(new_data$pH_low),
                                  ph_crit_max = unique(new_data$pH_high),
@@ -1146,20 +1146,20 @@ if(length(pH_stns) > 0) {
     pH_eval <- attr(pH_evaluate, 'ex_df')
     pH_list[[j]] <- pH_evaluate
     pH_exclist[[j]] <- pH_eval
-    
-    trend_logic <-ifelse(grepl("Not Significant", 
-                                 results_seaken[results_seaken$Station_ID == pH_stns[j],'signif']), 
+
+    trend_logic <-ifelse(grepl("Not Significant",
+                                 results_seaken[results_seaken$Station_ID == pH_stns[j],'signif']),
                            FALSE,
-                           ifelse(grepl("Need at least 8 years", 
+                           ifelse(grepl("Need at least 8 years",
                                         results_seaken[results_seaken$Station_ID == pH_stns[j],'signif']),
                                   FALSE,
                                   TRUE))
-    
+
     # Tualatin stations that are not supposed to have trend
     if(pH_stns[j] %in% c('USGS-14202980', 'USGS-14206694', 'USGS-453004122510301', 'USGS-453030122560101', 'USGS-453040123065201')) {
-      
+
       trend_logic <- FALSE }
-    
+
     b <- plot.ph(new_data = pH_evaluate,
                  sea_ken_table = results_seaken,
                  plot_trend = trend_logic,
@@ -1169,22 +1169,22 @@ if(length(pH_stns) > 0) {
                  datetime_column = 'Sampled',
                  result_column = 'Result',
                  datetime_format = '%Y-%m-%d %H:%M:%S',
-                 ph_crit_min = unique(pH_evaluate$pH_low), 
+                 ph_crit_min = unique(pH_evaluate$pH_low),
                  ph_crit_max = unique(pH_evaluate$pH_high))
-    
+
     pH_plots[[j]]<-b
-    
+
     print(pH_plots[[j]])
 
     pH_captions[[j]] <- paste0('Station ', pH_stns[j], ' pH water quality status and/or trends.')
     cap.names[[j]] <- paste0("pH.",pH_stns[j])
     cat('\n\n')
   }
-  
+
   pH <-rbind.fill(pH_list[])
   exc <-rbind.fill(pH_exclist[])
   exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
-  
+
     
   colnames(exc) <- c("Station ID", "Station Description", "Min Date", "Max Date", "Observations", "Exceedances", "Percent Exceedance")
     
@@ -1220,58 +1220,58 @@ temp_stat <- c(as.character(unique(temp_stat$Station_ID)))
 
 if(!is.null(temp_stn)){
   temp_stn <- unique(append(temp_stn, temp_stat))
-  
+
 } else {
   temp_stn <- temp_stat
 }
 
 if(length(temp_stn) > 0) {
-  
+
   if(!any(temp_stn %in% Ben_use_LU$Station_ID)){
     print("Before continuing, beneficial uses must be added for the following stations")
     print(temp_stn[!temp_stn %in% Ben_use_LU$Station_ID])
     View(stns[stns$Station_ID %in% temp_stn[!temp_stn %in% Ben_use_LU$Station_ID],])
     break
   }
-  
+
   df.temp <- df.all[df.all$Analyte == 'Temperature',]
   results_seaken <-SeaKen %>% filter(analyte == 'Temperature')
-  
+
   temp_list<- list()
   temp_exclist<- list()
   temp_plots<-list()
-  
+
   for(j in 1: length(temp_stn)) {
-    
+
     new_data <- df.temp[df.temp$Station_ID == temp_stn[j],]
     Temp_Benuse <- as.character((Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[j], 'Temp_Benuse']))
     spwn_time <- as.character(Ben_use_LU[Ben_use_LU$Station_ID == temp_stn[j], 'spwn_time'])
-    
+
     new_data$date <- as.Date(new_data$Sampled)
-            
+
     temp_evaluate <- EvaluateTempWQS(sdadm_df = new_data,
                                      selectUse = Temp_Benuse[1],
                                      selectSpawning = spwn_time[1],
                                      station_id_column = 'Station_ID')
-    
+
     # sort by station ID, parameters, and date/time
     temp_evaluate <- temp_evaluate[with(temp_evaluate, order(Station_ID, Analyte, Sampled)), ]
     rownames(temp_evaluate) <- 1:nrow(temp_evaluate)
-    
+
     temp_eval <- attr(temp_evaluate, 'result_summary')
     temp_list[[j]] <- temp_evaluate
     temp_exclist[[j]] <- temp_eval
-    
+
     trend_logic <-if(NROW(results_seaken[results_seaken$Station_ID == temp_stn[j],])>0){
-      ifelse(grepl("Not Significant", 
-                                 results_seaken[results_seaken$Station_ID == temp_stn[j],'signif']), 
+      ifelse(grepl("Not Significant",
+                                 results_seaken[results_seaken$Station_ID == temp_stn[j],'signif']),
                            FALSE,
-                           ifelse(grepl("Need at least 8 years", 
+                           ifelse(grepl("Need at least 8 years",
                                         results_seaken[results_seaken$Station_ID == temp_stn[j],'signif']),
                                   FALSE,
                                   TRUE))
     } else {FALSE}
-    
+
     b <- plot.Temperature(new_data = temp_evaluate,
                           sea_ken_table = results_seaken,
                           selectUse = Temp_Benuse[1],
@@ -1281,29 +1281,29 @@ if(length(temp_stn) > 0) {
                           datetime_column = 'date',
                           datetime_format = '%Y-%m-%d',
                           plot_trend = trend_logic)
-    
+
     temp_plots[[j]]<-b
-    
+
     print(temp_plots[[j]])
 
-    temp_captions[[j]] <- paste0('Station ', temp_stn[j], 
+    temp_captions[[j]] <- paste0('Station ', temp_stn[j],
                               ' Temperature water quality status and/or trends.')
     cap.names[[j]] <- paste0("temp.",temp_stn[j])
     cat("\n\n")
   }
-  
+
   temp <- rbind.fill(temp_list[])
   exc <- rbind.fill(temp_exclist[])
   exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
-  
+
   colnames(exc) <- c("Station ID","Station Description", "Time Period",
                      "Observations", " Exceedances", "Percent Exceedance")
-  
-  knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, 
+
+  knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE,
                caption = tbls(name = "tempExcTable", caption = " Temperature water quality status."))
-  
+
 } else {
-  
+
     cat("There was insufficient data to calculate the seven day average daily maximum stream temperatures and make status and/or trend assessments for stream temperature.")
 
 }
@@ -1336,14 +1336,14 @@ DO_stat <- c(unique(DO_stat$Station_ID))
 DO_stns <- unique(append(DO_trend, DO_stat))
 
 if(length(DO_stns) > 0) {
-  
+
   df.DO <- df.all[df.all$Analyte == 'Dissolved Oxygen',]
   results_seaken <- SeaKen %>% filter(analyte == 'Dissolved Oxygen')
 
   in_bentable <- (Ben_use_LU[Ben_use_LU$Station_ID %in% DO_stns, c('Station_ID', 'DO_use', 'spwn_time')])
-  
+
   df.DO <- merge(df.DO,in_bentable, by.x = "Station_ID", by.y = "Station_ID")
-  
+
   if(any(is.na(df.DO$DO_use) | is.na(df.DO$spwn_time))) {
     print("In order to assess against water quality standard, need to add Dissolved Oxygen beneficial uses and spawning time periods to stations.csv for stations:")
       print(unique(df.DO[(is.na(df.DO$DO_use) | is.na(df.DO$spwn_time)),c("Station_ID")]))
@@ -1356,8 +1356,8 @@ if(length(DO_stns) > 0) {
 
   for(j in 1: length(DO_stns)) {
     new_data <- df.DO[df.DO$Station_ID == DO_stns[j],]
-    
-    DO_sat_data <-df.all %>% 
+
+    DO_sat_data <-df.all %>%
       dplyr::filter(Analyte == 'Dissolved oxygen saturation') %>%
       dplyr::filter(Station_ID == DO_stns[j])
 
@@ -1371,25 +1371,25 @@ if(length(DO_stns) > 0) {
                                  datetime_column = 'Sampled',
                                  result_column = 'Result',
                                  datetime_format = '%Y-%m-%d %H:%M:%S')
-    
+
 
     DO_eval <- attr(DO_evaluate, 'ex_df')
     DO_list[[j]] <- DO_evaluate
     DO_exclist[[j]] <- DO_eval
-    
-    trend_logic <-ifelse(grepl("Not Significant", 
-                                 results_seaken[results_seaken$Station_ID == DO_stns[j],'signif']), 
+
+    trend_logic <-ifelse(grepl("Not Significant",
+                                 results_seaken[results_seaken$Station_ID == DO_stns[j],'signif']),
                            FALSE,
-                           ifelse(grepl("Need at least 8 years", 
+                           ifelse(grepl("Need at least 8 years",
                                         results_seaken[results_seaken$Station_ID == DO_stns[j],'signif']),
                                   FALSE,
                                   TRUE))
-    
+
     # Tualatin stations that are not supposed to have trend
     if(DO_stns[j] %in% c('USGS-14202980', 'USGS-14206694', 'USGS-453004122510301', 'USGS-453030122560101', 'USGS-453040123065201')) {
-      
+
       trend_logic <- FALSE }
-    
+
     b <- plot.DO(new_data = DO_evaluate,
                  selectUseDO = unique(DO_evaluate$DO_use),
                  sea_ken_table = results_seaken,
@@ -1403,27 +1403,27 @@ if(length(DO_stns) > 0) {
                  datetime_format = '%Y-%m-%d %H:%M:%S',
                  parm = 'Dissolved Oxygen')
 
-    
+
     DO_plots[[j]]<-b
-    
+
     print(DO_plots[[j]])
 
     DO_captions[[j]] <- paste0('Station ', DO_stns[j], ' Dissolved Oxygen water quality status and/or trends.')
     cap.names[[j]] <- paste0("DO.",DO_stns[j])
     cat('\n\n')
   }
-  
+
   DO <-rbind.fill(DO_list[])
   exc <-rbind.fill(DO_exclist[])
   exc$Percent_Exceedance <- (exc$Exceedances/exc$Obs) * 100
-  
-    
-  colnames(exc) <- c("Station ID", "Station Description", "Observations", "Exceedances", 
+
+
+  colnames(exc) <- c("Station ID", "Station Description", "Observations", "Exceedances",
                      "Meets b/c %Sat", "Min Year", "Max Year", "Percent Exceedance")
-    
+
   knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE,
                caption = tbls(name = "doExcTable", caption = "Dissolved Oxygen status."))
-  
+
 }
 
 DO_exc <- exc
