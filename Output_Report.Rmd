@@ -1235,7 +1235,7 @@ if(!is.null(temp_stn)){
 
 if(length(temp_stn) > 0) {
   
-  if(!any(temp_stn %in% Ben_use_LU$Station_ID)){
+  if(any(!temp_stn %in% Ben_use_LU$Station_ID)){
     print("Before continuing, beneficial uses must be added for the following stations")
     print(temp_stn[!temp_stn %in% Ben_use_LU$Station_ID])
     View(stns[stns$Station_ID %in% temp_stn[!temp_stn %in% Ben_use_LU$Station_ID],])

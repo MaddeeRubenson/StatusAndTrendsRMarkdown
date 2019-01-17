@@ -194,7 +194,7 @@ con.auto <- function(df, status_column, trend_column, station_id_column="Station
   txt.status <- paste0(s1a,s2a,s2b)
   
   if(n_trend == 0) {
-    t1a <- "Data were not available in the last two years to assess trend."
+    t1a <- "Data were not available in sufficient quantity to assess trend."
     t2a <-""
     t2b <-""
     t2c <-""

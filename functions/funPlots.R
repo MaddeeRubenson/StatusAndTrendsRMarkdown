@@ -284,7 +284,7 @@ plot.Temperature <- function(new_data,
       spn_index <- which(new_data$criteria_value == 13)
       spn_diff <- diff(spn_index)
       
-      if (all(spn_diff == 1)) {
+      if (all(spn_diff == 1 & spn_diff > 0)) {
         if (length(spn_index) > 0) {
           spn_1 <- max(spn_index)
           
