@@ -1402,28 +1402,35 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
   stn_nlcd <- merge(stct, nlcd, by.x="FEATUREID", by.y="COMID", all.x=TRUE, all.y=FALSE)
   stndf_nlcd <- as.data.frame(stn_nlcd)
   
-  #Reclass the NLCD
+  # Reclass the NLCD
+  # Note this reclass corresponds to the 2011 NLCD raster reclass in the GIS support folder where
+  # 1 Urban/Roads
+  # 2 Forest
+  # 3 cultivation/Agriculture
+  # 4 Range (or Forest Disturbance)
+  # 5 Other
+  # 11 Water <- In the table this is included in "Other" but it looks weird to map it that way.
   stn_cat_use_2011 <- stndf_nlcd %>% 
     group_by(Station_ID) %>% 
     dplyr::summarise(Station_Description,
               Year = "2011",
               WsAreaSqKm,
-              PerUrbanWs = sum(PctUrbOp2011Ws,
-                               PctUrbLo2011Ws,
-                               PctUrbMd2011Ws,
-                               PctUrbHi2011Ws),
-              PerForestWs = sum(PctDecid2011Ws,
-                                PctConif2011Ws,
-                                PctMxFst2011Ws),
-              PerAgWs = sum(PctHay2011Ws,
-                            PctCrop2011Ws),
-              PerRangeWs = sum(PctShrb2011Ws,
-                               PctGrs2011Ws),
-              PerOtherWs = sum(PctOw2011Ws,
-                               PctIce2011Ws,
-                               PctBl2011Ws,
-                               PctWdWet2011Ws,
-                               PctHbWet2011Ws))
+              PerUrbanWs = sum(PctUrbOp2011Ws, #21
+                               PctUrbLo2011Ws, #22
+                               PctUrbMd2011Ws, #23
+                               PctUrbHi2011Ws), #24
+              PerForestWs = sum(PctDecid2011Ws, #41
+                                PctConif2011Ws, #42
+                                PctMxFst2011Ws, #43
+                                PctWdWet2011Ws), #90
+              PerAgWs = sum(PctHay2011Ws, #81
+                            PctCrop2011Ws), #82
+              PerRangeWs = sum(PctShrb2011Ws, #52
+                               PctGrs2011Ws), #71
+              PerOtherWs = sum(PctOw2011Ws, #11
+                               PctIce2011Ws, #12
+                               PctBl2011Ws, #31
+                               PctHbWet2011Ws)) #95
   return(stn_cat_use_2011)
 }
 
