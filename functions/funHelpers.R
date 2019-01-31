@@ -1409,7 +1409,6 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
   # 3 Agriculture
   # 4 Shrub/Grass (or Forest Disturbance)
   # 5 Other
-  # 11 Water <- In the table this is included in "Other" but it looks weird to map it that way.
   stn_cat_use_2011 <- stndf_nlcd %>% 
     group_by(Station_ID) %>% 
     dplyr::summarise(Station_Description,
