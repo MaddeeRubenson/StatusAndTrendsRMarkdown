@@ -1404,10 +1404,10 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
   
   # Reclass the NLCD
   # Note this reclass corresponds to the 2011 NLCD raster reclass in the GIS support folder where
-  # 1 Urban/Roads
+  # 1 Developed
   # 2 Forest
-  # 3 cultivation/Agriculture
-  # 4 Range (or Forest Disturbance)
+  # 3 Agriculture
+  # 4 Shrub/Grass (or Forest Disturbance)
   # 5 Other
   # 11 Water <- In the table this is included in "Other" but it looks weird to map it that way.
   stn_cat_use_2011 <- stndf_nlcd %>% 
@@ -1415,7 +1415,7 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
     dplyr::summarise(Station_Description,
               Year = "2011",
               WsAreaSqKm,
-              PerUrbanWs = sum(PctUrbOp2011Ws, #21
+              PerDevelWs = sum(PctUrbOp2011Ws, #21
                                PctUrbLo2011Ws, #22
                                PctUrbMd2011Ws, #23
                                PctUrbHi2011Ws), #24
@@ -1425,12 +1425,13 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
                                 PctWdWet2011Ws), #90
               PerAgWs = sum(PctHay2011Ws, #81
                             PctCrop2011Ws), #82
-              PerRangeWs = sum(PctShrb2011Ws, #52
-                               PctGrs2011Ws), #71
+              PerShrubGrassWs = sum(PctShrb2011Ws, #52
+                               PctGrs2011Ws,#71
+                               PctHbWet2011Ws), #95
               PerOtherWs = sum(PctOw2011Ws, #11
                                PctIce2011Ws, #12
-                               PctBl2011Ws, #31
-                               PctHbWet2011Ws)) #95
+                               PctBl2011Ws) #31
+                               )
   return(stn_cat_use_2011)
 }
 
