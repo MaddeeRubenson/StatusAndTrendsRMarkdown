@@ -21,18 +21,20 @@ combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
                    'Long_DD' = 'DECIMAL_LONG',
                    # 'HorizontalCoordinateReferenceSystemDatumName' = 'DATUM',
                    # 'ResultDetectionConditionText' = 'Detect',
-                   'General_Comments' = 'Comment',
+                   # 'General_Comments' = 'Comment',
                    'Result_status' = 'StatusIdentifier',
                    'HUC8' = 'HUC',
-                   'Statistical_Base' = 'Statistical_Base'
+                   'Statistical_Base' = 'Statistical_Base',
+                   'sample_datetime' = 'Sampled',
+                   'Datum' = 'DATUM'
     )
     A$Activity_Type <- ifelse(A$SamplingMethod == "Continuous Summary" & !is.na(A$SamplingMethod), A$Statistical_Base, A$Activity_Type)
     A$DATUM <- 'Assumed NAD83'
     A$Sampled <- paste(A$SampleStartDate, A$SampleStartTime)
     A$Sampled <- as.POSIXct(A$Sampled, format='%Y-%m-%d %H:%M:%S')
     A$Detect <- NA
-    A <- A[,c(names(AWQMS.map),'Sampled', 'DATUM', 'Detect')]
-    A <- plyr::rename(A,AWQMS.map)
+    A <- A[,c(names(AWQMS.map), 'Detect')]
+    A <- plyr::rename(A, AWQMS.map)
     A$Database <- 'AWQMS'
     A$SD <- paste(A$Database, A$Station_ID)
   }

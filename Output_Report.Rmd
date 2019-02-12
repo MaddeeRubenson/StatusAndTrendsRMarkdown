@@ -72,9 +72,9 @@ figs <- captioner(prefix="\nFigure")
 # agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
-agwqma <- "Generic"
-query_dates <- c("2000-01-01", "2018-12-31")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/Generic"
+agwqma <- "Walker Stout"
+query_dates <- c("2000-01-01", "2019-01-01")
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/SIAs/WalkerStout/2019-SIA-Walker-Stout"
 
 # Set to TRUE if knitting a word document
 word_output <- TRUE
@@ -226,6 +226,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # Convert AWQMS analyte names to existing code language
   df.all[grep('Dissolved oxygen', df.all$Analyte),]$Analyte <- 'Dissolved Oxygen'
   df.all[grep('Phosphorus', df.all$Analyte),]$Analyte <- 'Total Phosphorus'
+  df.all[grep('Temperature, water', df.all$Analyte),]$Analyte <- 'Temperature'
   df.all[grep('Total suspended solids', df.all$Analyte),]$Analyte <- 'Total Suspended Solids'
   
   # Remove all Dissolved Oxygen summary statistics from analysis except for 'minimum' 
