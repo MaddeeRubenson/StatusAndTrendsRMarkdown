@@ -1408,22 +1408,24 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
     dplyr::summarise(Station_Description,
               Year = "2011",
               WsAreaSqKm,
-              PerUrbanWs = sum(PctUrbOp2011Ws,
-                               PctUrbLo2011Ws,
-                               PctUrbMd2011Ws,
-                               PctUrbHi2011Ws),
-              PerForestWs = sum(PctDecid2011Ws,
-                                PctConif2011Ws,
-                                PctMxFst2011Ws),
-              PerAgWs = sum(PctHay2011Ws,
-                            PctCrop2011Ws),
-              PerRangeWs = sum(PctShrb2011Ws,
-                               PctGrs2011Ws),
-              PerOtherWs = sum(PctOw2011Ws,
-                               PctIce2011Ws,
-                               PctBl2011Ws,
-                               PctWdWet2011Ws,
-                               PctHbWet2011Ws))
+              PerUrbanWs = sum(PctUrbOp2011Ws, #21
+                               PctUrbLo2011Ws, #22
+                               PctUrbMd2011Ws, #23
+                               PctUrbHi2011Ws),#24
+              PerForestWs = sum(PctDecid2011Ws,#41
+                                PctConif2011Ws,#42
+                                PctMxFst2011Ws,#43
+                                PctWdWet2011Ws),#90
+              PerAgWs = sum(PctHay2011Ws, #81
+                            PctCrop2011Ws), #82
+              PerRangeWs = sum(PctShrb2011Ws,#52
+                               PctGrs2011Ws),#71
+              PerOtherWs = sum(PctOw2011Ws,#11
+                               PctIce2011Ws,#12
+                               PctBl2011Ws,#31
+                               PctHbWet2011Ws))#95
+
+  
   return(stn_cat_use_2011)
 }
 
