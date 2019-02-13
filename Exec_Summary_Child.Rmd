@@ -1,7 +1,7 @@
 ---
 title: Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: September 2018
+date: February 2019
 output: 
   word_document:
     reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
@@ -23,11 +23,11 @@ This report presents data and analysis that will help DEQ fulfill its role in th
 
 Water quality data were retrieved from DEQ, EPA and USGS databases. DEQ's volunteer monitoring database was not included, however some volunteer data is queried from EPA's database. Many organizations provided data used in this report (see Appendix for a complete list). Data collected between `r format(ymd(query_dates[1]), format="%B %d, %Y")` and `r format(ymd(query_dates[2]), format="%B %d, %Y")` within the `r agwqma` agricultural water quality management area were included in this report. Parameters included in the data query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). 
 
-The data returned were evaluated for quality. Data retrieved from the DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf) (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data. Data was evaluated against the applicable Oregon water quality criterion. 
+The data returned were evaluated for quality. Data retrieved from the DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf) (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data. Data were evaluated against the applicable Oregon water quality criterion. 
 
 ## Land Use
 
-Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. The map below shows station locations in relation to the 2011 National Land Cover dataset (Homer et al. 2015).
+Each monitoring station that fit the criteria to assess water quality status and/or trends was included in the land use analysis. The Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. The map displayed in Figure 9 shows station locations in relation to the 2011 National Land Cover dataset (Homer et al. 2015).
 
 ```{r landuse-exec}
 
@@ -79,25 +79,25 @@ load(paste0(Rdata_dir, "/", stns_param_summary_file))
 stns_param_summary_tbl <- dplyr::select(stns_param_summary, -c(DECIMAL_LAT, DECIMAL_LONG))
 
 colnames(stns_param_summary_tbl) <- c("Station ID", "Station Description",
-                                  "_E. coli_  Status", "_E. coli_ Trend", 
-                                  "_Enterococcus_ Status", "_Enterococcus_ Trend",
-                                  "DO Status", "DO Trend",
-                                  "pH Status", "pH Trend", 
-                                  "Temperature Status", "Temperature Trend",
-                                  "TP Status", "TP Trend", 
-                                  "TSS Status", "TSS Trend")
+                                      "DO Status", "DO Trend",
+                                      "_E. coli_  Status", "_E. coli_ Trend", 
+                                      "_Enterococcus_ Status", "_Enterococcus_ Trend",
+                                      "pH Status", "pH Trend", 
+                                      "Temperature Status", "Temperature Trend",
+                                      "TP Status","TP Trend", 
+                                      "TSS Status","TSS Trend")
 
 knitr::kable(stns_param_summary_tbl[,c(1:6,9:10)],
              padding = 2, digits = 3,
              row.names = FALSE,
              caption = tbls(name = "exec_parmSumTable1", 
-                            caption = "Summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. Note: TSS = total suspended solids."))
+                            caption = "Summary of monitoring stations status and trend for DO, _E. coli_, and pH, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. A straight line indicates that a parameter is not sampled at a particular station. Note: DO = dissolved oxygen."))
 cat("\n\n")
 knitr::kable(stns_param_summary_tbl[,c(1,2,7,8,11:16)],
              padding = 2, digits = 3,
              row.names = FALSE,
              caption = tbls(name = "exec_parmSumTable2", 
-                            caption = paste0("Continued summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. See ", tbls("parmSumTable1", cite = ), " Note: DO = dissolved oxygen, TP = total phosphorus.")))
+                            caption = paste0("Continued summary of monitoring stations status and trend for _Enterococcus_, Temperature, TP, and TSS, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. A straight line indicates that a parameter is not sampled at a particular station. See ", tbls("parmSumTable1", cite = ), " Note: TP = total phosphorus, TSS = Total Suspended Solids.")))
 
 ```
 
@@ -165,14 +165,14 @@ knitr::include_graphics(path = paste0("Figures/",station_summary_map_tss_file))
 
 ```{r exec-conclusions-setup}
 
-colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
-                                  "DO_S", "DO_T",
-                                  "Ecoli_S", "Ecoli_T", 
-                                  "Entero_S", "Entero_T",
-                                  "pH_S", "pH_T", 
-                                  "Temp_S", "Temp_T",
-                                  "TP_S","TP_T", 
-                                  "TSS_S","TSS_T")
+colnames(stns_param_summary_tbl) <- c("Station_ID", "Station_Description",
+                                      "DO_S", "DO_T",
+                                      "Ecoli_S", "Ecoli_T", 
+                                      "Entero_S", "Entero_T",
+                                      "pH_S", "pH_T", 
+                                      "Temp_S", "Temp_T",
+                                      "TP_S","TP_T", 
+                                      "TSS_S","TSS_T")
 
 # Text for conclusions. Use auto conclusion function or make your own text
 conclusions.DO <- con.auto(df=stns_param_summary, status_column="DO_S", trend_column="DO_T")
