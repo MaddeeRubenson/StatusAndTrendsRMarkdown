@@ -3,16 +3,16 @@ title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px;
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
 date: February 2019
 output:
-  word_document:
-    fig_caption: yes
-    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
-    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
+  word_document:
+    fig_caption: yes
+    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+    toc: yes
 always_allow_html: yes
 ---
 
@@ -77,7 +77,7 @@ query_dates <- c("2000-01-01", "2018-11-01")
 project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Southern Willamette Valley/2018-Southern-Willamette-Valley"
 
 # Set to TRUE if knitting a word document
-word_output <- TRUE
+word_output <- FALSE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
 split_param_summary <- TRUE
@@ -505,7 +505,8 @@ Dissolved oxygen status was assessed by comparing the observed concentration val
 
 Results for continuous temperature data were compared against the applicable temperature criteria found in [OAR 340-041-0028][2.2.4]. The applicable temperature criteria is based on the seven day average daily maximum (7DADM) stream temperature metric. In order to ensure there was sufficient continuous data to calculate 7DADM, at least one observation per hour from noon to midnight must have been recorded. In addition, each month can have no more than one day of missing observations to ensure that no more than 10% of the 7DADM results in that month were missing.
 
-A land use summary was developed for all monitoring stations that fit the criteria to assess water quality status and/or trends. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. A map was made showing station locations in relation to 2011 national land cover dataset (Homer et al. 2015).
+A land use summary was developed for all monitoring stations that fit the criteria to assess water quality status and/or trends. The summary was derived from the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016). StreamCat utilized the NHDPlus version 2.1 stream network (McKay et al 2012) and the 2011 National Landcover Database (NLCD) (Homer et al. 2015) to calculate the proportion of each NLCD landuse class within the watershed area contributing to each NHDPlus stream segment including the upstream watershed area. This means that the landuse summary for a particular station represents the landuse for the entire NHDPlus segment where the station is located including the watershed portion of the segment downstream of the station as well as watershed areas upstream of that segment. The streamCat derived NLCD proportions were summarized by DEQ into five unique classes: **Developed**, **Forest**, **Agriculture**, **Shrub and Grass**, and **Other**). Developed includes all the various NLCD classes for urban and developed areas (21-24). Forest includes the various forest and woody wetland classes (41, 42, 43, and 90). Agriculture includes Pasture/Hay (81) and Cultivated Crops (82). Shrub and Grass includes NLCD classes Shrub/Scrub (52), Grassland/Herbaceous (71), and Herbaceous Wetlands (95). Other includes open water (11), Perennial Ice/Snow (12), and Barren Land (31). A map was made showing station locations in relation to these landuse classifications or to the original 2011 national land cover dataset if viewing the html version of this report.
+McKay, L., Bondelid, T., Dewald, T., Johnston, J., Moore, R., and Rea, A. 2012. NHDPlus Version 2:User Guide (Data Model Version 2.1). Available from http://www.horizon-systems.com/NHDPlus/NHDPlusV2_documentation.php.
 
 [2.2.1]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68713
 [2.2.2]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68695
@@ -639,7 +640,7 @@ landuse<-stn_nlcd_df%>%
   filter(Station_ID %in% stn_to_use) %>%
   arrange(desc(PerAgWs))
 colnames(landuse) <- c("Station ID", "Station Description", "Year", "Watershed Area (km^2^)",
-                       "% Urban", "% Forest", "% Ag", "% Range", "% Other")
+                       "% Developed", "% Forest", "% Ag", "% Shrub/Grass", "% Other")
 landuse <-landuse[, - 3]
 
 save(landuse, file=paste0(Rdata_dir,"/", landuse_file))
@@ -1546,7 +1547,7 @@ knitr::kable(stns_param_summary_tbl,
              padding = 2, digits = 3,
              row.names = FALSE,
              caption = tbls(name = "parmSumTable", 
-                            caption = "Summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. Note: DO = dissolved oxygen, TP = total phosphorus, TSS = total suspended solids."))
+                            caption = "Summary of monitoring stations status and trend, where 'Exceeds' represents a single exceedance of the water quality standard or TMDL target within the last two whole years. A straight line indicates that a parameter is not sampled at a particular station. Note: DO = dissolved oxygen, TP = total phosphorus, TSS = total suspended solids."))
 
 ```
 
@@ -1717,28 +1718,27 @@ leaflet(agwqma_shp) %>%
 
 ```{r conclusions-setup}
 
-colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
-                                  "DO_S", "DO_T",
-                                  "Ecoli_S", "Ecoli_T", 
-                                  "Entero_S", "Entero_T",
-                                  "pH_S", "pH_T", 
-                                  "Temp_S", "Temp_T",
-                                  "TP_S","TP_T", 
-                                  "TSS_S","TSS_T")
+colnames(stns_param_summary_tbl) <- c("Station_ID", "Station_Description",
+                                      "DO_S", "DO_T",
+                                      "Ecoli_S", "Ecoli_T", 
+                                      "Entero_S", "Entero_T",
+                                      "pH_S", "pH_T", 
+                                      "Temp_S", "Temp_T",
+                                      "TP_S","TP_T", 
+                                      "TSS_S","TSS_T")
 
 # Text for conclusions. Use auto conclusion function or make your own text
-conclusions.DO <- con.auto(df=stns_param_summary, status_column="DO_S", trend_column="DO_T")
-conclusions.Ecoli <- con.auto(df=stns_param_summary, status_column="Ecoli_S", trend_column="Ecoli_T")
-conclusions.Entero <- con.auto(df=stns_param_summary, status_column="Entero_S", trend_column="Entero_T")
-conclusions.pH <- con.auto(df=stns_param_summary, status_column="pH_S", trend_column="pH_T")
-conclusions.Temp <- con.auto(df=stns_param_summary, status_column="Temp_S", trend_column="Temp_T")
-conclusions.TP <- con.auto(df=stns_param_summary, status_column="TP_S", trend_column="TP_T")
-conclusions.TSS <- con.auto(df=stns_param_summary, status_column="TSS_S", trend_column="TSS_T")
+conclusions.DO <- con.auto(df=stns_param_summary_tbl, status_column="DO_S", trend_column="DO_T")
+conclusions.Ecoli <- con.auto(df=stns_param_summary_tbl, status_column="Ecoli_S", trend_column="Ecoli_T")
+conclusions.Entero <- con.auto(df=stns_param_summary_tbl, status_column="Entero_S", trend_column="Entero_T")
+conclusions.pH <- con.auto(df=stns_param_summary_tbl, status_column="pH_S", trend_column="pH_T")
+conclusions.Temp <- con.auto(df=stns_param_summary_tbl, status_column="Temp_S", trend_column="Temp_T")
+conclusions.TP <- con.auto(df=stns_param_summary_tbl, status_column="TP_S", trend_column="TP_T")
+conclusions.TSS <- con.auto(df=stns_param_summary_tbl, status_column="TSS_S", trend_column="TSS_T")
 
 # Text for additional conclusions
-conclusions.add.txt <- c("The text for an additional conclusions goes here.",
-                         "The text for a second additional conclusions goes here.",
-                         "third, etc.")
+conclusions.add.txt <- c("Grab samples may not provide a complete characterization of water quality for parameters that fluctuate on a daily basis                              (e.g., DO and pH). For this reason continuous data are preferred and should be considered when monitoring these parameters                             in the future.",
+                         "This report is best used as a summary and statistical analysis of the status and trends in water quality data collected                               throughout the Southern Willamette Valley Agricultural Water Quality Management Area. Interpretation of results will require                          knowledge of local conditions known to affect the observed water quality conditions at individual sites.")
 
 # Put everything together into a dataframe
 conclusions.param.df <- data.frame(AgArea=rep(input$select,7),
