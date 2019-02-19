@@ -1958,3 +1958,194 @@ plot.TP<-function(new_data,
   g
 }
 
+plot.TP.UKL<-function(new_data,
+                  annual_target=0.11, 
+                  spring_target=0.03,
+                  sea_ken_table,
+                  plot_trend,
+                  analyte_column = 'Analyte',
+                  station_id_column = 'Station_ID',
+                  station_desc_column = 'Station_Description',
+                  datetime_column = 'Sampled',
+                  result_column = 'Result',
+                  datetime_format = '%Y-%m-%d %H:%M:%S',
+                  parm = 'Total Phosphorus (mg/l)') {
+  library(ggplot2)
+  library(chron)
+  
+  # Plot for TP stations on Upper Klamath Lake and Agency Lake for the
+  # Upper Klamath Lake Drainage TMDL TP targets
+  # 110 ug/l (0.11 mg/L) annual lake mean total phosphorus concentration
+  # 30 ug/l (0.03 mg/L) spring (March - May) lake mean total phosphorus concentration
+  
+  # testing
+  #new_data <- TP_evaluate
+  #sea_ken_table <- results_seaken
+  #plot_trend <-trend_logic
+  #selectWQSTP <- 0.07
+  #parm <- unique(mydata_sub$Analyte)
+  #analyte_column <- 'Analyte'
+  #station_id_column <- 'Station_ID'
+  #station_desc_column <- 'Station_Description'
+  #datetime_column <- 'Sampled'
+  #result_column <- 'Result'
+  #datetime_format <- '%Y-%m-%d %H:%M:%S'
+  
+  x.min <- min(new_data[, datetime_column])
+  x.max <- max(new_data[, datetime_column]) 
+  x.lim <- c(x.min, x.max)
+  title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
+                  min(new_data[, station_id_column]))
+  x.lab <- "Date"
+  y.lab <- paste(parm, '(mg/L)')
+  
+  y.min <- floor(min(new_data[, result_column])) 
+  
+
+  if(max(new_data$Result) < annual_target) {
+    y.max<-ceiling(as.numeric(annual_target) + 0.1)
+  } else {
+    y.max <- ceiling(max(new_data[, result_column]))
+  }
+
+  
+  y.lim <- c(y.min, y.max)
+  y.median <- median(new_data[, result_column])
+  slope <- suppressWarnings(
+    as.numeric(
+      sea_ken_table[sea_ken_table$Station_ID == 
+                      unique(new_data[, station_id_column]) & 
+                      sea_ken_table$analyte == 
+                      unique(new_data[, analyte_column]), 'slope']
+    )
+  )
+  p.value <- suppressWarnings(
+    as.numeric(
+      sea_ken_table[sea_ken_table$Station_ID == 
+                      unique(new_data[,station_id_column]) & 
+                      sea_ken_table$analyte == 
+                      unique(new_data[,analyte_column]),'pvalue']
+    )
+  )
+  p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
+                                   unique(new_data[,station_id_column]) & 
+                                   sea_ken_table$analyte == 
+                                   unique(new_data[,analyte_column]),'signif']
+  median <- sea_ken_table[sea_ken_table$Station_ID == 
+                            unique(new_data[,station_id_column]) & 
+                            sea_ken_table$analyte == 
+                            unique(new_data[,analyte_column]),'median']
+  x.delta <- as.numeric((x.max-x.min)/2)####average date
+  SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
+  SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
+  sub.text <- paste0("p value = " ,
+                     round(p.value, digits=3),
+                     ", ",  
+                     p.value.label, 
+                     ", slope = ", 
+                     round(slope, digits=2), 
+                     ", n = ", 
+                     nrow(new_data),
+                     ", median = ", 
+                     median)
+  
+  df_trend_line <- data.frame(x = c(x.min, x.max),
+                              y = c(SK.min, SK.max),
+                              variable = rep('Trend line', 2))
+  
+  d<-data.frame(x = c(x.min, x.max), y = rep(annual_target, 2),
+                variable = rep("Annual Mean Target", 2))
+  
+  d2<-data.frame(x = c(x.min, x.max), y = rep(spring_target, 2),
+                variable = rep("March-May Mean Target", 2))
+  
+  elem_text <- element_text(face = 'bold')
+  
+  # TMDL Target
+  g <- ggplot(data = new_data, aes(x = Sampled, y = Result, color = exceed)) +
+    geom_point() +
+    geom_line(aes(x = x, y = y, color = variable), linetype= 'dashed', data = d) +
+    geom_line(aes(x = x, y = y, color = variable), linetype= 'dashed', data = d2) +
+    xlim(x.lim) +
+    ylim(y.lim) +
+    ggtitle(bquote(atop(.(title), atop(paste(.(sub.text)))))) +
+    theme(axis.title = elem_text,
+          plot.title = element_text(vjust=1.5, face="bold", size = 10),
+          legend.position = "top",
+          legend.title = element_blank(),
+          legend.direction = 'horizontal',
+          legend.key = element_rect(color="white", fill = "white"),
+          panel.background = element_rect(fill = "white"),
+          panel.grid.major = element_line(color="grey"),
+          panel.border = element_rect(color="grey",fill=NA),
+          axis.line = element_line(size = 1, color = "black"),
+          axis.text = element_text(color = "black"),
+          axis.ticks=element_blank()) +
+    xlab(x.lab) +
+    ylab(y.lab) 
+    
+  # trend line 
+  if (plot_trend & !is.na(p.value)) {
+    g <- g + geom_line(aes(x = x, y = y, color = variable), data = df_trend_line)  
+  }
+  
+  if (plot_trend & !is.na(p.value)) {
+    # trend line
+    if ('Exceeds' %in% unique(new_data$exceed)) { 
+      # with exceedances
+      meet<-new_data %>% filter(exceed == 'Meets') 
+      if (nrow(meet) < 1) {
+        # Trend + All Exceed
+        g <-g + scale_color_manual("", values = c('red','black', 'blue'),
+                                   labels = c('Exceeds', 'Annual Mean Target', 'March-May Mean Target', 'Trend line'),
+                                   guide = guide_legend(override.aes = list(
+                                     linetype = c('blank','dashed','dashed', 'solid'),
+                                     shape=c(16,NA,NA,NA)))) 
+      } else {
+        # Trend + Exceeds + Meets
+        g <- g + scale_color_manual("", values = c('red', 'black', 'black', 'blue'),
+                                    labels = c('Exceeds', 'Meets', 'Annual Mean Target', 'March-May Mean Target','Trend line'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'blank','dashed', 'dashed','solid'),
+                                      shape=c(16,16,NA,NA,NA))))
+      }
+    } else { 
+
+        # Trend, TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'blue', 'black'),
+                                    labels = c('Meets', 'Annual Mean Target','March-May Mean Target', 'Trend line'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank','dashed','dashed','solid'),
+                                      shape=c(16,NA,NA,NA))))
+    }
+  } else {
+    # No Trend
+    if ('Exceeds' %in% unique(new_data$exceed)) {
+      meet<-new_data %>% filter(exceed == 'Meets')
+      if(nrow(meet) < 1) {
+        # No Trend,  All Exceed
+        g <-g + scale_color_manual("", values = c('red', 'black'),
+                                   labels = c('Exceeds','Annual Mean Target', 'March-May Mean Target'),
+                                   guide = guide_legend(override.aes = list(
+                                     linetype = c('blank','dashed','dashed'),
+                                     shape=c(16,NA,NA))))
+      } else {
+        # No Trend, Meets + Exceeds
+        g <- g + scale_color_manual("", values = c('red', 'black', 'black'),
+                                    labels = c('Exceeds', 'Meets', 'Annual Mean Target', 'March-May Mean Target'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'blank', 'dashed', 'dashed'),
+                                      shape=c(16,16,NA,NA))))
+      }
+    } else {
+        # No Trend, TMDL Target, All Meet
+        g <- g + scale_color_manual("", values = c('black', 'black'),
+                                    labels = c('Meets', 'Annual Mean Target', 'March-May Mean Target'),
+                                    guide = guide_legend(override.aes = list(
+                                      linetype = c('blank', 'dashed', 'dashed'),
+                                      shape=c(16,NA,NA))))
+    }
+  }
+  g
+}
+
