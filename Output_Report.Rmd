@@ -363,17 +363,16 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
 
 ```{r Create-other-dataframes}
 
-if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen", 'Total Phosphorus') %in% df.all$Analyte)) {
+if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen") %in% df.all$Analyte)) {
   seaken_other <- run_seaKen(filter(df.all, Analyte %in% c('pH', 
                                                            'E. Coli', 
                                                            "Enterococcus", 
-                                                           "Dissolved Oxygen", 
-                                                           'Total Phosphorus')))
+                                                           "Dissolved Oxygen"
+                                                           )))
 } else {seaken_other <- data.frame()}
 
 if(NROW(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass")) > 0) {
-  seaken_temp <- run_seaKen(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass"))
-} else {seaken_temp <- data.frame()}
+  seaken_temp <- run_seaKen(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass"))} else {seaken_temp <- data.frame()}
 
 
 if(NROW(dplyr::filter(df.all, Analyte == "Total Suspended Solids")) > 0) {
@@ -383,7 +382,6 @@ if(NROW(dplyr::filter(df.all, Analyte == "Total Suspended Solids")) > 0) {
     
     seaken_tss <- df.all %>%
       filter(Analyte == "Total Suspended Solids") %>%
-      filter(month(Sampled) %in% (5:9)) %>%
       mutate(Sampled=floor_date(Sampled, "month")) %>%
       group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled) %>%
       summarize(Result=mean(Result)) %>%
@@ -397,7 +395,26 @@ if(NROW(dplyr::filter(df.all, Analyte == "Total Suspended Solids")) > 0) {
   seaken_tss <- data.frame()
 }
 
-SeaKen <- rbind(seaken_other, seaken_temp, seaken_tss)
+if(NROW(dplyr::filter(df.all, Analyte == 'Total Phosphorus')) > 0) {
+  
+  if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
+    # Snake River - Hells Canyon TMDL
+    # TMDL target applies during the growing season May - September
+    
+    seaken_tp <- df.all %>%
+      filter(Analyte == 'Total Phosphorus' & month(new_data$Sampled) >= 5 & month(new_data$Sampled) <=9) %>%
+      as.data.frame() %>%
+      run_seaKen()
+    
+  } else {
+    # Other Area
+    seaken_tp <- run_seaKen(filter(df.all, Analyte %in% c('Total Phosphorus')))
+  } 
+} else {
+  seaken_tp <- data.frame()
+}
+
+SeaKen <- rbind(seaken_other, seaken_temp, seaken_tss, seaken_tp)
 
 status_years <- seq(year(floor_date(ymd(input$dates[2]) - years(2), unit="year")), 
                     year(ymd(input$dates[2])), by = 1)
