@@ -1020,15 +1020,13 @@ EvaluateTSSWQS<-function(new_data,
 
 EvaluateTSS_SRHC<-function(new_data, TSS_target=50) {
   # function to evaluate monthly mean 50 mg/L TSS target in Snake River Hells Canyon Sediment TMDL
-  # applies during the growing season May - September
-  
+
   new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
   new_data$Sampled<-as.Date(new_data$Sampled)
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   new_data <- new_data %>%
     mutate(Sampled=floor_date(Sampled, "month")) %>%
-    filter(month(Sampled) %in% (5:9)) %>%
     group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled, year) %>%
     summarize(Result=mean(Result)) %>%
     as.data.frame()
@@ -1079,7 +1077,7 @@ EvaluateTPWQS<-function(new_data,
   
 }
 
-EvaluateTP_SRHC<-function(new_data, selectWQSTP) {
+EvaluateTP_SRHC<-function(new_data, selectWQSTP=0.07) {
   
   # function to evaluate May - Sept 0.07 mg/L TP target in Snake Hells Canyon Nutrient TMDL
   # applies during the growing season May - September
