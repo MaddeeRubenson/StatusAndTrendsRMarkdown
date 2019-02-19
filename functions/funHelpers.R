@@ -1104,6 +1104,82 @@ EvaluateTP_SRHC<-function(new_data, selectWQSTP=0.07) {
   
 }
 
+EvaluateTP_UKL_lake <-function(new_data, annual_target=0.11, spring_target=0.03) {
+  
+  # function to evaluate UKL and Agency Lake TP targets in Upper Klamath Lake Drainage TMDL
+  # 110 µg/l (0.11 mg/L)annual lake mean total phosphorus concentration
+  # 30 µg/l (0.03 mg/L) spring (March - May) lake mean total phosphorus concentration
+
+  new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
+  new_data$Sampled<-as.Date(new_data$Sampled)
+  new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
+  
+  # 110 µg/l annual lake mean total phosphorus concentration
+  new_data_annual <- new_data %>%
+    mutate(Sampled=floor_date(Sampled, "year")) %>%
+    group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled, year) %>%
+    summarize(Result=mean(Result)) %>%
+    as.data.frame()
+  
+  # 30 µg/l spring (March - May) lake mean total phosphorus concentration
+  new_data_spring <- new_data %>%
+    filter(month(new_data$Sampled) >= 3 & month(new_data$Sampled) <=5) %>%
+    mutate(Sampled=ymd(paste0(year(Sampled),"-","04-01"))) %>%
+    group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled, year) %>%
+    summarize(Result=mean(Result)) %>%
+    as.data.frame()
+  
+  new_data_annual$exceed<- ifelse(new_data_annual$Result > annual_target, "Exceeds", "Meets")
+  new_data_spring$exceed<- ifelse(new_data_spring$Result > spring_target, "Exceeds", "Meets")
+  
+  new_data <- rbind(new_data_annual, new_data_spring)
+
+  exc<-new_data%>%
+    filter(exceed == "Exceeds")
+  
+  ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
+                      "Station_Description" = (unique(new_data$Station_Description)),
+                      "Min_Date" = min(new_data$year),
+                      "Max_Date" = max(new_data$year),
+                      "Obs" = c(nrow(new_data)),
+                      "Exceedances" = c(nrow(exc)))
+  
+  attr(new_data, "ex_df") <-ex_df
+  return(new_data)
+}
+
+EvaluateTP_UKL_inflows <-function(new_data, annual_target=0.11) {
+  
+  # function to evaluate TP targets for inflow in Upper Klamath Lake Drainage TMDL
+  # 66 µg/l (0.066 mg/L) annual mean total phosphorus concentration from all inflows to the lake
+  
+  new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
+  new_data$Sampled<-as.Date(new_data$Sampled)
+  new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
+  
+  new_data <- new_data %>%
+    mutate(Sampled=floor_date(Sampled, "year")) %>%
+    group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled, year) %>%
+    summarize(Result=mean(Result)) %>%
+    as.data.frame()
+  
+  new_data$exceed<- ifelse(new_data_annual$Result > annual_target, "Exceeds", "Meets")
+  
+  exc<-new_data%>%
+    filter(exceed == "Exceeds")
+  
+  ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
+                      "Station_Description" = (unique(new_data$Station_Description)),
+                      "Min_Date" = min(new_data$year),
+                      "Max_Date" = max(new_data$year),
+                      "Obs" = c(nrow(new_data)),
+                      "Exceedances" = c(nrow(exc)))
+  
+  attr(new_data, "ex_df") <-ex_df
+  return(new_data)
+}
+
+
 generate_exceed_df <- function(new_data, 
                                df.all,
                                parm, 
