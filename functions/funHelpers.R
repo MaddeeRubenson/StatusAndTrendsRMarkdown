@@ -299,6 +299,30 @@ extract_303d <- function (df.all, wq_limited, selectedPlanArea) {
   return(wq_limited)
 }
 
+status_stns <- function(data, status_years = c((as.numeric(format(Sys.Date(), "%Y"))-2):format(Sys.Date(), "%Y"))) {
+  
+  data$Sampled <- as.POSIXct(strptime(dta$Sampled, format = '%Y-%m-%d')) 
+  data$year <- lubridate::year(data$Sampled)
+  
+  if(any(unique(data$year) %in% status_years)){
+    status_check <- data %>%
+      filter(year %in% status_years) %>%
+      dplyr::group_by(Station_ID, Analyte) %>%
+      dplyr::summarise(n_years = length(unique(year))) %>%
+      filter(n_years>=2)
+    
+    print(paste("Data should be sufficient for", NROW(status_check), "different statuses to be determined."))
+    
+  } else {
+    status_check <- data %>%
+      filter(year %in% status_years) %>%
+      dplyr::group_by(Station_ID, Analyte) %>%
+      dplyr::summarise(n_years = length(unique(year)))
+    print("No stations meet Status criteria")
+  }
+  return(status_check)
+}
+
 Stations_Status <- function(df.all, status.years) {
   # Generatures a dataframe with the number of observations per year for 
   # monitoring stations that fit the criteria to assess status
@@ -366,33 +390,51 @@ Stations_Trend<-function(df.all, SeaKen){
   require(dplyr)
   
   dta <- df.all
-  lstoutput <- list()
+  # lstoutput <- list()
   
   dta$Sampled <- as.POSIXct(strptime(dta$Sampled, format = '%Y-%m-%d')) 
   dta$Sampled<-as.Date(dta$Sampled)
   dta$year<-as.numeric(format(dta$Sampled, format="%Y"))
   
-  trend_pass <- SeaKen %>%
-    filter(signif != 'Insufficient data for trend analysis')
   
-  for (i in 1:nrow(trend_pass)) {
-    
-    lstoutput[[i]] <- dta %>% 
-      dplyr::filter(Analyte == trend_pass$analyte[i], Station_ID == trend_pass$Station_ID[i]) %>%
-      dplyr::group_by(Station_ID, Analyte, year) %>% 
-      dplyr::summarise(n = n()) %>% 
-      spread(year, n) %>%
-      as.data.frame()
-  }
+  # trend_pass <- SeaKen %>%
+  #   filter(signif != 'Insufficient data for trend analysis')
   
-  trend <- rbind.fill(lstoutput)
+  # trend_stations <- unique(df.all$Station_ID)
+  # 
+  #     for (i in trend_stations) {
+  # 
+  #       lstoutput[[i]] <- dta %>%
+  #         dplyr::filter(Analyte == trend_pass$analyte[i], Station_ID == trend_pass$Station_ID[i]) %>%
+  #         dplyr::group_by(Station_ID, Analyte, year) %>%
+  #         dplyr::summarise(n = n()) %>%
+  #         spread(year, n) %>%
+  #         as.data.frame()
+  #     }
   
-  if(length(trend) == 0){
-    
-    trend <-'No Stations Meet Trend Criteria'
-  }
+  dta <- dta %>% dplyr::group_by(Station_ID, Analyte, year) %>% dplyr::summarise(n = n()) %>% spread(year, n)
   
-  return(trend)
+  return(dta)
+  
+  # if (nrow(trend_pass > 0)){
+  #   for (i in 1:nrow(trend_pass)) {
+  #     
+  #     lstoutput[[i]] <- dta %>% 
+  #       dplyr::filter(Analyte == trend_pass$analyte[i], Station_ID == trend_pass$Station_ID[i]) %>%
+  #       dplyr::group_by(Station_ID, Analyte, year) %>% 
+  #       dplyr::summarise(n = n()) %>% 
+  #       spread(year, n) %>%
+  #       as.data.frame()
+  #   }
+  
+  # trend <- rbind.fill(lstoutput)
+  # 
+  # if(length(trend) == 0){
+  #   
+  #   trend <-'No Stations Meet Trend Criteria'
+  # }
+  # 
+  # return(trend)
 }
 
 Stations_by_Year <- function(df.all) {
