@@ -1,5 +1,5 @@
 ---
-title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report'
+title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Walker Stout Strategic Implementation Area Water Quality Status and Trends Report'
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
 date: January 2019
 output:
@@ -69,15 +69,16 @@ figs <- captioner(prefix="\nFigure")
 
 ```{r inputs}
 
-# agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
-# how it is named in the agwqma shapefile ('agwqma_all_shp').
+# sia, query_dates, and project_dir are different for every Report. Note 'sia' must be named exactly 
+# how it is named in the sia shapefile ('agwqma_all_shp').
 
-agwqma <- "Generic"
+sia <- "Walker Stout SIA"
+sia_huc8 <- c(17090005)
 query_dates <- c("2000-01-01", "2018-12-31")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/Generic"
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/SIAs/2019-SIA-Walker-Stout"
 
 # Set to TRUE if knitting a word document
-word_output <- TRUE
+word_output <- FALSE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
 split_param_summary <- FALSE
@@ -88,35 +89,35 @@ Rdata_dir <- paste0(project_dir,"/RData")
 GIS_dir <- paste0(project_dir,"/GIS")
 
 # Name of input map files
-landuse_map_file <- paste0(gsub(" ", "_", agwqma), "_landuse_map.png")
-station_map_file <- paste0(gsub(" ", "_", agwqma), "_station_map.png")
+landuse_map_file <- paste0(gsub(" ", "_", sia), "_landuse_map.png")
+station_map_file <- paste0(gsub(" ", "_", sia), "_station_map.png")
 
-station_summary_map1_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map1.png")
-station_summary_map2_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map2.png")
+station_summary_map1_file <- paste0(gsub(" ", "_", sia), "_station_summary_map1.png")
+station_summary_map2_file <- paste0(gsub(" ", "_", sia), "_station_summary_map2.png")
 
-station_summary_map_DO_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_DO.png")
-station_summary_map_pH_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_pH.png")
-station_summary_map_temp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_temp.png")
-station_summary_map_ecoli_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_ecoli.png")
-station_summary_map_entero_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_entero.png")
-station_summary_map_tss_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_tss.png")
-station_summary_map_tp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_tp.png")
+station_summary_map_DO_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_DO.png")
+station_summary_map_pH_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_pH.png")
+station_summary_map_temp_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_temp.png")
+station_summary_map_ecoli_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_ecoli.png")
+station_summary_map_entero_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_entero.png")
+station_summary_map_tss_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_tss.png")
+station_summary_map_tp_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_tp.png")
 
 # Name of output files
-df_all_raw_file <- paste0(gsub(" ", "_", agwqma), "_df_all_raw_",paste(query_dates, collapse = "."), ".Rdata")
-df_all_clean_file <- paste0(gsub(" ", "_", agwqma), "_df_all_clean_",paste(query_dates, collapse = "."), ".Rdata")
-duplicates_file <- paste0(gsub(" ", "_", agwqma), "_duplicates_",paste(query_dates, collapse = "."), ".Rdata")
-landuse_file <- paste0(gsub(" ", "_", agwqma), "_landuse.Rdata")
-stns_file <- paste0(gsub(" ", "_", agwqma), "_stns.Rdata")
-status_file <- paste0(gsub(" ", "_", agwqma), "_status.Rdata")
-trend_file <- paste0(gsub(" ", "_", agwqma), "_trend.Rdata")
-stns_param_summary_file <- paste0(gsub(" ", "_", agwqma), "_station_param_summary.Rdata")
+df_all_raw_file <- paste0(gsub(" ", "_", sia), "_df_all_raw_",paste(query_dates, collapse = "."), ".Rdata")
+df_all_clean_file <- paste0(gsub(" ", "_", sia), "_df_all_clean_",paste(query_dates, collapse = "."), ".Rdata")
+duplicates_file <- paste0(gsub(" ", "_", sia), "_duplicates_",paste(query_dates, collapse = "."), ".Rdata")
+landuse_file <- paste0(gsub(" ", "_", sia), "_landuse.Rdata")
+stns_file <- paste0(gsub(" ", "_", sia), "_stns.Rdata")
+status_file <- paste0(gsub(" ", "_", sia), "_status.Rdata")
+trend_file <- paste0(gsub(" ", "_", sia), "_trend.Rdata")
+stns_param_summary_file <- paste0(gsub(" ", "_", sia), "_station_param_summary.Rdata")
 
 # Sets up checks for Executive Summary generation
 Executive_Summary_check <- Reduce("&", file.exists(paste0(Rdata_dir,"/", landuse_file), paste0(Rdata_dir,"/", stns_param_summary_file)))
 
 input <- list(action_button = c(0))
-input$select <- agwqma
+input$select <- sia
 input$dates <- query_dates
 input$parms <- c('Total Phosphorus',
                  'Total Suspended Solids',
@@ -162,8 +163,9 @@ lu_parms <- read.csv('Lookups/WQP_Table3040_Names.csv', stringsAsFactors = FALSE
 ph_crit <- merge(ph_crit, HUClist, by.x = 'plan_name', by.y = 'PlanName', all.x = TRUE)
 
 # import GIS features
-agwqma_all_shp <- readOGR(dsn = support_files_dir, layer = 'ODA_AgWQMA', integer64="warn.loss", verbose = FALSE)
-agwqma_shp <- agwqma_all_shp[agwqma_all_shp$PlanName == agwqma,]
+# SIA area shp
+sia_shp <- readOGR(dsn = GIS_dir, layer = 'WalkerStout_SIA', integer64="warn.loss", verbose = FALSE)
+
 tribal_lands_shp <- readOGR(dsn = support_files_dir, layer = 'tl_2017_or_aiannh', integer64="warn.loss", verbose = FALSE)
 wql_streams_shp <- readOGR(dsn = support_files_dir, layer = 'WQL_Streams_2012', integer64="warn.loss", verbose = FALSE)
 wql_streams_shp <- spTransform(wql_streams_shp, CRS("+proj=longlat +datum=NAD83"))
@@ -188,8 +190,8 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
 } else {
   
-  AWQMS_Data <- AWQMS_Query(planArea = agwqma,
-                            area.Shp = agwqma_shp,
+  AWQMS_Data <- AWQMS_Query(HUC8 = sia_huc8,
+                            area.Shp = sia_shp,
                             inParms = input$parms,
                             luParms = lu_parms,
                             startDate = min(input$dates),
@@ -219,23 +221,24 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # remove data collected on tribal nation land or tribal trust land
   df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands_shp, outside=TRUE),]
   
+  # clip to SIA
+  df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, sia_shp, outside=FALSE),]
   
-  # remove stations outside the agwqma
-  df.all <- clipToPlanArea(df.all, agwqma_all_shp, input$select)
-
+  
   # Convert AWQMS analyte names to existing code language
   df.all[grep('Dissolved oxygen', df.all$Analyte),]$Analyte <- 'Dissolved Oxygen'
   df.all[grep('Phosphorus', df.all$Analyte),]$Analyte <- 'Total Phosphorus'
   df.all[grep('Total suspended solids', df.all$Analyte),]$Analyte <- 'Total Suspended Solids'
-  
+  df.all[grep('Temperature, water', df.all$Analyte),]$Analyte <- 'Temperature'
+
   # Remove all Dissolved Oxygen summary statistics from analysis except for 'minimum' 
   df.all <- df.all %>% filter(!(Analyte == "Dissolved Oxygen" & Statistical_Base %in% c('7DADM', 'Maximum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
   
   # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
   # The Station ID will be named the same as LASAR
-  df.all$Station_ID <- gsub("OREGONDEQ-", "", df.all$Station_ID)
+  #df.all$Station_ID <- gsub("OREGONDEQ-", "", df.all$Station_ID)
   df.all$Station_ID <- gsub("-ORDEQ", "", df.all$Station_ID)
-  df.all$Station_ID <- gsub("21ORBCH-", "", df.all$Station_ID)
+  #df.all$Station_ID <- gsub("21ORBCH-", "", df.all$Station_ID)
   
   # Reconcile Stations with the same ID but have different Lat/Longs 
   df.all <- remove_stn_dups(df.all)
@@ -276,7 +279,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
   # Create a vector of stations where the Enterococcus criterion apply
   df.temp.ent2 <- (Ben_use_LU[!is.na(Ben_use_LU$bacteria_use),]) 
-  df.temp.ent2 <- unique(df.temp.ent2[(df.temp.ent2$AgArea == agwqma &  grepl("Coastal Contact Recreation",
+  df.temp.ent2 <- unique(df.temp.ent2[(df.temp.ent2$AgArea == sia &  grepl("Coastal Contact Recreation",
                                                                               df.temp.ent2$bacteria_use)), c("Station_ID")])
   
   if(!identical(df.temp.ent2, character(0))) {
@@ -355,7 +358,6 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   }
 
   save(df.all, file=paste0(Rdata_dir,"/",df_all_clean_file))
-  # save(df.all, file=paste0(Rdata_dir,"/", gsub(" ", "_", agwqma), "_df_all_clean_",paste(query_dates, collapse = "."), "_old.Rdata"))
   
 }
 
@@ -419,7 +421,8 @@ SeaKen <- rbind(seaken_other, seaken_temp, seaken_tss, seaken_tp)
 status_years <- seq(year(floor_date(ymd(input$dates[2]) - years(2), unit="year")), 
                     year(ymd(input$dates[2])), by = 1)
 
-status <- Stations_Status(df.all, status.years=status_years)
+# status <- Stations_Status(df.all, status.years=status_years)
+status <- status_stns(df.all)
 trend <- Stations_Trend(df.all, SeaKen=SeaKen)
 
 stns_by_year <- Stations_by_Year(df.all)
@@ -563,7 +566,7 @@ knitr::kable(station_summary_tbl, digits = 0, padding = 2, row.names = FALSE, ca
 The map in `r figs("stationsmap", display="cite")` shows the general location of monitoring stations that fit the status and/or trend data requirements along with the distribution of federal and non-federal lands. 
 
 
-```{r stations-map-word, eval = word_output, results = "asis", fig.cap=figs(name="stationsmap", caption=paste0("Monitoring station locations within the ", agwqma, " Agricultural Water Quality Management Area."))}
+```{r stations-map-word, eval = word_output, results = "asis", fig.cap=figs(name="stationsmap", caption=paste0("Monitoring station locations within the ", sia, " Agricultural Water Quality Management Area."))}
 
 knitr::include_graphics(path = paste0("Figures/", station_map_file))
 
@@ -573,19 +576,19 @@ knitr::include_graphics(path = paste0("Figures/", station_map_file))
 
 The map in `r figs("landusemap", display="cite")` shows station location in relation to the 2011 national land cover dataset (Homer et al. 2015).
 
-```{r landuse-map-word, eval = word_output, results = "asis", fig.cap=figs(name="landusemap", caption=paste0("Land use and land cover within the ", agwqma, " Agricultural Water Quality Management Area."))}
+```{r landuse-map-word, eval = word_output, results = "asis", fig.cap=figs(name="landusemap", caption=paste0("Land use and land cover within the ", sia, " Agricultural Water Quality Management Area."))}
 
 knitr::include_graphics(path = paste0("Figures/", landuse_map_file))
 
 ```
 
 
-```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=8.5, fig.height=7, fig.cap=figs(name="landusemap", caption=paste0("Land use and land cover within the ", agwqma, " Agricultural Water Quality Management Area."))}
+```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=8.5, fig.height=7, fig.cap=figs(name="landusemap", caption=paste0("Land use and land cover within the ", sia, " Agricultural Water Quality Management Area."))}
 
-agwqma_shp <-spTransform(agwqma_shp, CRS("+proj=longlat +datum=NAD83"))
+sia_shp <-spTransform(sia_shp, CRS("+proj=longlat +datum=NAD83"))
 
-map <- leaflet(agwqma_shp) %>%
-  addPolygons(fill=FALSE, group = "AgWQMA") %>%
+map <- leaflet(sia_shp) %>%
+  addPolygons(fill=FALSE, group = "SIA") %>%
   addTiles() %>%
   addMarkers(data = all.sp, 
              lng = all.sp@coords[,1], 
@@ -637,7 +640,7 @@ map <- leaflet(agwqma_shp) %>%
   addEasyButton(easyButton(
     icon = "fa-globe",
     onClick = JS("function(btn, map){
-                var groupLayer = map.layerManager.getLayerGroup('AgWQMA');
+                var groupLayer = map.layerManager.getLayerGroup('SIA');
                 map.fitBounds(groupLayer.getBounds());
                  }")))
 map
@@ -885,7 +888,7 @@ if(length(entero_stns) > 0) {
                               caption = "_Enterococcus_ status. If sufficient data exists to calculate the geometric mean, it is included in this table."))
 }  else {
   
-  cat(paste0("A status and trend assessment was not made for *Enterococcus* because the marine water contact recreation use criteria do not apply in the ",agwqma,".")) 
+  cat(paste0("A status and trend assessment was not made for *Enterococcus* because the marine water contact recreation use criteria do not apply in the ",sia,".")) 
 } 
 
 ```
@@ -1619,15 +1622,15 @@ popupTable <- function(param){
 }
 
 
-agwqma_shp_buff <- gBuffer(agwqma_all_shp[agwqma_all_shp$PlanName == input$select,], width=500)
-agwqma_shp_buff <- spTransform(agwqma_shp_buff, CRS("+init=epsg:4326"))
-agwqma_shp <- spTransform(agwqma_shp, CRS("+init=epsg:4326"))
-wql_streams_shp <- spTransform(wql_streams_shp, proj4string(agwqma_shp_buff))
-wql_streams_clip <- raster::intersect(wql_streams_shp, agwqma_shp_buff)
+sia_shp_buff <- gBuffer(sia_shp, width=500)
+sia_shp_buff <- spTransform(sia_shp_buff, CRS("+init=epsg:4326"))
+sia_shp <- spTransform(sia_shp, CRS("+init=epsg:4326"))
+wql_streams_shp <- spTransform(wql_streams_shp, proj4string(sia_shp_buff))
+wql_streams_clip <- raster::intersect(wql_streams_shp, sia_shp_buff)
 
 lgnd <- base64enc::base64encode(paste0(project_dir, "/Figures/", "Parm_Summary_mapLegend.png"))
 
-leaflet(agwqma_shp) %>%
+leaflet(sia_shp) %>%
   addWMSTiles(GetURL("USGSTopo"),
               attribution = paste0("<a href='https://www.usgs.gov/'>",
                                    "U.S. Geological Survey</a> | ",
@@ -1640,7 +1643,7 @@ leaflet(agwqma_shp) %>%
               options = WMSTileOptions(format = "image/png",
                                        transparent = TRUE),
               layers = "0") %>%
-  addPolygons(fill=FALSE, group = "AgWQMA") %>%
+  addPolygons(fill=FALSE, group = "SIA") %>%
   addAwesomeMarkers(data = stns_param_summary,
                     lat = stns_param_summary$DECIMAL_LAT,
                     lng = stns_param_summary$DECIMAL_LONG,
@@ -1732,7 +1735,7 @@ leaflet(agwqma_shp) %>%
   addEasyButton(easyButton(
     icon = "fa-globe",
     onClick = JS("function(btn, map){
-                var groupLayer = map.layerManager.getLayerGroup('AgWQMA');
+                var groupLayer = map.layerManager.getLayerGroup('SIA');
                 map.fitBounds(groupLayer.getBounds());
                  }")))
 
