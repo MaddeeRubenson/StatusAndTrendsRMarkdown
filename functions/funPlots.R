@@ -5,14 +5,14 @@ plot.ph <- function(new_data,
                     station_id_column = 'Station_ID',
                     station_desc_column = 'Station_Description',
                     datetime_column = 'Sampled', 
-                    # datetime_format = '%Y-%m-%d %H:%M:%S', 
+                    # datetime_format = '%Y-%m-%d %H:%M:%S',
                     plot_trend = FALSE,
                     ph_crit_min = NULL,
                     ph_crit_max = NULL)
 {
   library(ggplot2)
  
-  # new_data[, datetime_column] <- as.POSIXct(strptime(new_data[, datetime_column], format = datetime_format))  
+  # new_data[, datetime_column] <- as.POSIXct(strptime(new_data[, datetime_column], format = datetime_format))
   
   x.min <- min(new_data[, datetime_column])
   x.max <- max(new_data[, datetime_column])
@@ -167,47 +167,52 @@ plot.Temperature <- function(new_data,
   }
   y.lim <- c(y.min,y.max)
   y.median <- median(new_data$Result)
-  slope <- suppressWarnings(
-    as.numeric(
-      sea_ken_table[sea_ken_table$Station_ID == 
-                      unique(new_data[, station_id_column]) & 
-                      sea_ken_table$analyte == 
-                      unique(new_data[, analyte_column]), 'slope']
-    )
-  )
-  median <- sea_ken_table[sea_ken_table$Station_ID == 
-                            unique(new_data[,station_id_column]) & 
-                            sea_ken_table$analyte == 
-                            unique(new_data[,analyte_column]),'median']
-  p.value <- suppressWarnings(
-    as.numeric(
-      sea_ken_table[sea_ken_table$Station_ID == 
-                      unique(new_data[,station_id_column]) & 
-                      sea_ken_table$analyte == 
-                      unique(new_data[,analyte_column]),'pvalue']
-    )
-  )
-  p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
-                                   unique(new_data[,station_id_column]) & 
-                                   sea_ken_table$analyte == 
-                                   unique(new_data[,analyte_column]),'signif']
-  x.delta <- as.numeric((x.max-x.min)/2)####average date
-  SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
-  SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
-  sub.text <- paste0("p value = " ,
-                     round(p.value, digits=3),
-                     ", ",  
-                     p.value.label, 
-                     ", slope = ", 
-                     round(slope, digits=2), 
-                     ", n = ", 
-                     nrow(new_data),
-                     ", median = ", 
-                     median)
   
-  df_trend_line <- data.frame(x = c(x.min, x.max),
-                              y = c(SK.min, SK.max),
-                              variable = rep('Trend line', 2))
+  if(plot_trend){
+    slope <- suppressWarnings(
+      as.numeric(
+        sea_ken_table[sea_ken_table$Station_ID == 
+                        unique(new_data[, station_id_column]) & 
+                        sea_ken_table$analyte == 
+                        unique(new_data[, analyte_column]), 'slope']
+      )
+    )
+    median <- sea_ken_table[sea_ken_table$Station_ID == 
+                              unique(new_data[,station_id_column]) & 
+                              sea_ken_table$analyte == 
+                              unique(new_data[,analyte_column]),'median']
+    p.value <- suppressWarnings(
+      as.numeric(
+        sea_ken_table[sea_ken_table$Station_ID == 
+                        unique(new_data[,station_id_column]) & 
+                        sea_ken_table$analyte == 
+                        unique(new_data[,analyte_column]),'pvalue']
+      )
+    )
+    p.value.label <- sea_ken_table[sea_ken_table$Station_ID == 
+                                     unique(new_data[,station_id_column]) & 
+                                     sea_ken_table$analyte == 
+                                     unique(new_data[,analyte_column]),'signif']
+    x.delta <- as.numeric((x.max-x.min)/2)####average date
+    SK.min <- y.median - x.delta*slope/365.25#minimum y value for line
+    SK.max <- y.median + x.delta*slope/365.25#maximum y value for line
+    sub.text <- paste0("p value = " ,
+                       round(p.value, digits=3),
+                       ", ",  
+                       p.value.label, 
+                       ", slope = ", 
+                       round(slope, digits=2), 
+                       ", n = ", 
+                       nrow(new_data),
+                       ", median = ", 
+                       median)
+    
+    df_trend_line <- data.frame(x = c(x.min, x.max),
+                                y = c(SK.min, SK.max),
+                                variable = rep('Trend line', 2))
+  } else {
+    sub.text <- paste0("n = ", nrow(new_data))
+  }
   
   title <- paste0(min(new_data[, station_desc_column]), ", ID = ",
                   min(new_data[, station_id_column]))
@@ -394,7 +399,7 @@ plot.Temperature <- function(new_data,
           g <- g + geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, linetype = "Non-spawning", color = 'Non-spawning'),
                                 data = df
                                 # , inherit.aes = FALSE
-          ) 
+          )
         }
       } else {
         spn_stop <- spn_index[which(spn_diff > 1)]
