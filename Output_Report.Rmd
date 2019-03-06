@@ -1,18 +1,18 @@
 ---
 title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Klamath Headwaters Agricultural Water Quality Management Area Water Quality Status and Trends Report'
 subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
-date: December 2018
+date: March 2019
 output:
-  word_document:
-    fig_caption: yes
-    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
-    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
+  word_document:
+    fig_caption: yes
+    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+    toc: yes
 always_allow_html: yes
 ---
 
@@ -73,14 +73,14 @@ figs <- captioner(prefix="\nFigure")
 # how it is named in the agwqma shapefile ('agwqma_all_shp').
 
 agwqma <- "Klamath Headwaters"
-query_dates <- c("2000-01-01", "2018-11-01")
+query_dates <- c("2000-01-01", "2018-12-01")
 project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Klamath Headwaters/2018-Klamath-Headwaters"
 
 # Set to TRUE if knitting a word document
-word_output <- TRUE
+word_output <- FALSE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
-split_param_summary <- FALSE
+split_param_summary <- TRUE
 
 # Everything below here should not change
 support_files_dir <- "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files"
@@ -111,6 +111,9 @@ stns_file <- paste0(gsub(" ", "_", agwqma), "_stns.Rdata")
 status_file <- paste0(gsub(" ", "_", agwqma), "_status.Rdata")
 trend_file <- paste0(gsub(" ", "_", agwqma), "_trend.Rdata")
 stns_param_summary_file <- paste0(gsub(" ", "_", agwqma), "_station_param_summary.Rdata")
+
+# Sets up checks for Executive Summary generation
+Executive_Summary_check <- Reduce("&", file.exists(paste0(Rdata_dir,"/", landuse_file), paste0(Rdata_dir,"/", stns_param_summary_file)))
 
 input <- list(action_button = c(0))
 input$select <- agwqma
@@ -453,19 +456,9 @@ save(trend, file = paste0(Rdata_dir,"/", trend_file))
 ```
 
 
-```{r exec-summary-placeholder}
-
-if (word_output) {
-  
-  tbls(name="tbl1_lu", display=FALSE)
-  tbls(name="tbl2_results_summary", display=FALSE)
-  figs(name="fig1_result_map1", display=FALSE)
-  figs(name="fig2_result_map2", display=FALSE)
-  tbls(name="tbl3_station_summary", display=FALSE)
-}
+```{r exec-summary, child='Exec_Summary_Child.Rmd', eval = Executive_Summary_check & word_output}
 
 ```
-
 
 # Introduction
 
@@ -757,11 +750,13 @@ if(nrow(SK) > 0) {
 
 ## _E. coli_
 
-```{r Ecoli, fig.height=6, fig.width=7, results='asis'}
+```{r Ecoli, fig.height=6, fig.width=7, results='asis', eval.after="fig.cap", fig.cap=mapply(figs, cap.names, ecoli_captions)}
 
 exc <- NULL
 ecoli_stns <- NULL
 ecoli <- NULL
+cap.names <- list()
+ecoli_captions <- list()
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   ecoli_trend <- trend %>%
@@ -806,9 +801,9 @@ if(length(ecoli_stns) > 0) {
                        parm = unique(new_data$Analyte))
     
     print(b)
-    cat(figs(name = paste0('E_', ecoli_stns[j]), caption = paste0('Station ', ecoli_stns[j], ' _E. coli_ water quality status and/or trends.')))
+    ecoli_captions[[j]] <- paste0('Station ', ecoli_stns[j], ' _E. coli_ water quality status and/or trends.')
+    cap.names[[j]] <- paste0("ecoli.",ecoli_stns[j])
     cat('\n\n')
-    
   }
   
   ecoli <- rbind.fill(ecoli_list[])
@@ -828,11 +823,13 @@ if(length(ecoli_stns) > 0) {
 
 ## _Enterococcus_ 
 
-```{r Enterococcus, fig.height=6, fig.width=7, results='asis'}
+```{r Enterococcus, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, entero_captions), eval.after="fig.cap"}
 
 exc <- NULL
 entero_stns <- NULL
 entero <- NULL
+cap.names <- list()
+entero_captions <- list()
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   entero_trend <- trend %>%
@@ -877,12 +874,12 @@ if(length(entero_stns) > 0) {
                        plot_log = FALSE,
                        parm = unique(new_data$Analyte))
     
-    entero_plots[[i]] <- b
+    entero_plots[[j]] <- b
     
-    print(entero_plots[[i]])
-    
-    cat(figs(name = paste0('Entero_', entero_stns[i]),
-             caption = paste0('Station ', entero_stns[i], ' _Enterococcus_ water quality status and/or trends.')))
+    print(entero_plots[[j]])
+
+    entero_captions[[j]] <- paste0('Station ', entero_stns[j], ' _Enterococcus_ water quality status and/or trends.')
+    cap.names[[j]] <- paste0("entero.",entero_stns[j])
     cat('\n\n')
     
   }
@@ -898,18 +895,20 @@ if(length(entero_stns) > 0) {
                               caption = "_Enterococcus_ status. If sufficient data exists to calculate the geometric mean, it is included in this table."))
 }  else {
   
-  cat(paste0("A status and trend assessment was not made for_Enterococcus_ because the marine water contact recreation use criteria do not apply in the ",agwqma,".")) 
+  cat(paste0("A status and trend assessment was not made for *Enterococcus* because the marine water contact recreation use criteria do not apply in the ",agwqma,".")) 
 } 
 
 ```
 
 ## Total Phosphorus
 
-```{r Total-Phosphorus, fig.height=6, fig.width=7, results='asis'}
+```{r Total-Phosphorus, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, tp_captions), eval.after="fig.cap"}
 
 exc <- NULL
 tp_stn <- NULL
 TP <- NULL
+cap.names <- list()
+tp_captions <- list()
 
 if(!(trend == "No Stations Meet Trend Criteria")) {
   tp_stn<-trend %>%
@@ -985,12 +984,10 @@ if(length(tp_stn) > 0) {
     tp_plots[[j]]<-b
     
     print(tp_plots[[j]])
-    cat(figs(name = paste0('TP_', tp_stn[j]), 
-             caption = paste0('Station ', tp_stn[j], 
-                              ' Total Phosphorus water quality status and/or trends.')))
+    
+    tp_captions[[j]] <- paste0('Station ', tp_stn[j], ' Total Phosphorus water quality status and/or trends.')
+    cap.names[[j]] <- paste0("tp.",tp_stn[j])
     cat('\n\n')
-    
-    
   }
   
   TP <- rbind.fill(TP_list[])
@@ -1012,11 +1009,13 @@ tp_exc <- exc
 
 ## Total Suspended Solids
 
-```{r TSS, results = 'asis', fig.width = 7, fig.height = 6}
+```{r TSS, results = 'asis', fig.width = 7, fig.height = 6, fig.cap=mapply(figs, cap.names, tss_captions), eval.after="fig.cap"}
 
 exc <- NULL
 tss_stn <- NULL
 TSS <- NULL
+cap.names <- list()
+tss_captions <- list()
 
 if(!(trend == "No Stations Meet Trend Criteria")) {
   tss_stn<-trend %>%
@@ -1094,12 +1093,11 @@ if(length(tss_stn) > 0){
     tss_plots[[j]]<-b
     
     print(tss_plots[[j]])
-    cat(figs(name = paste0('TSS_', tss_stn[j]), 
-             caption = paste0('Station ', tss_stn[j], 
-                              ' Total Suspended Solids water quality status and trends.')))
+
+    tss_captions[[j]] <- paste0('Station ', tss_stn[j], 
+                              ' Total Suspended Solids water quality status and trends.')
+    cap.names[[j]] <- paste0("tss.",tss_stn[j])
     cat('\n\n')
-    
-    
   }
   
   TSS<-rbind.fill(TSS_list[])
@@ -1121,11 +1119,13 @@ tss_exc <- exc
 
 ## pH
 
-```{r pH, fig.height=6, fig.width=7, results='asis'}
+```{r pH, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, pH_captions), eval.after="fig.cap"}
 
 exc <- NULL
 pH_stns <- NULL
 pH <- NULL
+cap.names <- list()
+pH_captions <- list()
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   pH_trend <- trend %>%
@@ -1201,12 +1201,10 @@ if(length(pH_stns) > 0) {
     pH_plots[[j]]<-b
     
     print(pH_plots[[j]])
-    
-    cat(figs(name = paste0('pH_', pH_stns[j]), 
-             caption = paste0('Station ', pH_stns[j],
-                              ' pH water quality status and/or trends.')))
+
+    pH_captions[[j]] <- paste0('Station ', pH_stns[j], ' pH water quality status and/or trends.')
+    cap.names[[j]] <- paste0("pH.",pH_stns[j])
     cat('\n\n')
-    
   }
   
   pH <-rbind.fill(pH_list[])
@@ -1228,11 +1226,13 @@ pH_exc <- exc
 
 ## Temperature
 
-```{r Temperature, fig.height=6, fig.width=7, results='asis'}
+```{r Temperature, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, temp_captions), eval.after="fig.cap"}
 
 exc <- NULL
 temp_stn <- NULL
 temp <- NULL
+cap.names <- list()
+temp_captions <- list()
 
 if(!(trend == "No Stations Meet Trend Criteria")) {
   temp_stn<-trend %>%
@@ -1241,7 +1241,7 @@ if(!(trend == "No Stations Meet Trend Criteria")) {
 }
 
 temp_stat<-status %>%
-  dplyr::filter(Analyte == "Temperatures")
+  dplyr::filter(Analyte == "Temperature")
 temp_stat <- c(as.character(unique(temp_stat$Station_ID)))
 
 if(!is.null(temp_stn)){
@@ -1252,6 +1252,13 @@ if(!is.null(temp_stn)){
 }
 
 if(length(temp_stn) > 0) {
+  
+  if(!any(temp_stn %in% Ben_use_LU$Station_ID)){
+    print("Before continuing, beneficial uses must be added for the following stations")
+    print(temp_stn[!temp_stn %in% Ben_use_LU$Station_ID])
+    View(stns[stns$Station_ID %in% temp_stn[!temp_stn %in% Ben_use_LU$Station_ID],])
+    break
+  }
   
   df.temp <- df.all[df.all$Analyte == 'Temperature',]
   results_seaken <-SeaKen %>% filter(analyte == 'Temperature')
@@ -1281,15 +1288,15 @@ if(length(temp_stn) > 0) {
     temp_list[[j]] <- temp_evaluate
     temp_exclist[[j]] <- temp_eval
     
-    trend_logic <-ifelse(grepl("Not Significant", 
+    trend_logic <-if(NROW(results_seaken[results_seaken$Station_ID == temp_stn[j],])>0){
+      ifelse(grepl("Not Significant", 
                                  results_seaken[results_seaken$Station_ID == temp_stn[j],'signif']), 
                            FALSE,
                            ifelse(grepl("Need at least 8 years", 
                                         results_seaken[results_seaken$Station_ID == temp_stn[j],'signif']),
                                   FALSE,
                                   TRUE))
-    
-
+    } else {FALSE}
     
     b <- plot.Temperature(new_data = temp_evaluate,
                           sea_ken_table = results_seaken,
@@ -1304,11 +1311,11 @@ if(length(temp_stn) > 0) {
     temp_plots[[j]]<-b
     
     print(temp_plots[[j]])
-    cat(figs(name = paste0('temp_', temp_stn[j]), 
-             caption = paste0('Station ', temp_stn[j], 
-                              ' Temperature water quality status and/or trends.')))
-    
-    
+
+    temp_captions[[j]] <- paste0('Station ', temp_stn[j], 
+                              ' Temperature water quality status and/or trends.')
+    cap.names[[j]] <- paste0("temp.",temp_stn[j])
+    cat("\n\n")
   }
   
   temp <- rbind.fill(temp_list[])
@@ -1334,11 +1341,13 @@ temp_exc <- exc
 
 ## Dissolved Oxygen
 
-```{r Dissolved-Oxygen, fig.height=6, fig.width=7, results='asis'}
+```{r Dissolved-Oxygen, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, DO_captions), eval.after="fig.cap"}
 
 exc <- NULL
 DO_stns <- NULL
 DO <- NULL
+cap.names <- list()
+DO_captions <- list()
 
 if(any(!(trend == "No Stations Meet Trend Criteria"))) {
   DO_trend <- trend %>%
@@ -1424,12 +1433,10 @@ if(length(DO_stns) > 0) {
     DO_plots[[j]]<-b
     
     print(DO_plots[[j]])
-    
-    cat(figs(name = paste0('DO_', DO_stns[j]), 
-             caption = paste0('Station ', DO_stns[j],
-                              ' Dissolved Oxygen water quality status and/or trends.')))
+
+    DO_captions[[j]] <- paste0('Station ', DO_stns[j], ' Dissolved Oxygen water quality status and/or trends.')
+    cap.names[[j]] <- paste0("DO.",DO_stns[j])
     cat('\n\n')
-    
   }
   
   DO <-rbind.fill(DO_list[])
@@ -1736,8 +1743,7 @@ leaflet(agwqma_shp) %>%
 
 ```{r conclusions-setup}
 
-colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
-                                  "DEC_LAT", "DEC_LONG",
+colnames(stns_param_summary_tbl) <- c("Station_ID", "Station_Description",      #BTD removed "DEC_LAT", "DEC_LONG", 
                                   "DO_S", "DO_T",
                                   "Ecoli_S", "Ecoli_T", 
                                   "Entero_S", "Entero_T",
@@ -1747,18 +1753,17 @@ colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
                                   "TSS_S","TSS_T")
 
 # Text for conclusions. Use auto conclusion function or make your own text
-conclusions.DO <- con.auto(df=stns_param_summary, status_column="DO_S", trend_column="DO_T")
-conclusions.Ecoli <- con.auto(df=stns_param_summary, status_column="Ecoli_S", trend_column="Ecoli_T")
-conclusions.Entero <- con.auto(df=stns_param_summary, status_column="Entero_S", trend_column="Entero_T")
-conclusions.pH <- con.auto(df=stns_param_summary, status_column="pH_S", trend_column="pH_T")
-conclusions.Temp <- con.auto(df=stns_param_summary, status_column="Temp_S", trend_column="Temp_T")
-conclusions.TP <- con.auto(df=stns_param_summary, status_column="TP_S", trend_column="TP_T")
-conclusions.TSS <- con.auto(df=stns_param_summary, status_column="TSS_S", trend_column="TSS_T")
+conclusions.DO <- con.auto(df=stns_param_summary_tbl, status_column="DO_S", trend_column="DO_T")
+conclusions.Ecoli <- con.auto(df=stns_param_summary_tbl, status_column="Ecoli_S", trend_column="Ecoli_T")
+conclusions.Entero <- con.auto(df=stns_param_summary_tbl, status_column="Entero_S", trend_column="Entero_T")
+conclusions.pH <- con.auto(df=stns_param_summary_tbl, status_column="pH_S", trend_column="pH_T")
+conclusions.Temp <- con.auto(df=stns_param_summary_tbl, status_column="Temp_S", trend_column="Temp_T")
+conclusions.TP <- con.auto(df=stns_param_summary_tbl, status_column="TP_S", trend_column="TP_T")
+conclusions.TSS <- con.auto(df=stns_param_summary_tbl, status_column="TSS_S", trend_column="TSS_T")
 
 # Text for additional conclusions
-conclusions.add.txt <- c("The text for an additional conclusions goes here.",
-                         "The text for a second additional conclusions goes here.",
-                         "third, etc.")
+conclusions.add.txt <- c("Grab samples may not provide a complete characterization of water quality for parameters that fluctuate on a daily basis                              (e.g., DO and pH). For this reason continuous data are preferred and should be considered when monitoring these parameters                            in the future.",
+                         "This report is best used as a summary and statistical analysis of the status and trends in water quality data collected                               throughout the Klamath Headwaters Agricultural Water Quality Management Area. Interpretation of results will require                                  knowledge of local conditions known to affect the observed water quality conditions at individual sites.")
 
 # Put everything together into a dataframe
 conclusions.param.df <- data.frame(AgArea=rep(input$select,7),
@@ -1790,16 +1795,16 @@ write.table(Conc_LU, file = paste0(project_dir,"/Lookups/Conclusions_LU.csv"), r
 
 * *Dissolved Oxygen*: `r conclusions.DO`
 * *E. coli*: `r conclusions.Ecoli`
-* *Enterococcus*: `r conclusions.Entero'
-* *pH*: `r conclusions.pH` -->
-* *Temperature*: `r conclusions.Temp
-* *Total Phosphorus*: `r conclusions.TP'
+* *Enterococcus*: `r conclusions.Entero`
+* *pH*: `r conclusions.pH`
+* *Temperature*: `r conclusions.Temp`
+* *Total Phosphorus*: `r conclusions.TP`
 * *Total Suspended Solids*: `r conclusions.TSS`
 
 
 **Additional Conclusions:**
 
-`r paste0("* ",conclusions.add,"\n", collapse="")`
+`r paste0("* ",conclusions.add.txt,"\n", collapse="")`
 
 
 # Citations
