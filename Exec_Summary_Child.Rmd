@@ -21,9 +21,11 @@ This report presents data and analysis that will help DEQ fulfill its role in th
 
 ## Methods
 
-Water quality data were retrieved from DEQ, EPA and USGS databases. DEQ's volunteer monitoring database was not included, however some volunteer data is queried from EPA's database. Many organizations provided data used in this report (see Appendix for a complete list). Data collected between `r format(ymd(query_dates[1]), format="%B %d, %Y")` and `r format(ymd(query_dates[2]), format="%B %d, %Y")` within the `r agwqma` agricultural water quality management area were included in this report. Parameters included in the data query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). 
+Water quality data were retrieved from DEQ, EPA, and USGS databases. Many organizations provided data used in this report (see Appendix for a complete list). Data collected between `r format(ymd(query_dates[1]), format="%B %d, %Y")` and `r format(ymd(query_dates[2]), format="%B %d, %Y")` within the `r agwqma` agricultural water quality management area were included in this report. Parameters included in the data query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). 
 
-The data returned were evaluated for quality. Data retrieved from the DEQ's databases included data that were rated `r unique(df.all[df.all$Database == 'Element' | df.all$Database == 'LASAR', 'Status'])` under the [DEQ's Laboratory Quality Manual](http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf) (ODEQ 2013) guidelines. EPA and USGS data were included unless result comments indicated problems with the data. Data was evaluated against the applicable Oregon water quality criterion. 
+The data returned were evaluated for quality. Data that was rated under the [DEQ's Laboratory Quality Manual][2.1.5] (ODEQ 2013) guidelines were rated `r unique(df.all[!is.na(df.all$Status), 'Status'])`. EPA and USGS data were included unless result comments indicated problems with the data. Data was evaluated against the applicable Oregon water quality criterion. 
+
+[2.1.5]: http://www.oregon.gov/deq/FilterDocs/DEQ91LAB0006QMP.pdf 
 
 ## Land Use
 
@@ -165,28 +167,23 @@ knitr::include_graphics(path = paste0("Figures/",station_summary_map_tss_file))
 
 ```{r exec-conclusions-setup}
 
-colnames(stns_param_summary_tbl) <- c("Station_ID", "Station_Description",
-                                  "DO_S", "DO_T",
-                                  "Ecoli_S", "Ecoli_T", 
-                                  "Entero_S", "Entero_T",
-                                  "pH_S", "pH_T", 
-                                  "Temp_S", "Temp_T",
-                                  "TP_S","TP_T", 
-                                  "TSS_S","TSS_T")
 
-# Text for conclusions. Use auto conclusion function or make your own text
-conclusions.DO <- con.auto(df=stns_param_summary_tbl, status_column="DO_S", trend_column="DO_T")
-conclusions.Ecoli <- con.auto(df=stns_param_summary_tbl, status_column="Ecoli_S", trend_column="Ecoli_T")
-conclusions.Entero <- con.auto(df=stns_param_summary_tbl, status_column="Entero_S", trend_column="Entero_T")
-conclusions.pH <- con.auto(df=stns_param_summary_tbl, status_column="pH_S", trend_column="pH_T")
-conclusions.Temp <- con.auto(df=stns_param_summary_tbl, status_column="Temp_S", trend_column="Temp_T")
-conclusions.TP <- con.auto(df=stns_param_summary_tbl, status_column="TP_S", trend_column="TP_T")
-conclusions.TSS <- con.auto(df=stns_param_summary_tbl, status_column="TSS_S", trend_column="TSS_T")
+Conc_LU <- read.csv("Lookups/Conclusions_LU.csv", na.strings = c("", "NA"))
+
+# Text for conclusions from lookup. Don't use auto conclusions here in case some text is hardwired.
+conclusions.DO <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "DO"), c("conclusion")]
+conclusions.Ecoli <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Ecoli"), c("conclusion")]
+conclusions.Entero <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Entero"), c("conclusion")]
+conclusions.pH <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "pH"), c("conclusion")]
+conclusions.Temp <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Temp"), c("conclusion")]
+conclusions.TP <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "TP"), c("conclusion")]
+conclusions.TSS <- Conc_LU[(Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "TSS"), c("conclusion")]
 
 # Text for additional conclusions from lookup
-if(NROW(Conc_LU[Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc",]) > 0){
-  conclusions.add.txt <- Conc_LU[Conc_LU$AgArea %in% input$select & Conc_LU$topic == "Add_conc",]$conclusion
+if(NROW(Conc_LU[Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Add_conc",]) > 0){
+  conclusions.add.txt <- Conc_LU[Conc_LU$AgArea %in% agwqma & Conc_LU$topic == "Add_conc",]$conclusion
 } else {conclusions.add.txt <- ""}
+
 ```
 
 **What is the overall status or trends in water quality?**

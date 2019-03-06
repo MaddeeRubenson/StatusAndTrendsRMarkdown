@@ -1011,7 +1011,7 @@ EvaluateTSSWQS<-function(new_data,
                       "Min_Date" = min(new_data$year),
                       "Max_Date" = max(new_data$year),
                       "Obs" = c(nrow(new_data)),
-                      "Exceedances" = c(nrow(exc)))
+                      "Exceedances" = ifelse(all(new_data$exceed == 'No Status'),NA,nrow(exc)))
   
   attr(new_data, "ex_df") <-ex_df
   return(new_data)
@@ -1020,15 +1020,13 @@ EvaluateTSSWQS<-function(new_data,
 
 EvaluateTSS_SRHC<-function(new_data, TSS_target=50) {
   # function to evaluate monthly mean 50 mg/L TSS target in Snake River Hells Canyon Sediment TMDL
-  # applies during the growing season May - September
-  
+
   new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
   new_data$Sampled<-as.Date(new_data$Sampled)
   new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
   
   new_data <- new_data %>%
     mutate(Sampled=floor_date(Sampled, "month")) %>%
-    filter(month(Sampled) %in% (5:9)) %>%
     group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled, year) %>%
     summarize(Result=mean(Result)) %>%
     as.data.frame()
@@ -1072,14 +1070,14 @@ EvaluateTPWQS<-function(new_data,
                       "Min_Date" = min(new_data$year),
                       "Max_Date" = max(new_data$year),
                       "Obs" = c(nrow(new_data)),
-                      "Exceedances" = c(nrow(exc)))
+                      "Exceedances" = ifelse(all(new_data$exceed == 'No Status'),NA,nrow(exc)))
   
   attr(new_data, "ex_df") <-ex_df
   return(new_data)
   
 }
 
-EvaluateTP_SRHC<-function(new_data, selectWQSTP) {
+EvaluateTP_SRHC<-function(new_data, selectWQSTP=0.07) {
   
   # function to evaluate May - Sept 0.07 mg/L TP target in Snake Hells Canyon Nutrient TMDL
   # applies during the growing season May - September
@@ -1105,6 +1103,82 @@ EvaluateTP_SRHC<-function(new_data, selectWQSTP) {
   return(new_data)
   
 }
+
+EvaluateTP_UKL_lake <-function(new_data, annual_target=0.11, spring_target=0.03) {
+  
+  # function to evaluate UKL and Agency Lake TP targets in Upper Klamath Lake Drainage TMDL
+  # 110 µg/l (0.11 mg/L)annual lake mean total phosphorus concentration
+  # 30 µg/l (0.03 mg/L) spring (March - May) lake mean total phosphorus concentration
+
+  new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
+  new_data$Sampled<-as.Date(new_data$Sampled)
+  new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
+  
+  # 110 µg/l annual lake mean total phosphorus concentration
+  new_data_annual <- new_data %>%
+    mutate(Sampled=floor_date(Sampled, "year")) %>%
+    group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled, year) %>%
+    summarize(Result=mean(Result)) %>%
+    as.data.frame()
+  
+  # 30 µg/l spring (March - May) lake mean total phosphorus concentration
+  new_data_spring <- new_data %>%
+    filter(month(new_data$Sampled) >= 3 & month(new_data$Sampled) <=5) %>%
+    mutate(Sampled=ymd(paste0(year(Sampled),"-","04-01"))) %>%
+    group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled, year) %>%
+    summarize(Result=mean(Result)) %>%
+    as.data.frame()
+  
+  new_data_annual$exceed<- ifelse(new_data_annual$Result > annual_target, "Exceeds", "Meets")
+  new_data_spring$exceed<- ifelse(new_data_spring$Result > spring_target, "Exceeds", "Meets")
+  
+  new_data <- rbind(new_data_annual, new_data_spring)
+
+  exc<-new_data%>%
+    filter(exceed == "Exceeds")
+  
+  ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
+                      "Station_Description" = (unique(new_data$Station_Description)),
+                      "Min_Date" = min(new_data$year),
+                      "Max_Date" = max(new_data$year),
+                      "Obs" = c(nrow(new_data)),
+                      "Exceedances" = c(nrow(exc)))
+  
+  attr(new_data, "ex_df") <-ex_df
+  return(new_data)
+}
+
+EvaluateTP_UKL_inflows <-function(new_data, annual_target=0.11) {
+  
+  # function to evaluate TP targets for inflow in Upper Klamath Lake Drainage TMDL
+  # 66 µg/l (0.066 mg/L) annual mean total phosphorus concentration from all inflows to the lake
+  
+  new_data$Sampled <- as.POSIXct(strptime(new_data$Sampled, format = '%Y-%m-%d')) 
+  new_data$Sampled<-as.Date(new_data$Sampled)
+  new_data$year<-as.numeric(format(new_data$Sampled, format="%Y"))
+  
+  new_data <- new_data %>%
+    mutate(Sampled=floor_date(Sampled, "year")) %>%
+    group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled, year) %>%
+    summarize(Result=mean(Result)) %>%
+    as.data.frame()
+  
+  new_data$exceed<- ifelse(new_data_annual$Result > annual_target, "Exceeds", "Meets")
+  
+  exc<-new_data%>%
+    filter(exceed == "Exceeds")
+  
+  ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
+                      "Station_Description" = (unique(new_data$Station_Description)),
+                      "Min_Date" = min(new_data$year),
+                      "Max_Date" = max(new_data$year),
+                      "Obs" = c(nrow(new_data)),
+                      "Exceedances" = c(nrow(exc)))
+  
+  attr(new_data, "ex_df") <-ex_df
+  return(new_data)
+}
+
 
 generate_exceed_df <- function(new_data, 
                                df.all,
@@ -1402,28 +1476,35 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
   stn_nlcd <- merge(stct, nlcd, by.x="FEATUREID", by.y="COMID", all.x=TRUE, all.y=FALSE)
   stndf_nlcd <- as.data.frame(stn_nlcd)
   
-  #Reclass the NLCD
+  # Reclass the NLCD
+  # Note this reclass corresponds to the 2011 NLCD raster reclass in the GIS support folder where
+  # 1 Developed
+  # 2 Forest
+  # 3 Agriculture
+  # 4 Shrub/Grass (or Forest Disturbance)
+  # 5 Other
   stn_cat_use_2011 <- stndf_nlcd %>% 
     group_by(Station_ID) %>% 
     dplyr::summarise(Station_Description,
               Year = "2011",
               WsAreaSqKm,
-              PerUrbanWs = sum(PctUrbOp2011Ws,
-                               PctUrbLo2011Ws,
-                               PctUrbMd2011Ws,
-                               PctUrbHi2011Ws),
-              PerForestWs = sum(PctDecid2011Ws,
-                                PctConif2011Ws,
-                                PctMxFst2011Ws),
-              PerAgWs = sum(PctHay2011Ws,
-                            PctCrop2011Ws),
-              PerRangeWs = sum(PctShrb2011Ws,
-                               PctGrs2011Ws),
-              PerOtherWs = sum(PctOw2011Ws,
-                               PctIce2011Ws,
-                               PctBl2011Ws,
-                               PctWdWet2011Ws,
-                               PctHbWet2011Ws))
+              PerDevelWs = sum(PctUrbOp2011Ws, #21
+                               PctUrbLo2011Ws, #22
+                               PctUrbMd2011Ws, #23
+                               PctUrbHi2011Ws), #24
+              PerForestWs = sum(PctDecid2011Ws, #41
+                                PctConif2011Ws, #42
+                                PctMxFst2011Ws, #43
+                                PctWdWet2011Ws), #90
+              PerAgWs = sum(PctHay2011Ws, #81
+                            PctCrop2011Ws), #82
+              PerShrubGrassWs = sum(PctShrb2011Ws, #52
+                               PctGrs2011Ws,#71
+                               PctHbWet2011Ws), #95
+              PerOtherWs = sum(PctOw2011Ws, #11
+                               PctIce2011Ws, #12
+                               PctBl2011Ws) #31
+                               )
   return(stn_cat_use_2011)
 }
 

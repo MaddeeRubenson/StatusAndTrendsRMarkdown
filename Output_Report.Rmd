@@ -386,17 +386,16 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
 
 ```{r Create-other-dataframes}
 
-if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen", 'Total Phosphorus') %in% df.all$Analyte)) {
+if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen") %in% df.all$Analyte)) {
   seaken_other <- run_seaKen(filter(df.all, Analyte %in% c('pH', 
                                                            'E. Coli', 
                                                            "Enterococcus", 
-                                                           "Dissolved Oxygen", 
-                                                           'Total Phosphorus')))
+                                                           "Dissolved Oxygen"
+                                                           )))
 } else {seaken_other <- data.frame()}
 
 if(NROW(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass")) > 0) {
-  seaken_temp <- run_seaKen(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass"))
-} else {seaken_temp <- data.frame()}
+  seaken_temp <- run_seaKen(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass"))} else {seaken_temp <- data.frame()}
 
 
 if(NROW(dplyr::filter(df.all, Analyte == "Total Suspended Solids")) > 0) {
@@ -406,7 +405,6 @@ if(NROW(dplyr::filter(df.all, Analyte == "Total Suspended Solids")) > 0) {
     
     seaken_tss <- df.all %>%
       filter(Analyte == "Total Suspended Solids") %>%
-      filter(month(Sampled) %in% (5:9)) %>%
       mutate(Sampled=floor_date(Sampled, "month")) %>%
       group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled) %>%
       summarize(Result=mean(Result)) %>%
@@ -420,7 +418,26 @@ if(NROW(dplyr::filter(df.all, Analyte == "Total Suspended Solids")) > 0) {
   seaken_tss <- data.frame()
 }
 
-SeaKen <- rbind(seaken_other, seaken_temp, seaken_tss)
+if(NROW(dplyr::filter(df.all, Analyte == 'Total Phosphorus')) > 0) {
+  
+  if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
+    # Snake River - Hells Canyon TMDL
+    # TMDL target applies during the growing season May - September
+    
+    seaken_tp <- df.all %>%
+      filter(Analyte == 'Total Phosphorus' & month(new_data$Sampled) >= 5 & month(new_data$Sampled) <=9) %>%
+      as.data.frame() %>%
+      run_seaKen()
+    
+  } else {
+    # Other Area
+    seaken_tp <- run_seaKen(filter(df.all, Analyte %in% c('Total Phosphorus')))
+  } 
+} else {
+  seaken_tp <- data.frame()
+}
+
+SeaKen <- rbind(seaken_other, seaken_temp, seaken_tss, seaken_tp)
 
 status_years <- seq(year(floor_date(ymd(input$dates[2]) - years(2), unit="year")), 
                     year(ymd(input$dates[2])), by = 1)
@@ -528,7 +545,7 @@ Dissolved oxygen status was assessed by comparing the observed concentration val
 
 Results for continuous temperature data were compared against the applicable temperature criteria found in [OAR 340-041-0028][2.2.4]. The applicable temperature criteria is based on the seven day average daily maximum (7DADM) stream temperature metric. In order to ensure there was sufficient continuous data to calculate 7DADM, at least one observation per hour from noon to midnight must have been recorded. In addition, each month can have no more than one day of missing observations to ensure that no more than 10% of the 7DADM results in that month were missing.
 
-A land use summary was developed for all monitoring stations that fit the criteria to assess water quality status and/or trends. Specifically, the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016) was used to categorize land uses in the catchment each station was located within and all the catchments upstream. A map was made showing station locations in relation to 2011 national land cover dataset (Homer et al. 2015).
+A land use summary was developed for all monitoring stations that fit the criteria to assess water quality status and/or trends. The summary was derived from the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016). StreamCat utilized the NHDPlus version 2.1 stream network (McKay et al 2012) and the 2011 National Landcover Database (NLCD) (Homer et al. 2015) to calculate the proportion of each NLCD landuse class within the watershed area contributing to each NHDPlus stream segment including the upstream watershed area. This means that the landuse summary for a particular station represents the landuse for the entire NHDPlus segment where the station is located including the watershed portion of the segment downstream of the station as well as watershed areas upstream of that segment. The streamCat derived NLCD proportions were summarized by DEQ into five unique classes: **Developed**, **Forest**, **Agriculture**, **Shrub and Grass**, and **Other**). Developed includes all the various NLCD classes for urban and developed areas (21-24). Forest includes the various forest and woody wetland classes (41, 42, 43, and 90). Agriculture includes Pasture/Hay (81) and Cultivated Crops (82). Shrub and Grass includes NLCD classes Shrub/Scrub (52), Grassland/Herbaceous (71), and Herbaceous Wetlands (95). Other includes open water (11), Perennial Ice/Snow (12), and Barren Land (31). A map was made showing station locations in relation to these landuse classifications or to the original 2011 national land cover dataset if viewing the html version of this report.
 
 [2.2.1]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68713
 [2.2.2]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68695
@@ -618,13 +635,13 @@ map <- leaflet(agwqma_shp) %>%
                                   })),
              group = 'All Stations Queried') %>%
   hideGroup('All Stations Queried') %>%
-  addWMSTiles('https://www.mrlc.gov/arcgis/services/LandCover/USGS_EROS_LandCover_NLCD/MapServer/WMSServer?',
+  addWMSTiles(baseUrl = 'https://smallscale.nationalmap.gov/arcgis/services/LandCover/MapServer/WMSServer?',
               group = "Land Use (NLCD 2011)",
-              layers = '33',
-              options = WMSTileOptions(format = 'image/png',
-                                       version = '1.3.0',
-                                       transparent = TRUE)) %>%
-  addWMSTiles(GetURL("USGSTopo"),
+              layers = "1",
+              options = WMSTileOptions(version = '1.3.0',
+                                       format = 'image/png',
+                                       transparent = TRUE)) %>% 
+  addWMSTiles(GetURL("USGSTopo"), 
               attribution = paste0("<a href='https://www.usgs.gov/'>",
                                    "U.S. Geological Survey</a> | ",
                                    "<ahref='https://www.usgs.gov/laws/policies_notices.html'>",
@@ -666,7 +683,7 @@ landuse<-stn_nlcd_df%>%
   filter(Station_ID %in% stn_to_use) %>%
   arrange(desc(PerAgWs))
 colnames(landuse) <- c("Station ID", "Station Description", "Year", "Watershed Area (km^2^)",
-                       "% Urban", "% Forest", "% Ag", "% Range", "% Other")
+                       "% Developed", "% Forest", "% Ag", "% Shrub/Grass", "% Other")
 landuse <-landuse[, - 3]
 
 save(landuse, file=paste0(Rdata_dir,"/", landuse_file))
@@ -861,10 +878,10 @@ if(length(entero_stns) > 0) {
     exc_list[[j]] <- entero_eval
     
     trend_logic <- ifelse(grepl("Not Significant", 
-                                results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
+                                results_seaken[results_seaken$Station_ID == entero_stns[j],'signif']),
                           FALSE,
                           ifelse(grepl("Need at least 8 years", 
-                                       results_seaken[results_seaken$Station_ID == entero_stns[i],'signif']),
+                                       results_seaken[results_seaken$Station_ID == entero_stns[j],'signif']),
                                  FALSE, TRUE))
     
     
@@ -997,6 +1014,10 @@ if(length(tp_stn) > 0) {
   colnames(exc) <- c("Station ID","Station Description", "Min Year", "Max Year", 
                      "Observations", "Exceedances", "Percent Exceedance")
   
+  if(all(is.na(exc$Exceedances))){
+    exc <- exc[,1:5]
+  }
+  
   knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, 
                caption = tbls(name = "tpExcTable", caption = " Total Phosphorus water quality trends."))
   
@@ -1107,6 +1128,10 @@ if(length(tss_stn) > 0){
   colnames(exc) <- c("Station ID","Station Description", "Min Year", "Max Year", 
                      "Observations", "Exceedances", "Percent Exceedance")
 
+  if(all(is.na(exc$Exceedances))){
+    exc <- exc[,1:5]
+  }
+  
   knitr::kable(exc, padding = 2, digits = 1, row.names = FALSE, 
                caption = tbls(name = "tssExcTable", caption = "Total Suspended Solids observations."))
 
@@ -1253,7 +1278,7 @@ if(!is.null(temp_stn)){
 
 if(length(temp_stn) > 0) {
   
-  if(!any(temp_stn %in% Ben_use_LU$Station_ID)){
+  if(any(!temp_stn %in% Ben_use_LU$Station_ID)){
     print("Before continuing, beneficial uses must be added for the following stations")
     print(temp_stn[!temp_stn %in% Ben_use_LU$Station_ID])
     View(stns[stns$Station_ID %in% temp_stn[!temp_stn %in% Ben_use_LU$Station_ID],])
@@ -1819,6 +1844,9 @@ Homer, C.G., Dewitz, J.A., Yang, L., Jin, S., Danielson, P., Xian, G., Coulston,
 
 Mann, H. B., 1945, Nonparametric test against trend: *Econometrica* 13, 245-259.
 
+McKay, L., Bondelid, T., Dewald, T., Johnston, J., Moore, R., and Rea, A. 2012. NHDPlus Version 2:User Guide (Data Model Version 2.1). Available from http://www.horizon-systems.com/NHDPlus/NHDPlusV2_documentation.php.
+
+
 Oregon Department of Environmental Quality, 2013. Quality Manual. DEQ91-LAB-0006-LQM Version 8.2.
 
 U.S. Environmental Protection Agency. 2016. National Rivers and Streams Assessment 2008-2009. Available from U.S. EPA website: http://www.epa.gov/national-aquatic-resource-surveys/data-national-aquatic-resource-surves, accessed `r format(ymd(input$dates[2]), format="%B %d, %Y")`.
@@ -1834,11 +1862,35 @@ org_summary <- summarizeByOrg(df.all)
 # clean up column names
 colnames(org_summary) <- c("Organization",	"Observations",	"Unique Stations",	"NA observations",	"Unique Comments")
 
+# org summary by station and analyte
+fit_criteria <- rbind(status[,c("Station_ID", "Analyte")], trend[,c("Station_ID", "Analyte")])
+
+fit_criteria <- unique(fit_criteria[c("Station_ID", "Analyte")])
+
+org_summary_station <- fit_criteria %>%
+  dplyr::left_join(df.all,by=c("Station_ID", "Analyte"))  %>%
+  dplyr::group_by(Station_ID, Analyte) %>%
+  dplyr::summarise('Sampling Organizations' = paste(sort(unique(Client)), collapse = ", ")) %>%
+  as.data.frame()
+
+colnames(org_summary_station)[1] <- "Station ID"
 colnames(status)[1] <- "Station ID"
 colnames(trend)[1] <- "Station ID"
 colnames(stns_by_year)[1] <- "Station ID"
 
+# Add italics to E. coli and Enterococcus
+org_summary_station$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", org_summary_station$Analyte)
+org_summary_station$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", org_summary_station$Analyte)
+status$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", status$Analyte)
+status$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", status$Analyte)
+trend$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", trend$Analyte)
+trend$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", trend$Analyte)
+stns_by_year$Analyte <- gsub("[Ee]. [cC]oli", "_E. coli_", stns_by_year$Analyte)
+stns_by_year$Analyte <- gsub("[Ee]terococcus", "_Enterococcus_", stns_by_year$Analyte)
+
 knitr::kable(org_summary, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixorgSumTable", caption = "Summary table of all unique organizations that were queried; note that organizations included in this table may or may not have had data sufficient for status and/or trends analysis and therefore may not be included in this report."))
+
+knitr::kable(org_summary_station, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixorgSumbyStation", caption = "Summary of all unique organizations that collected data at each station for each analyte that had a status and/or trend result."))
 
 knitr::kable(status, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixstatusTable", caption = "Number of observations per year for monitoring stations that fit the criteria to assess status."))
 
