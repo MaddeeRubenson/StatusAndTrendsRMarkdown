@@ -73,11 +73,11 @@ figs <- captioner(prefix="\nFigure")
 # sia, query_dates, and project_dir are different for every Report. Note 'sia' must be named exactly 
 # how it is named in the sia shapefile ('agwqma_all_shp').
 
-sia <- "Walker Stout"
-sia_huc8 <- c(17090005)
+sia <- "Thirtymile"
+sia_huc8 <- c(17070204)
 
 query_dates <- c("2000-01-01", "2018-12-31")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/SIAs/2019-SIA-Walker-Stout"
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/SIAs/2019-SIA-Thirtymile"
 
 # Set to TRUE if knitting a word document
 word_output <- FALSE
@@ -166,7 +166,7 @@ ph_crit <- merge(ph_crit, HUClist, by.x = 'plan_name', by.y = 'PlanName', all.x 
 
 # import GIS features
 # SIA area shp
-sia_shp <- readOGR(dsn = GIS_dir, layer = 'WalkerStout', integer64="warn.loss", verbose = FALSE)
+sia_shp <- readOGR(dsn = GIS_dir, layer = 'Thirtymile_SIA', integer64="warn.loss", verbose = FALSE)
 
 
 tribal_lands_shp <- readOGR(dsn = support_files_dir, layer = 'tl_2017_or_aiannh', integer64="warn.loss", verbose = FALSE)
@@ -194,6 +194,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
 } else {
   
   AWQMS_Data <- AWQMS_Query(HUC8 = sia_huc8,
+                            station_IDs =c("24438-ORDEQ"),
                             area.Shp = sia_shp,
                             inParms = input$parms,
                             luParms = lu_parms,
