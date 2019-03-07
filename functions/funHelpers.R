@@ -299,6 +299,30 @@ extract_303d <- function (df.all, wq_limited, selectedPlanArea) {
   return(wq_limited)
 }
 
+status_stns <- function(data, status_years = c((as.numeric(format(Sys.Date(), "%Y"))-2):format(Sys.Date(), "%Y"))) {
+  
+  data$Sampled <- as.POSIXct(strptime(data$Sampled, format = '%Y-%m-%d')) 
+  data$year <- lubridate::year(data$Sampled)
+  
+  if(any(unique(data$year) %in% status_years)){
+    status_check <- data %>%
+      dplyr::filter(year %in% status_years) %>%
+      dplyr::group_by(Station_ID, Analyte) %>%
+      dplyr::summarise(n_years = length(unique(year))) %>%
+      dplyr::filter(n_years>=2)
+    
+    print(paste("Data should be sufficient for", NROW(status_check), "different statuses to be determined."))
+    
+  } else {
+    status_check <- data %>%
+      dplyr::filter(year %in% status_years) %>%
+      dplyr::group_by(Station_ID, Analyte) %>%
+      dplyr::summarise(n_years = length(unique(year)))
+    print("No stations meet Status criteria")
+  }
+  return(status_check)
+}
+
 Stations_Status <- function(df.all, status.years) {
   # Generatures a dataframe with the number of observations per year for 
   # monitoring stations that fit the criteria to assess status
@@ -308,29 +332,29 @@ Stations_Status <- function(df.all, status.years) {
   dta<-df.all
   
   dta<-dta %>%
-    filter(!Analyte == "Dissolved oxygen saturation")
+    dplyr::filter(!Analyte == "Dissolved oxygen saturation")
   
   dta$Sampled <- as.POSIXct(strptime(dta$Sampled, format = '%Y-%m-%d')) 
   dta$Sampled<-as.Date(dta$Sampled)
   dta$year<-as.numeric(format(dta$Sampled, format="%Y"))
   
   # dta<-dta%>%
-  #   filter(Analyte == parm)
+  #   dplyr::filter(Analyte == parm)
   
   if(any(dta$year %in% status.years)){
     lst_stat <- list()
     for (j in 1 : (length(unique(dta$Analyte)))) {
     sub_data <- dta[dta$Analyte == unique(dta$Analyte)[j],]
     status<-sub_data%>%
-      filter(year %in% status.years) %>%
+      dplyr::filter(year %in% status.years) %>%
       group_by(Station_ID)%>%
       dplyr::summarise(n_years=length(unique(year))) %>%
-      filter(n_years>=2)
+      dplyr::filter(n_years>=2)
     stns<-c(as.character(unique(status$Station_ID)))
     #trend[trend$Station_ID %in% stns, ]
     dta_stns<-sub_data%>%
       dplyr::filter(Station_ID %in% stns) %>%
-      filter(year %in% status.years)
+      dplyr::filter(year %in% status.years)
     
     if (nrow(status) == 0) {
       lst_stat[[j]] <- NULL
@@ -366,33 +390,51 @@ Stations_Trend<-function(df.all, SeaKen){
   require(dplyr)
   
   dta <- df.all
-  lstoutput <- list()
+  # lstoutput <- list()
   
   dta$Sampled <- as.POSIXct(strptime(dta$Sampled, format = '%Y-%m-%d')) 
   dta$Sampled<-as.Date(dta$Sampled)
   dta$year<-as.numeric(format(dta$Sampled, format="%Y"))
   
-  trend_pass <- SeaKen %>%
-    filter(signif != 'Insufficient data for trend analysis')
   
-  for (i in 1:nrow(trend_pass)) {
-    
-    lstoutput[[i]] <- dta %>% 
-      dplyr::filter(Analyte == trend_pass$analyte[i], Station_ID == trend_pass$Station_ID[i]) %>%
-      dplyr::group_by(Station_ID, Analyte, year) %>% 
-      dplyr::summarise(n = n()) %>% 
-      spread(year, n) %>%
-      as.data.frame()
-  }
+  # trend_pass <- SeaKen %>%
+  #   dplyr::filter(signif != 'Insufficient data for trend analysis')
   
-  trend <- rbind.fill(lstoutput)
+  # trend_stations <- unique(df.all$Station_ID)
+  # 
+  #     for (i in trend_stations) {
+  # 
+  #       lstoutput[[i]] <- dta %>%
+  #         dplyr::filter(Analyte == trend_pass$analyte[i], Station_ID == trend_pass$Station_ID[i]) %>%
+  #         dplyr::group_by(Station_ID, Analyte, year) %>%
+  #         dplyr::summarise(n = n()) %>%
+  #         spread(year, n) %>%
+  #         as.data.frame()
+  #     }
   
-  if(length(trend) == 0){
-    
-    trend <-'No Stations Meet Trend Criteria'
-  }
+  dta <- dta %>% dplyr::group_by(Station_ID, Analyte, year) %>% dplyr::summarise(n = n()) %>% spread(year, n)
   
-  return(trend)
+  return(dta)
+  
+  # if (nrow(trend_pass > 0)){
+  #   for (i in 1:nrow(trend_pass)) {
+  #     
+  #     lstoutput[[i]] <- dta %>% 
+  #       dplyr::filter(Analyte == trend_pass$analyte[i], Station_ID == trend_pass$Station_ID[i]) %>%
+  #       dplyr::group_by(Station_ID, Analyte, year) %>% 
+  #       dplyr::summarise(n = n()) %>% 
+  #       spread(year, n) %>%
+  #       as.data.frame()
+  #   }
+  
+  # trend <- rbind.fill(lstoutput)
+  # 
+  # if(length(trend) == 0){
+  #   
+  #   trend <-'No Stations Meet Trend Criteria'
+  # }
+  # 
+  # return(trend)
 }
 
 Stations_by_Year <- function(df.all) {
@@ -404,7 +446,7 @@ Stations_by_Year <- function(df.all) {
   df.all$year<-as.numeric(format(df.all$Sampled, format="%Y"))
   
   stns_by_year <- df.all %>% 
-    filter(Analyte != 'Dissolved oxygen saturation') %>%
+    dplyr::filter(Analyte != 'Dissolved oxygen saturation') %>%
     group_by(Station_ID, year, Analyte) %>% 
     dplyr::summarise(n = n()) %>% spread(year, n)
   
@@ -436,7 +478,7 @@ All_stns_fit_Criteria<-function(status, trend, df.all) {
   
   #stns<-df.all[,c('Station_ID', 'Station_Description', 'DECIMAL_LAT', 'DECIMAL_LONG', 'snap_Lat', 'snap_Long')]
   stns <- stns %>%
-    filter(Station_ID %in% unique_stns)
+    dplyr::filter(Station_ID %in% unique_stns)
   stns <- unique(stns)
   
   if(nrow(stns) < 1) {
@@ -819,7 +861,7 @@ EvaluatepHWQS <- function(new_data,
                             1, 0)
 
   exc <- new_data %>% 
-    filter(exceed == 1)
+    dplyr::filter(exceed == 1)
   
   ex_df <- data.frame("Station_ID" = (unique(new_data[,station_id_column])),
                       "Station_Description" = (unique(new_data[,station_desc_column])),
@@ -969,9 +1011,9 @@ EvaluateDOWQS<-function(new_data,
   new_data_all$exceed <- as.factor(new_data_all$BCsat_Exceed)
   
   exc<-new_data_all%>%
-    filter(exceed == 'Exceeds' & BCsat_Exceed != 'Meets')
+    dplyr::filter(exceed == 'Exceeds' & BCsat_Exceed != 'Meets')
   do_meet<-new_data_all%>%
-    filter(exceed == "Meets b/c %Sat")
+    dplyr::filter(exceed == "Meets b/c %Sat")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data_all$Station_ID)),
                       "Station_Description" = (unique(new_data_all$Station_Description)),
@@ -1004,7 +1046,7 @@ EvaluateTSSWQS<-function(new_data,
   }
   
   exc <-new_data %>%
-    filter(exceed ==  "Exceeds")
+    dplyr::filter(exceed ==  "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1034,7 +1076,7 @@ EvaluateTSS_SRHC<-function(new_data, TSS_target=50) {
   new_data$exceed<- ifelse(new_data$Result > TSS_target,  'Exceeds', 'Meets')
   
   exc<-new_data%>%
-    filter(exceed == 'Exceeds')
+    dplyr::filter(exceed == 'Exceeds')
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1063,7 +1105,7 @@ EvaluateTPWQS<-function(new_data,
   }
   
   exc <-new_data %>%
-    filter(exceed ==  "Exceeds")
+    dplyr::filter(exceed ==  "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1090,7 +1132,7 @@ EvaluateTP_SRHC<-function(new_data, selectWQSTP=0.07) {
   new_data$exceed<- ifelse(new_data$Result > selectWQSTP & month(new_data$Sampled) >= 5 & month(new_data$Sampled) <=9, "Exceeds", "Meets")
   
   exc<-new_data%>%
-    filter(exceed == "Exceeds")
+    dplyr::filter(exceed == "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1123,7 +1165,7 @@ EvaluateTP_UKL_lake <-function(new_data, annual_target=0.11, spring_target=0.03)
   
   # 30 µg/l spring (March - May) lake mean total phosphorus concentration
   new_data_spring <- new_data %>%
-    filter(month(new_data$Sampled) >= 3 & month(new_data$Sampled) <=5) %>%
+    dplyr::filter(month(new_data$Sampled) >= 3 & month(new_data$Sampled) <=5) %>%
     mutate(Sampled=ymd(paste0(year(Sampled),"-","04-01"))) %>%
     group_by(Station_ID, Station_Description, DECIMAL_LAT, DECIMAL_LONG, Analyte, Sampled, year) %>%
     summarize(Result=mean(Result)) %>%
@@ -1135,7 +1177,7 @@ EvaluateTP_UKL_lake <-function(new_data, annual_target=0.11, spring_target=0.03)
   new_data <- rbind(new_data_annual, new_data_spring)
 
   exc<-new_data%>%
-    filter(exceed == "Exceeds")
+    dplyr::filter(exceed == "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1166,7 +1208,7 @@ EvaluateTP_UKL_inflows <-function(new_data, annual_target=0.11) {
   new_data$exceed<- ifelse(new_data_annual$Result > annual_target, "Exceeds", "Meets")
   
   exc<-new_data%>%
-    filter(exceed == "Exceeds")
+    dplyr::filter(exceed == "Exceeds")
   
   ex_df <- data.frame("Station_ID" = (unique(new_data$Station_ID)),
                       "Station_Description" = (unique(new_data$Station_Description)),
@@ -1461,7 +1503,7 @@ remove.dups <- function(tname) {
   #tname$tResult <- round(tname$tResult.x, 2)
   # tname$Result <- tname$Result.x
   # tname <- within(tname, rm(Result.x, Result.y))
-  tname <- tname %>% filter(!SampleType %in% c("Quality Control Sample-Field Replicate", "Quality Control Field Replicate Msr/Obs"))
+  tname <- tname %>% dplyr::filter(!SampleType %in% c("Quality Control Sample-Field Replicate", "Quality Control Field Replicate Msr/Obs"))
   
   return(tname)
   }
@@ -1509,8 +1551,8 @@ landUseAnalysis <- function(all.sp, cats, nlcd) {
 }
 
 temp_sufficiency_analysis <- function(df.all) {
-  df.all <- filter(df.all, Analyte == "Temperature", Statistical_Base != '7DADM')
-  df.all$isMax <- ifelse(df.all$Statistical_Base == "Maximum", TRUE, FALSE)
+  df.all <- dplyr::filter(df.all, Analyte == "Temperature")
+  df.all$isMax <- ifelse(df.all$Statistical_Base == "Maximum" & !is.na(df.all$Statistical_Base), TRUE, FALSE)
   stns <- unique(df.all$Station_ID)
   qc.results.1 <- NULL
   qc.results.2 <- NULL
@@ -1533,7 +1575,7 @@ temp_sufficiency_analysis <- function(df.all) {
     # This is to make sure there is suffcient continous data to capture the daily maximum
     
     # First filter to observations collected from Noon to midnight and sum hours
-    qc.hr <- as.tbl(tmp) %>% filter((hour >=12 & hour <= 24) | isMax == TRUE) %>% 
+    qc.hr <- as.tbl(tmp) %>% dplyr::filter((hour >=12 & hour <= 24) | isMax == TRUE) %>% 
       group_by(HUC, Station_ID, isMax, date, month, year, day) %>%
       summarise(n = length(unique(hour)))
     qc.hr <- as.data.frame(qc.hr)
@@ -1558,7 +1600,7 @@ temp_sufficiency_analysis <- function(df.all) {
       # No more than one day for each monthly period without observations
       # and subset to data to the months of interest
       
-      qc.dy <- as.data.frame(as.tbl(qc.hr.p) %>% filter(month %in% c(6,7,8,9,10)) %>% 
+      qc.dy <- as.data.frame(as.tbl(qc.hr.p) %>% dplyr::filter(month %in% c(6,7,8,9,10)) %>% 
                                group_by(HUC, Station_ID, year, month) %>% 
                                summarise(n = n()))
       qc.dy$n_threshold <- ifelse(qc.dy$month %in% c(1,3,5,7,8,10,12), 30, 
@@ -1614,10 +1656,15 @@ temp_sufficiency_analysis <- function(df.all) {
   }
   
   stns_pass <- unique(qc.results.3[qc.results.3$result == 'pass', "Station_ID"])
-  
-  attr(stns_pass, "day_test") <- qc.results.1
-  attr(stns_pass, "month_test") <- qc.results.2
-  attr(stns_pass, "year_test") <- qc.results.3
+  if(!is.null(stns_pass)){
+    attr(stns_pass, "day_test") <- qc.results.1
+  }
+  if(!is.null(stns_pass)){
+    attr(stns_pass, "month_test") <- qc.results.2
+  }
+  if(!is.null(stns_pass)){
+    attr(stns_pass, "year_test") <- qc.results.3
+  }
     
   print(qc.results.1)
   return(stns_pass)
@@ -1943,12 +1990,12 @@ parm_summary <- function(stns,
     ecoli$year<-as.numeric(format(ecoli$Sampled, format="%Y"))
     
     #filter out stations that meet status and stations that meet trend
-    e_status_stns <- status %>% filter(Analyte == 'E. Coli')
+    e_status_stns <- status %>% dplyr::filter(Analyte == 'E. Coli')
     e_status_stns  <- unique(e_status_stns$Station_ID)
-    e_status <- ecoli %>% filter(Station_ID %in% e_status_stns) %>% filter(year %in% status.years)
+    e_status <- ecoli %>% dplyr::filter(Station_ID %in% e_status_stns) %>% dplyr::filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      e_trend_stns <- SeaKen %>% filter(analyte == 'E. Coli', signif != 'Insufficient data for trend analysis')
+      e_trend_stns <- SeaKen %>% dplyr::filter(analyte == 'E. Coli', signif != 'Insufficient data for trend analysis')
       e_trend_stns  <- unique(e_trend_stns$Station_ID)
     } else {
       e_trend_stns <- NULL
@@ -1972,7 +2019,7 @@ parm_summary <- function(stns,
     #trend Ecoli
     if(length(e_trend_stns) > 0) {
       for(j in 1:length(e_trend_stns)) {
-        e_seaken <- SeaKen %>% filter(analyte == 'E. Coli')
+        e_seaken <- SeaKen %>% dplyr::filter(analyte == 'E. Coli')
         e_seaken <- e_seaken[e_seaken$Station_ID == e_trend_stns[j],]
         
         if(e_seaken$signif != "Not Significant") {
@@ -2000,12 +2047,12 @@ parm_summary <- function(stns,
     entero$year<-as.numeric(format(entero$Sampled, format="%Y"))
     
     #filter out stations that meet status and stations that meet trend
-    ent_status_stns <- status %>% filter(Analyte == 'Enterococcus')
+    ent_status_stns <- status %>% dplyr::filter(Analyte == 'Enterococcus')
     ent_status_stns  <- unique(ent_status_stns$Station_ID)
-    ent_status <- entero %>% filter(Station_ID %in% ent_status_stns) %>% filter(year %in% status.years)
+    ent_status <- entero %>% dplyr::filter(Station_ID %in% ent_status_stns) %>% dplyr::filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      ent_trend_stns <- SeaKen %>% filter(analyte == 'Enterococcus', signif != 'Insufficient data for trend analysis')
+      ent_trend_stns <- SeaKen %>% dplyr::filter(analyte == 'Enterococcus', signif != 'Insufficient data for trend analysis')
       ent_trend_stns  <- unique(ent_trend_stns$Station_ID)
     } else {
       ent_trend_stns <- NULL
@@ -2029,7 +2076,7 @@ parm_summary <- function(stns,
     # trend Enterococcus
     if(length(ent_trend_stns) > 0) {
       for(j in 1:length(ent_trend_stns)) {
-        ent_seaken <- SeaKen %>% filter(analyte == 'Enterococcus')
+        ent_seaken <- SeaKen %>% dplyr::filter(analyte == 'Enterococcus')
         ent_seaken <- ent_seaken[ent_seaken$Station_ID == ent_trend_stns[j],]
         
         if(ent_seaken$signif != "Not Significant") {
@@ -2056,12 +2103,12 @@ parm_summary <- function(stns,
     pH$year<-as.numeric(format(pH$Sampled, format="%Y"))
     
     #filter out stations that meet status and stations that meet trend
-    pH_status_stns <- status %>% filter(Analyte == 'pH')
+    pH_status_stns <- status %>% dplyr::filter(Analyte == 'pH')
     pH_status_stns  <- unique(pH_status_stns$Station_ID)
-    pH_status <- pH %>% filter(Station_ID %in% pH_status_stns) %>% filter(year %in% status.years)
+    pH_status <- pH %>% dplyr::filter(Station_ID %in% pH_status_stns) %>% dplyr::filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      pH_trend_stns <- SeaKen %>% filter(analyte == 'pH', signif != 'Insufficient data for trend analysis')
+      pH_trend_stns <- SeaKen %>% dplyr::filter(analyte == 'pH', signif != 'Insufficient data for trend analysis')
       pH_trend_stns  <- unique(pH_trend_stns$Station_ID)
     }else{
       pH_trend_stns <- NULL
@@ -2085,7 +2132,7 @@ parm_summary <- function(stns,
     # trend pH
     if(length(pH_trend_stns) > 0 ) {
       for(j in 1:length(pH_trend_stns)) {
-        pH_seaken <- SeaKen %>% filter(analyte == 'pH')
+        pH_seaken <- SeaKen %>% dplyr::filter(analyte == 'pH')
         pH_seaken <- pH_seaken[pH_seaken$Station_ID == pH_trend_stns[j],]
         
         if(pH_seaken$signif != "Not Significant") {
@@ -2107,12 +2154,12 @@ parm_summary <- function(stns,
   if(!is.null(DO)){
     
     #filter out stations that meet status and stations that meet trend
-    DO_status_stns <- status %>% filter(Analyte == 'Dissolved Oxygen')
+    DO_status_stns <- status %>% dplyr::filter(Analyte == 'Dissolved Oxygen')
     DO_status_stns  <- unique(DO_status_stns$Station_ID)
-    DO_status <- DO %>% filter(Station_ID %in% DO_status_stns) %>% filter(year %in% status.years)
+    DO_status <- DO %>% dplyr::filter(Station_ID %in% DO_status_stns) %>% dplyr::filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      DO_trend_stns <- SeaKen %>% filter(analyte == 'Dissolved Oxygen', signif != 'Insufficient data for trend analysis')
+      DO_trend_stns <- SeaKen %>% dplyr::filter(analyte == 'Dissolved Oxygen', signif != 'Insufficient data for trend analysis')
       DO_trend_stns  <- unique(DO_trend_stns$Station_ID)
     } else {
       DO_trend_stns <- NULL
@@ -2136,7 +2183,7 @@ parm_summary <- function(stns,
     # trend DO
     if(length(DO_trend_stns) > 0){
       for(j in 1:length(DO_trend_stns)) {
-        DO_seaken <- SeaKen %>% filter(analyte == 'Dissolved Oxygen')
+        DO_seaken <- SeaKen %>% dplyr::filter(analyte == 'Dissolved Oxygen')
         DO_seaken <- DO_seaken[DO_seaken$Station_ID == DO_trend_stns[j],]
         
         if(DO_seaken$signif != "Not Significant") {
@@ -2161,10 +2208,10 @@ parm_summary <- function(stns,
     temp$year<-as.numeric(format(temp$date, format="%Y"))
     
     #filter out stations that meet status and stations that meet trend
-    temp_status_stns  <- unique(filter(status, Analyte == "Temperature")$Station_ID)
+    temp_status_stns  <- unique(dplyr::filter(status, Analyte == "Temperature")$Station_ID)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      temp_trend_stns <- SeaKen %>% filter(analyte == 'Temperature', signif != 'Insufficient data for trend analysis')
+      temp_trend_stns <- SeaKen %>% dplyr::filter(analyte == 'Temperature', signif != 'Insufficient data for trend analysis')
       temp_trend_stns  <- unique(temp_trend_stns$Station_ID)
     } else {
       temp_trend_stns <- NULL
@@ -2176,7 +2223,7 @@ parm_summary <- function(stns,
         # status  
         temp_data <- temp[temp$Station_ID == temp_status_stns[i],]
         
-        temp_status <- temp_data %>% filter(Station_ID %in% temp_status_stns[i]) %>% filter(year %in% status.years)
+        temp_status <- temp_data %>% dplyr::filter(Station_ID %in% temp_status_stns[i]) %>% dplyr::filter(year %in% status.years)
         
         if(any(!is.na(temp_status$exceed))) {
           if(any(unique((temp_status$exceed) == 'TRUE'))) {
@@ -2192,7 +2239,7 @@ parm_summary <- function(stns,
     # trend temp
     if(length(temp_trend_stns) > 0){
       for(j in 1:length(temp_trend_stns)) {
-        temp_seaken <- SeaKen %>% filter(analyte == 'Temperature')
+        temp_seaken <- SeaKen %>% dplyr::filter(analyte == 'Temperature')
         temp_seaken <- temp_seaken[temp_seaken$Station_ID == temp_trend_stns[j],]
         
         if(temp_seaken$signif != "Not Significant") {
@@ -2218,12 +2265,12 @@ parm_summary <- function(stns,
     tp$year<-as.numeric(format(tp$Sampled, format="%Y"))
     
     #filter out stations that meet status and stations that meet trend
-    tp_status_stns <- status %>% filter(Analyte == 'Total Phosphorus')
+    tp_status_stns <- status %>% dplyr::filter(Analyte == 'Total Phosphorus')
     tp_status_stns  <- unique(tp_status_stns$Station_ID)
-    tp_status <- tp %>% filter(Station_ID %in% tp_status_stns) %>% filter(year %in% status.years)
+    tp_status <- tp %>% dplyr::filter(Station_ID %in% tp_status_stns) %>% dplyr::filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      tp_trend_stns <- SeaKen %>% filter(analyte == 'Total Phosphorus', signif != 'Insufficient data for trend analysis')
+      tp_trend_stns <- SeaKen %>% dplyr::filter(analyte == 'Total Phosphorus', signif != 'Insufficient data for trend analysis')
       tp_trend_stns  <- unique(tp_trend_stns$Station_ID)
     }else{
       tp_trend_stns <- NULL
@@ -2248,7 +2295,7 @@ parm_summary <- function(stns,
     #trend tp
     if(length(tp_trend_stns) > 0 ) {
       for(j in 1:length(tp_trend_stns)) {
-        tp_seaken <- SeaKen %>% filter(analyte == 'Total Phosphorus')
+        tp_seaken <- SeaKen %>% dplyr::filter(analyte == 'Total Phosphorus')
         tp_seaken <- tp_seaken[tp_seaken$Station_ID == tp_trend_stns[j],]
         
         if(tp_seaken$signif != "Not Significant") {
@@ -2274,12 +2321,12 @@ parm_summary <- function(stns,
     tss$year<-as.numeric(format(tss$Sampled, format="%Y"))
     
     #filter out stations that meet status and stations that meet trend
-    tss_status_stns <- status %>% filter(Analyte == 'Total Suspended Solids')
+    tss_status_stns <- status %>% dplyr::filter(Analyte == 'Total Suspended Solids')
     tss_status_stns  <- unique(tss_status_stns$Station_ID)
-    tss_status <- tss %>% filter(Station_ID %in% tss_status_stns) %>% filter(year %in% status.years)
+    tss_status <- tss %>% dplyr::filter(Station_ID %in% tss_status_stns) %>% dplyr::filter(year %in% status.years)
     
     if(any(trend != 'No Stations Meet Trend Criteria'))  {
-      tss_trend_stns <- SeaKen %>% filter(analyte == 'Total Suspended Solids', signif != 'Insufficient data for trend analysis')
+      tss_trend_stns <- SeaKen %>% dplyr::filter(analyte == 'Total Suspended Solids', signif != 'Insufficient data for trend analysis')
       tss_trend_stns  <- unique(tss_trend_stns$Station_ID)
     }else{
       tss_trend_stns <- NULL
@@ -2305,7 +2352,7 @@ parm_summary <- function(stns,
     #trend tss
     if(length(tss_trend_stns) > 0 ) {
       for(j in 1:length(tss_trend_stns)) {
-        tss_seaken <- SeaKen %>% filter(analyte == 'Total Suspended Solids')
+        tss_seaken <- SeaKen %>% dplyr::filter(analyte == 'Total Suspended Solids')
         tss_seaken <- tss_seaken[tss_seaken$Station_ID == tss_trend_stns[j],]
         
         if(tss_seaken$signif != "Not Significant") {
@@ -2354,12 +2401,12 @@ Snapped_Stations <- function(df.all) {
   
   if(any(grepl('USGS', df.all$Station_ID))) {
     tmp_usgs <- df.all %>%
-      filter(grepl('USGS', Station_ID))
+      dplyr::filter(grepl('USGS', Station_ID))
     
     tmp_usgs$snap_Lat <- tmp_usgs$DECIMAL_LAT
     tmp_usgs$snap_Long <- tmp_usgs$DECIMAL_LONG
     
-    tmp_df.all <- df.all %>% filter(!grepl('USGS', Station_ID))
+    tmp_df.all <- df.all %>% dplyr::filter(!grepl('USGS', Station_ID))
     
     df.all <- rbind(tmp_df.all, tmp_usgs)
   } 
