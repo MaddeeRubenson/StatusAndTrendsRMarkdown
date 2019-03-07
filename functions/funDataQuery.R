@@ -21,7 +21,7 @@ combine <- function(A = NULL, E = NULL, L = NULL, W = NULL, N = NULL) {
                    'Long_DD' = 'DECIMAL_LONG',
                    # 'HorizontalCoordinateReferenceSystemDatumName' = 'DATUM',
                    # 'ResultDetectionConditionText' = 'Detect',
-                   'General_Comments' = 'Comment',
+                   'Result_Comment' = 'Comment',
                    'Result_status' = 'StatusIdentifier',
                    'HUC8' = 'HUC',
                    'Statistical_Base' = 'Statistical_Base'
@@ -222,8 +222,8 @@ Stations_in_poly_AWQMS <- function(df.all, poly_shp, outside=FALSE) {
   }
 }
 
-AWQMS_Query <- function(planArea = NULL, 
-                        area.Shp = agwqma_shp, 
+AWQMS_Query <- function(HUC8 = NULL, 
+                        area.Shp = sia_shp, 
                         inParms, 
                         luParms, 
                         startDate,
@@ -251,7 +251,7 @@ AWQMS_Query <- function(planArea = NULL,
   
   # Get Stations within Hucs from station database
   stations_channel <- odbcConnect(stations.Channel.Name)
-  HUC_List <- HUClist[HUClist$PlanName == planArea, "HUC8"]
+  HUC_List <- HUC8
   stations_query <- paste0("SELECT * FROM VWStationsFinal WHERE HUC8 IN ('", paste(HUC_List, collapse = "', '"), "')")
   print(stations_query)
   sTime <- Sys.time()
