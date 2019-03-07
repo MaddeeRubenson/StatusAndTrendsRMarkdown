@@ -301,7 +301,7 @@ extract_303d <- function (df.all, wq_limited, selectedPlanArea) {
 
 status_stns <- function(data, status_years = c((as.numeric(format(Sys.Date(), "%Y"))-2):format(Sys.Date(), "%Y"))) {
   
-  data$Sampled <- as.POSIXct(strptime(dta$Sampled, format = '%Y-%m-%d')) 
+  data$Sampled <- as.POSIXct(strptime(data$Sampled, format = '%Y-%m-%d')) 
   data$year <- lubridate::year(data$Sampled)
   
   if(any(unique(data$year) %in% status_years)){
