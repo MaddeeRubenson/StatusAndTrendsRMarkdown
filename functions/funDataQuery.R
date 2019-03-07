@@ -222,7 +222,8 @@ Stations_in_poly_AWQMS <- function(df.all, poly_shp, outside=FALSE) {
   }
 }
 
-AWQMS_Query <- function(HUC8 = NULL, 
+AWQMS_Query <- function(HUC8 = NULL,
+                        station_IDs = c(),
                         area.Shp = sia_shp, 
                         inParms, 
                         luParms, 
@@ -260,7 +261,7 @@ AWQMS_Query <- function(HUC8 = NULL,
   print(eTime-sTime)
   
   agwqma_stations <- stations[stations$MLocID %in% Stations_in_poly_AWQMS(stations, area.Shp),]
-  station_list <- unique(agwqma_stations$MLocID)
+  station_list <- unique(c(agwqma_stations$MLocID, station_IDs))
   
   ## connect to element and get data (must set up ODBC connection first)
   channel <- odbcConnect("AWQMS")
