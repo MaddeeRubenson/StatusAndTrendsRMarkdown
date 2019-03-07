@@ -1,18 +1,18 @@
 ---
-title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Generic Agricultural Water Quality Management Area Water Quality Status and Trends Report'
-subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
+title: '<img src="Figures/LogoColorRegular.jpg" style="float: right;width: 80px; "/>Lower North Fork Malheur Strategic Implementation Area Water Quality Status and Trends Report'
+#subtitle: Oregon DEQ's Water Quality Status and Trends Report for the Oregon Department of Agriculture's Biennial Review of the Agricultural Area Rules and Plans
 date: January 2019
 output:
-  word_document:
-    fig_caption: yes
-    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
-    toc: yes
   html_document:
     mode: selfcontained
     number_sections: yes
     toc: yes
     toc_depth: 2
     toc_float: yes
+  word_document:
+    fig_caption: yes
+    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+    toc: yes
 always_allow_html: yes
 ---
 
@@ -55,6 +55,7 @@ library(plyr)
 library(tidyr)
 library(leaflet)
 
+
 source('functions/funDataQuery.R')
 source("functions/funHelpers.R")
 source("functions/funClean.R")
@@ -69,15 +70,17 @@ figs <- captioner(prefix="\nFigure")
 
 ```{r inputs}
 
-# agwqma, query_dates, and project_dir are different for every Report. Note 'agwqma' must be named exactly 
-# how it is named in the agwqma shapefile ('agwqma_all_shp').
+# sia, query_dates, and project_dir are different for every Report. Note 'sia' must be named exactly 
+# how it is named in the sia shapefile ('agwqma_all_shp').
 
-agwqma <- "Generic"
+sia <- "Lower North Fork Malheur"
+sia_huc8 <- c(17050116)
+
 query_dates <- c("2000-01-01", "2018-12-31")
-project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/Generic/Generic"
+project_dir <-  "//deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/SIAs/2019-SIA-Lower-North-Fork-Malheur"
 
 # Set to TRUE if knitting a word document
-word_output <- TRUE
+word_output <- FALSE
 
 # Set to TRUE if you want individual parameter summary maps for each parameter
 split_param_summary <- FALSE
@@ -88,35 +91,35 @@ Rdata_dir <- paste0(project_dir,"/RData")
 GIS_dir <- paste0(project_dir,"/GIS")
 
 # Name of input map files
-landuse_map_file <- paste0(gsub(" ", "_", agwqma), "_landuse_map.png")
-station_map_file <- paste0(gsub(" ", "_", agwqma), "_station_map.png")
+landuse_map_file <- paste0(gsub(" ", "_", sia), "_landuse_map.png")
+station_map_file <- paste0(gsub(" ", "_", sia), "_station_map.png")
 
-station_summary_map1_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map1.png")
-station_summary_map2_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map2.png")
+station_summary_map1_file <- paste0(gsub(" ", "_", sia), "_station_summary_map1.png")
+station_summary_map2_file <- paste0(gsub(" ", "_", sia), "_station_summary_map2.png")
 
-station_summary_map_DO_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_DO.png")
-station_summary_map_pH_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_pH.png")
-station_summary_map_temp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_temp.png")
-station_summary_map_ecoli_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_ecoli.png")
-station_summary_map_entero_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_entero.png")
-station_summary_map_tss_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_tss.png")
-station_summary_map_tp_file <- paste0(gsub(" ", "_", agwqma), "_station_summary_map_tp.png")
+station_summary_map_DO_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_DO.png")
+station_summary_map_pH_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_pH.png")
+station_summary_map_temp_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_temp.png")
+station_summary_map_ecoli_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_ecoli.png")
+station_summary_map_entero_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_entero.png")
+station_summary_map_tss_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_tss.png")
+station_summary_map_tp_file <- paste0(gsub(" ", "_", sia), "_station_summary_map_tp.png")
 
 # Name of output files
-df_all_raw_file <- paste0(gsub(" ", "_", agwqma), "_df_all_raw_",paste(query_dates, collapse = "."), ".Rdata")
-df_all_clean_file <- paste0(gsub(" ", "_", agwqma), "_df_all_clean_",paste(query_dates, collapse = "."), ".Rdata")
-duplicates_file <- paste0(gsub(" ", "_", agwqma), "_duplicates_",paste(query_dates, collapse = "."), ".Rdata")
-landuse_file <- paste0(gsub(" ", "_", agwqma), "_landuse.Rdata")
-stns_file <- paste0(gsub(" ", "_", agwqma), "_stns.Rdata")
-status_file <- paste0(gsub(" ", "_", agwqma), "_status.Rdata")
-trend_file <- paste0(gsub(" ", "_", agwqma), "_trend.Rdata")
-stns_param_summary_file <- paste0(gsub(" ", "_", agwqma), "_station_param_summary.Rdata")
+df_all_raw_file <- paste0(gsub(" ", "_", sia), "_df_all_raw_",paste(query_dates, collapse = "."), ".Rdata")
+df_all_clean_file <- paste0(gsub(" ", "_", sia), "_df_all_clean_",paste(query_dates, collapse = "."), ".Rdata")
+duplicates_file <- paste0(gsub(" ", "_", sia), "_duplicates_",paste(query_dates, collapse = "."), ".Rdata")
+landuse_file <- paste0(gsub(" ", "_", sia), "_landuse.Rdata")
+stns_file <- paste0(gsub(" ", "_", sia), "_stns.Rdata")
+status_file <- paste0(gsub(" ", "_", sia), "_status.Rdata")
+trend_file <- paste0(gsub(" ", "_", sia), "_trend.Rdata")
+stns_param_summary_file <- paste0(gsub(" ", "_", sia), "_station_param_summary.Rdata")
 
 # Sets up checks for Executive Summary generation
-Executive_Summary_check <- Reduce("&", file.exists(paste0(Rdata_dir,"/", landuse_file), paste0(Rdata_dir,"/", stns_param_summary_file)))
+#Executive_Summary_check <- Reduce("&", file.exists(paste0(Rdata_dir,"/", landuse_file), paste0(Rdata_dir,"/", stns_param_summary_file)))
 
 input <- list(action_button = c(0))
-input$select <- agwqma
+input$select <- sia
 input$dates <- query_dates
 input$parms <- c('Total Phosphorus',
                  'Total Suspended Solids',
@@ -162,8 +165,10 @@ lu_parms <- read.csv('Lookups/WQP_Table3040_Names.csv', stringsAsFactors = FALSE
 ph_crit <- merge(ph_crit, HUClist, by.x = 'plan_name', by.y = 'PlanName', all.x = TRUE)
 
 # import GIS features
-agwqma_all_shp <- readOGR(dsn = support_files_dir, layer = 'ODA_AgWQMA', integer64="warn.loss", verbose = FALSE)
-agwqma_shp <- agwqma_all_shp[agwqma_all_shp$PlanName == agwqma,]
+# SIA area shp
+sia_shp <- readOGR(dsn = GIS_dir, layer = 'LowerNorthForkMalheur_SIA', integer64="warn.loss", verbose = FALSE)
+
+
 tribal_lands_shp <- readOGR(dsn = support_files_dir, layer = 'tl_2017_or_aiannh', integer64="warn.loss", verbose = FALSE)
 wql_streams_shp <- readOGR(dsn = support_files_dir, layer = 'WQL_Streams_2012', integer64="warn.loss", verbose = FALSE)
 wql_streams_shp <- spTransform(wql_streams_shp, CRS("+proj=longlat +datum=NAD83"))
@@ -188,8 +193,9 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_raw_file))) {
   
 } else {
   
-  AWQMS_Data <- AWQMS_Query(planArea = agwqma,
-                            area.Shp = agwqma_shp,
+  AWQMS_Data <- AWQMS_Query(HUC8 = sia_huc8,
+                            station_IDs =c(),
+                            area.Shp = sia_shp,
                             inParms = input$parms,
                             luParms = lu_parms,
                             startDate = min(input$dates),
@@ -219,23 +225,32 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   # remove data collected on tribal nation land or tribal trust land
   df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, tribal_lands_shp, outside=TRUE),]
   
+  # clip to SIA
+  df.all <-df.all[df.all$Station_ID %in% Stations_in_poly(df.all, sia_shp, outside=FALSE),]
   
-  # remove stations outside the agwqma
-  df.all <- clipToPlanArea(df.all, agwqma_all_shp, input$select)
-
+  
   # Convert AWQMS analyte names to existing code language
-  df.all[grep('Dissolved oxygen', df.all$Analyte),]$Analyte <- 'Dissolved Oxygen'
+  if(any(df.all$Analyte == "Dissolved oxygen")){
+    df.all[grep('Dissolved oxygen', df.all$Analyte),]$Analyte <- 'Dissolved Oxygen'
+  }
+  if(any(df.all$Analyte == "Phosphorus")){
   df.all[grep('Phosphorus', df.all$Analyte),]$Analyte <- 'Total Phosphorus'
+  }
+  if(any(df.all$Analyte == "Total suspended solids")){
   df.all[grep('Total suspended solids', df.all$Analyte),]$Analyte <- 'Total Suspended Solids'
-  
+  }
+  if(any(df.all$Analyte == "Temperature, water")){
+  df.all[grep('Temperature, water', df.all$Analyte),]$Analyte <- 'Temperature'
+  }
+
   # Remove all Dissolved Oxygen summary statistics from analysis except for 'minimum' 
-  df.all <- df.all %>% filter(!(Analyte == "Dissolved Oxygen" & Statistical_Base %in% c('7DADM', 'Maximum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
+  df.all <- df.all %>% dplyr::filter(!(Analyte == "Dissolved Oxygen" & Statistical_Base %in% c('7DADM', 'Maximum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
   
   # Reconcile the same ODEQ stations that have different IDs in WQP and DEQ Databases
   # The Station ID will be named the same as LASAR
-  df.all$Station_ID <- gsub("OREGONDEQ-", "", df.all$Station_ID)
+  #df.all$Station_ID <- gsub("OREGONDEQ-", "", df.all$Station_ID)
   df.all$Station_ID <- gsub("-ORDEQ", "", df.all$Station_ID)
-  df.all$Station_ID <- gsub("21ORBCH-", "", df.all$Station_ID)
+  #df.all$Station_ID <- gsub("21ORBCH-", "", df.all$Station_ID)
   
   # Reconcile Stations with the same ID but have different Lat/Longs 
   df.all <- remove_stn_dups(df.all)
@@ -276,7 +291,7 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
   # Create a vector of stations where the Enterococcus criterion apply
   df.temp.ent2 <- (Ben_use_LU[!is.na(Ben_use_LU$bacteria_use),]) 
-  df.temp.ent2 <- unique(df.temp.ent2[(df.temp.ent2$AgArea == agwqma &  grepl("Coastal Contact Recreation",
+  df.temp.ent2 <- unique(df.temp.ent2[(df.temp.ent2$AgArea == sia &  grepl("Coastal Contact Recreation",
                                                                               df.temp.ent2$bacteria_use)), c("Station_ID")])
   
   if(!identical(df.temp.ent2, character(0))) {
@@ -292,79 +307,81 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   
   # Run temperature sufficiency tests
   if (any('Temperature' %in% df.all$Analyte)) {
-    df.all <- df.all %>% filter(!(Analyte == "Temperature" & Statistical_Base %in% c('7DADM', 'Minimum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
+    df.all <- df.all %>% dplyr::filter(!(Analyte == "Temperature" & Statistical_Base %in% c('7DADM', 'Minimum', 'Mean', '7DADMean', '7DADMin', '30DADMean')))
     tempStns <- temp_sufficiency_analysis(df.all)
     
-    qc.1.pass <- filter(attributes(tempStns)$day_test, result == "pass")
-    qc.2.pass <- filter(attributes(tempStns)$month_test, result == "pass")
-    qc.3.pass <- filter(attributes(tempStns)$year_test, result == "pass")
-    qc.1.stn <- filter(attributes(tempStns)$day_test, result == "pass")$Station_ID
-    qc.2.stn <- filter(attributes(tempStns)$month_test, result == "pass")$Station_ID
-    qc.3.stn <- filter(attributes(tempStns)$year_test, result == "pass")$Station_ID
-    
-    qc.1.pass$IDD <- paste0(qc.1.pass$Station_ID," ",qc.1.pass$date)
-    
-    df.all.temp <- df.all %>% 
-      filter(Analyte == "Temperature")  %>%
-      mutate(date = date(Sampled)) %>%
-      mutate(IDD = paste0(Station_ID," ",date)) %>%
-      merge(qc.1.pass[,c("result", "IDD")], by=c("IDD"), all=FALSE)
-
-    
-    df.all.temp$Result <- convert_temp_F_C(df.all.temp, result_column_name="Result", unit_column_name="Unit")
-    df.all.temp$Unit <- "Celsius"
-    
-    df.sdadm <- Calculate.sdadm(df.all.temp, "Result", "Station_ID", "Sampled", '%Y-%m-%d %H:%M:%S')
-    
-    # Remove NAs
-    df.sdadm <- df.sdadm[!(is.na(df.sdadm$sdadm)),]
-    
-    df.sdadm$IDD <- paste0(df.sdadm$Station_ID," ",df.sdadm$date)
-    
-    # Attempt at pulling the other df fields for each daily sample so it can be added back to sdadm
-    df.all.temp.fields <- df.all.temp[!duplicated(df.all.temp[c("IDD")] ), ]
-    
-    # add it back
-    df.sdadm <- merge(x=df.sdadm[,c("IDD", "sdadm")],y=df.all.temp.fields, by="IDD", all.x=TRUE)
-    
-    # Remove NAs from merge
-    df.sdadm <- df.sdadm[!(is.na(df.sdadm$Station_ID)),]
-    
-    df.sdadm$Result <- df.sdadm$sdadm
-    
-    # only keep columns in df.all
-    df.sdadm <- df.sdadm[,colnames(df.sdadm) %in% colnames(df.all)]
-    
-    df.sdadm$Analyte <- "Temperature"
-
-    # now remove temperature from df.all and replace with 7DADM values
-    df.all <- df.all %>%
-      filter(!Analyte == "Temperature") %>%
-      rbind(df.sdadm)
-    
-    if(NROW(qc.3.pass) > 0) {
-      qc.3.pass$Analyte <- "Temperature"
-      df.all$month <- month(df.all$Sampled)
-      qc.3.pass <- dplyr::rename(qc.3.pass, monTest = result)
-      df.all <- merge(df.all, qc.3.pass[,c("Station_ID", "month", "monTest", "Analyte")], 
-                      by=c("Station_ID", "Analyte", "month"), all.x = TRUE, all.y = FALSE)
-    } else {
-       df.all$monTest <- "NA"
-    }     
+    if(!is.null(tempStns)){
+      qc.1.pass <- dplyr::filter(attributes(tempStns)$day_test, result == "pass")
+      qc.2.pass <- dplyr::filter(attributes(tempStns)$month_test, result == "pass")
+      qc.3.pass <- dplyr::filter(attributes(tempStns)$year_test, result == "pass")
+      qc.1.stn <- dplyr::filter(attributes(tempStns)$day_test, result == "pass")$Station_ID
+      qc.2.stn <- dplyr::filter(attributes(tempStns)$month_test, result == "pass")$Station_ID
+      qc.3.stn <- dplyr::filter(attributes(tempStns)$year_test, result == "pass")$Station_ID
       
+      qc.1.pass$IDD <- paste0(qc.1.pass$Station_ID," ",qc.1.pass$date)
+      
+      df.all.temp <- df.all %>% 
+        dplyr::filter(Analyte == "Temperature")  %>%
+        mutate(date = date(Sampled)) %>%
+        mutate(IDD = paste0(Station_ID," ",date)) %>%
+        merge(qc.1.pass[,c("result", "IDD")], by=c("IDD"), all=FALSE)
+      
+      
+      df.all.temp$Result <- convert_temp_F_C(df.all.temp, result_column_name="Result", unit_column_name="Unit")
+      df.all.temp$Unit <- "Celsius"
+      
+      df.sdadm <- Calculate.sdadm(df.all.temp, "Result", "Station_ID", "Sampled", '%Y-%m-%d %H:%M:%S')
+      
+      # Remove NAs
+      df.sdadm <- df.sdadm[!(is.na(df.sdadm$sdadm)),]
+      
+      df.sdadm$IDD <- paste0(df.sdadm$Station_ID," ",df.sdadm$date)
+      
+      # Attempt at pulling the other df fields for each daily sample so it can be added back to sdadm
+      df.all.temp.fields <- df.all.temp[!duplicated(df.all.temp[c("IDD")] ), ]
+      
+      # add it back
+      df.sdadm <- merge(x=df.sdadm[,c("IDD", "sdadm")],y=df.all.temp.fields, by="IDD", all.x=TRUE)
+      
+      # Remove NAs from merge
+      df.sdadm <- df.sdadm[!(is.na(df.sdadm$Station_ID)),]
+      
+      df.sdadm$Result <- df.sdadm$sdadm
+      
+      # only keep columns in df.all
+      df.sdadm <- df.sdadm[,colnames(df.sdadm) %in% colnames(df.all)]
+      
+      df.sdadm$Analyte <- "Temperature"
+      
+      # now remove temperature from df.all and replace with 7DADM values
+      df.all <- df.all %>%
+        dplyr::filter(!Analyte == "Temperature") %>%
+        rbind(df.sdadm)
+      
+      if(NROW(qc.3.pass) > 0) {
+        qc.3.pass$Analyte <- "Temperature"
+        df.all$month <- month(df.all$Sampled)
+        qc.3.pass <- dplyr::rename(qc.3.pass, monTest = result)
+        df.all <- merge(df.all, qc.3.pass[,c("Station_ID", "month", "monTest", "Analyte")], 
+                        by=c("Station_ID", "Analyte", "month"), all.x = TRUE, all.y = FALSE)
+      } else {
+        df.all$monTest <- "NA"
+      }     
+    } else {
+      df.all <- df.all %>% dplyr::filter(!Analyte == "Temperature")
+    }  
   }
 
   save(df.all, file=paste0(Rdata_dir,"/",df_all_clean_file))
-  # save(df.all, file=paste0(Rdata_dir,"/", gsub(" ", "_", agwqma), "_df_all_clean_",paste(query_dates, collapse = "."), "_old.Rdata"))
   
 }
 
 ```
 
-```{r Create-other-dataframes}
-
+```{r Create-other-dataframes, results=FALSE}
+df.all$monTest <- "NA"
 if (any(c('pH', 'E. Coli', "Enterococcus", "Dissolved Oxygen") %in% df.all$Analyte)) {
-  seaken_other <- run_seaKen(filter(df.all, Analyte %in% c('pH', 
+  seaken_other <- run_seaKen(dplyr::filter(df.all, Analyte %in% c('pH', 
                                                            'E. Coli', 
                                                            "Enterococcus", 
                                                            "Dissolved Oxygen"
@@ -377,7 +394,7 @@ if(NROW(dplyr::filter(df.all, Analyte == "Temperature" & monTest == "pass")) > 0
 
 if(NROW(dplyr::filter(df.all, Analyte == "Total Suspended Solids")) > 0) {
   
-  if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
+  if (input$select %in% c('Lower North Fork Malheur','Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
     # Snake River - Hells Canyon TMDL
     
     seaken_tss <- df.all %>%
@@ -397,12 +414,12 @@ if(NROW(dplyr::filter(df.all, Analyte == "Total Suspended Solids")) > 0) {
 
 if(NROW(dplyr::filter(df.all, Analyte == 'Total Phosphorus')) > 0) {
   
-  if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
+  if (input$select %in% c('Lower North Fork Malheur','Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
     # Snake River - Hells Canyon TMDL
     # TMDL target applies during the growing season May - September
     
     seaken_tp <- df.all %>%
-      filter(Analyte == 'Total Phosphorus' & month(new_data$Sampled) >= 5 & month(new_data$Sampled) <=9) %>%
+      filter(Analyte == 'Total Phosphorus' & month(df.all$Sampled) >= 5 & month(df.all$Sampled) <=9) %>%
       as.data.frame() %>%
       run_seaKen()
     
@@ -419,7 +436,8 @@ SeaKen <- rbind(seaken_other, seaken_temp, seaken_tss, seaken_tp)
 status_years <- seq(year(floor_date(ymd(input$dates[2]) - years(2), unit="year")), 
                     year(ymd(input$dates[2])), by = 1)
 
-status <- Stations_Status(df.all, status.years=status_years)
+# status <- Stations_Status(df.all, status.years=status_years)
+status <- status_stns(df.all)
 trend <- Stations_Trend(df.all, SeaKen=SeaKen)
 
 stns_by_year <- Stations_by_Year(df.all)
@@ -428,60 +446,42 @@ stns_by_year <- Stations_by_Year(df.all)
 status <- status %>% arrange(Analyte, Station_ID)
 trend <- trend %>% arrange(Analyte, Station_ID)
 
-stns <- All_stns_fit_Criteria(trend = trend, 
-                             status = status,
-                             df.all = df.all)
+#no stns meeting criteria, can't create object
+# stns <- All_stns_fit_Criteria(trend = trend, 
+#                             status = status,
+#                             df.all = df.all)
 
 #print(stns)
 
-df.stns <- df.all[df.all$Station_ID %in% unique(stns$Station_ID),]
-stn_totals <- summarizeByStation(df.stns)
-all.sp <- generateStnLyrToPlot(df.stns, stn_totals) #changed lat and long names
+#EC-created df.stns by copying df.all instead of subsetting df.all, since no observations meet subset criteria. 
+#df.stns <- df.all[df.all$Station_ID %in% unique(stns$Station_ID),]
+#df.stns <- df.all[unique(df.all$Station_ID),]
+#stn_totals <- summarizeByStation(df.stns)
+#all.sp <- generateStnLyrToPlot(df.stns, stn_totals) #changed lat and long names
 
-writeOGR(obj=all.sp, dsn=GIS_dir, layer="stations_to_map", driver="ESRI Shapefile", overwrite_layer=TRUE)
+#writeOGR(obj=all.sp, dsn=GIS_dir, layer="stations_to_map", driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 all_stn_sp <- all_stn_sp(df.all)
-stn_nlcd_df <- landUseAnalysis(all.sp, cats, NLCD2011)
+stn_nlcd_df <- landUseAnalysis(all_stn_sp, cats, NLCD2011)
 
-save(stns, file = paste0(Rdata_dir,"/", stns_file))
+#EC- no stns meeting criteria, so no stns object so save. 
+#save(stns, file = paste0(Rdata_dir,"/", stns_file))
 save(status, file = paste0(Rdata_dir,"/", status_file))
 save(trend, file = paste0(Rdata_dir,"/", trend_file))
 
 ```
 
-
-```{r exec-summary, child='Exec_Summary_Child.Rmd', eval = Executive_Summary_check & word_output}
-
-```
-
-# Introduction
-
-## Purpose
-
-The Oregon Department of Agriculture (ODA) has adopted area rules (OAR `r OAR_LU[OAR_LU$AgArea %in% input$select,'OAR']`) and plans for the `r input$select` agricultural water quality management area. Oregon statute and administrative rules require ODA to consult with the Oregon Department of Environmental Quality (DEQ) during the biennial review of Agricultural Water Quality Management Area Rules and Plans [ORS 568.930][1.1].  DEQ Total Maximum Daily Load (TMDLs) and Nonpoint Source (NPS) program staff conduct these reviews based on ODA's biennial review schedule of their area rules and plans. ODA's Agriculture Water Quality Program is outcome based, explicitly describing prohibited conditions, similar to DEQ's TMDL and NPS programs which explicitly define water quality targets and goals.  The analysis of landscape conditions and water quality data is used for implementing these programs as well as identifying data gaps. 
-
-This report presents data and analysis that will help DEQ fulfill its roles in the biennial review process described in the [Memorandum of Agreement](https://www.oregon.gov/ODA/shared/Documents/Publications/NaturalResources/DEQODAmoa.pdf) between ODA and DEQ. Water quality status and trends reports are created to inform discussions between DEQ Basin Coordinators and ODA Agriculture Water Quality Specialists prior to the Local Advisory Committee meeting. The discussions between DEQ and ODA prior to the LAC meeting could include: water quality and what's working and not working, source(s) and solutions, data needs and future monitoring to answer these questions. This report presents an analysis of water quality data readily accessible from public databases and available in sufficient quantity to indicate status and trends. Dependent on data availability, DEQ will use the available water quality data to answer the first three questions below. For the fourth bullet, the report is expected to inform DEQ Basin Coordinator analysis, interpretation, and discussion with ODA and the LAC about possible or potential sources of pollution:
-
-*	What is the status of water quality? 
-*	What is the trend in water quality? 
-*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
-* Can water quality status and trends be attributed to a pollution source or sources?
-
-DEQ basin coordinators review pertinent information including this report as part of ODA's biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL load allocations through ODA's survey. 
-
-[1.1]: https://www.oregonlegislature.gov/bills_laws/ors/ors568.html
-
-## Basin Contact
+# Basin Contact
 
 
 ```{r basin-contact, results="asis"}
 
-deq<- paste(BC_LU[BC_LU$AgArea %in% input$select, 'DEQ_bc_name'], BC_LU[BC_LU$AgArea %in% input$select, 'DEQ_bc_email'], sep = '; ')
+deq<- paste('Don Butcher','butcher.don@deq.state.or.us', sep = '; ')
 
-oda<- paste(BC_LU[BC_LU$AgArea %in% input$select, 'ODA_agwqcoord_name'], BC_LU[BC_LU$AgArea %in% input$select, 'ODA_agwqcoord_number'], sep = '; ')
+oda<- paste('Tom Demianew', 'tdemianew@oda.state.or.us', sep = '; ')
 
-BC_table<-data.frame(input$select, deq, oda)
-colnames(BC_table) <- c('Agricultural Water Quality Management Area', 'DEQ Basin Coordinator', 'ODA Agricultural Water Quality Specialist')
+BC_table<-data.frame('Lower North Fork Malheur', deq, oda)
+colnames(BC_table) <- c('Strategic Implementation Area', 'DEQ Basin Coordinator', 'ODA Agricultural Water Quality Specialist')
 
 knitr::kable(BC_table,
              padding = 2, digits = 1, row.names = FALSE, caption = 
@@ -496,7 +496,7 @@ knitr::kable(BC_table,
 
 ## Data Sources
 
-Water quality data were retrieved from DEQ's [AWQMS Database][2.1.1] which may include data submitted to DEQ from many other organizations (see Appendix for a complete list). Data were also retrieved from the U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) and U.S. Geological Survey [NWIS][2.1.3] (USGS 2016) databases via the [Water Quality Portal][2.1.4]). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). ** REMOVE IF NOT NEEDED. Stations located within the Confederated Tribes of Umatilla Indian Reservation were not included in this report. The Confederated Tribes of Umatilla administer Clean Water Act programs on the reservation.**
+Water quality data were retrieved from DEQ's [AWQMS Database][2.1.1] which may include data submitted to DEQ from many other organizations (see Appendix for a complete list). Data were also retrieved from the U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) and U.S. Geological Survey [NWIS][2.1.3] (USGS 2016) databases via the [Water Quality Portal][2.1.4]). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). 
 
 The data returned were evaluated for quality. Data that was rated under the [DEQ's Laboratory Quality Manual][2.1.5] (ODEQ 2013) guidelines were rated `r unique(df.all[!is.na(df.all$Status), 'Status'])`. EPA and USGS data were included unless result comments indicated problems with the data.
 
@@ -531,7 +531,7 @@ A land use summary was developed for all monitoring stations that fit the criter
 
 # Results
 
-Within the `r input$select` Agricultural Water Quality Management Area, data from `r length(unique(stns$Station_ID))` monitoring stations were sufficient to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations. 
+Within the `r input$select` Strategic Implementation Area, data from 0 monitoring stations were sufficient to assess status and/or trends out of `r length(unique(df.all$Station_ID))` total monitoring stations. 
 
 ```{r results-summary, results='asis'}
 
@@ -544,61 +544,66 @@ station_summary_tbl <- data.frame(Analyte=c("_E. coli_","_Enterococcus_","Dissol
                                            nrow(unique(status[status$Analyte == "Total Phosphorus", ])),
                                            nrow(unique(status[status$Analyte == "Total Suspended Solids", ]))
                                            ),
-                                  trends=c(nrow(unique(trend[trend$Analyte == "E. Coli", ])),
-                                           nrow(unique(trend[trend$Analyte == "Enterococcus", ])),
-                                           nrow(unique(trend[trend$Analyte == "Dissolved Oxygen", ])),
-                                           nrow(unique(trend[trend$Analyte == "pH",])),
-                                           nrow(unique(trend[trend$Analyte == "Temperature", ])),
-                                           nrow(unique(trend[trend$Analyte == "Total Phosphorus", ])),
-                                           nrow(unique(trend[trend$Analyte == "Total Suspended Solids", ]))
+                                  trends=c(nrow(unique(trend[trend$Analyte == "E. Coli" & trend$t_check, ])),
+                                           nrow(unique(trend[trend$Analyte == "Enterococcus"& trend$t_check, ])),
+                                           nrow(unique(trend[trend$Analyte == "Dissolved Oxygen"& trend$t_check, ])),
+                                           nrow(unique(trend[trend$Analyte == "pH"& trend$t_check,])),
+                                           nrow(unique(trend[trend$Analyte == "Temperature"& trend$t_check, ])),
+                                           nrow(unique(trend[trend$Analyte == "Total Phosphorus"& trend$t_check, ])),
+                                           nrow(unique(trend[trend$Analyte == "Total Suspended Solids"& trend$t_check, ]))
                                            ))
 colnames(station_summary_tbl) <- c("Analyte", "Number of stations w/ sufficient data for status analysis", "Number of stations w/ sufficient data for trend analysis")                                  
 
-knitr::kable(station_summary_tbl, digits = 0, padding = 2, row.names = FALSE, caption = tbls(name = "StnSumTable", caption = "Summary of stations with sufficient data for status or trend analysis."))                                 
+knitr::kable(station_summary_tbl, digits = 0, padding = 2, row.names = FALSE, caption = tbls(name = "StnSumTable", caption = "Summary of all monitoring stations within the Strategic Implementation Area"))                                 
 
 ```
 
-## Station Locations
-
-The map in `r figs("stationsmap", display="cite")` shows the general location of monitoring stations that fit the status and/or trend data requirements along with the distribution of federal and non-federal lands. 
 
 
-```{r stations-map-word, eval = word_output, results = "asis", fig.cap=figs(name="stationsmap", caption=paste0("Monitoring station locations within the ", agwqma, " Agricultural Water Quality Management Area."))}
+
+```{r stations-map-word, eval = word_output, results = "asis", fig.cap=figs(name="stationsmap", caption=paste0("Monitoring station locations within the ", sia, " Agricultural Water Quality Management Area."))}
 
 knitr::include_graphics(path = paste0("Figures/", station_map_file))
 
 ```
 
-## Land Use
+## Station Locations and Land Use
 
 The map in `r figs("landusemap", display="cite")` shows station location in relation to the 2011 national land cover dataset (Homer et al. 2015).
 
-```{r landuse-map-word, eval = word_output, results = "asis", fig.cap=figs(name="landusemap", caption=paste0("Land use and land cover within the ", agwqma, " Agricultural Water Quality Management Area."))}
+```{r landuse-map-word, eval = word_output, results = "asis", fig.cap=figs(name="landusemap", caption=paste0("Land use and land cover within the ", sia, " Strategic Implementation Area."))}
 
 knitr::include_graphics(path = paste0("Figures/", landuse_map_file))
 
 ```
 
 
-```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=8.5, fig.height=7, fig.cap=figs(name="landusemap", caption=paste0("Land use and land cover within the ", agwqma, " Agricultural Water Quality Management Area."))}
+```{r landuse-map-html, results= 'asis', eval = !(word_output), fig.width=8.5, fig.height=7, fig.cap=figs(name="landusemap", caption=paste0("Land use and land cover within the ", sia, " Strategic Implementation Area."))}
 
-agwqma_shp <-spTransform(agwqma_shp, CRS("+proj=longlat +datum=NAD83"))
+sia_shp <-spTransform(sia_shp, CRS("+proj=longlat +datum=NAD83"))
 
-map <- leaflet(agwqma_shp) %>%
-  addPolygons(fill=FALSE, group = "AgWQMA") %>%
+map <- leaflet(sia_shp) %>%
+  addPolygons(fill=FALSE, group = "SIA") %>%
   addTiles() %>%
-  addMarkers(data = all.sp, 
-             lng = all.sp@coords[,1], 
-             lat = all.sp@coords[,2], 
-             popup = paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
-                           lapply(rownames(all.sp@data), 
-                                  function(row) {
-                                    htmlTable::htmlTable(all.sp@data[row,],
-                                                         header = c("Station ID", "Station Description",
-                                                                    names(all.sp@data)[-c(1,2)]),
-                                                         rnames = FALSE)
-                                  })),
-             group = 'Stations That Fit Criteria') %>%
+  # addMarkers(data = all.sp, 
+  #            lng = all.sp@coords[,1], 
+  #            lat = all.sp@coords[,2], 
+  #            popup = paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
+  #                          lapply(rownames(all.sp@data), 
+  #                                 function(row) {
+  #                                   htmlTable::htmlTable(all.sp@data[row,],
+  #                                                        header = c("Station ID", "Station Description",
+  #                                                                   names(all.sp@data)[-c(1,2)]),
+  #                                                        rnames = FALSE)
+  #                                 })),
+  #            group = 'Stations That Fit Criteria') %>%
+# hideGroup('All Stations Queried') %>%
+  # addWMSTiles(baseUrl = 'https://smallscale.nationalmap.gov/arcgis/services/LandCover/MapServer/WMSServer?',
+  #             group = "Land Use (NLCD 2011)",
+  #             layers = "1",
+  #             options = WMSTileOptions(version = '1.3.0',
+  #                                      format = 'image/png',
+  #                                      transparent = TRUE)) %>% 
   addMarkers(data = all_stn_sp, 
              lng = all_stn_sp@coords[,1], 
              lat = all_stn_sp@coords[,2], 
@@ -611,11 +616,10 @@ map <- leaflet(agwqma_shp) %>%
                                                          rnames = FALSE)
                                   })),
              group = 'All Stations Queried') %>%
-  hideGroup('All Stations Queried') %>%
-  addWMSTiles(baseUrl = 'https://smallscale.nationalmap.gov/arcgis/services/LandCover/MapServer/WMSServer?',
+  addWMSTiles(baseUrl = 'https://edcintl.cr.usgs.gov/geoserver/mrlc_display/wms?',
               group = "Land Use (NLCD 2011)",
-              layers = "1",
-              options = WMSTileOptions(version = '1.3.0',
+              layers = "mrlc_nlcd_2011_landcover_2011_edition_2014_10_10",
+              options = WMSTileOptions(version = '1.1.1',
                                        format = 'image/png',
                                        transparent = TRUE)) %>% 
   addWMSTiles(GetURL("USGSTopo"), 
@@ -632,12 +636,14 @@ map <- leaflet(agwqma_shp) %>%
   hideGroup("Hydrography") %>%
   addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
   addLayersControl(baseGroups = c('Land Use (NLCD 2011)', 'USGS Topo', 'ESRI NatGEO World Map'),
-                   overlayGroups = c('Stations That Fit Criteria', 'All Stations Queried', 'Hydrography'),
+                   overlayGroups = c(
+                     # 'Stations That Fit Criteria', 
+                     'All Stations Queried', 'Hydrography'),
                    options = layersControlOptions(collapsed = FALSE)) %>%
   addEasyButton(easyButton(
     icon = "fa-globe",
     onClick = JS("function(btn, map){
-                var groupLayer = map.layerManager.getLayerGroup('AgWQMA');
+                var groupLayer = map.layerManager.getLayerGroup('SIA');
                 map.fitBounds(groupLayer.getBounds());
                  }")))
 map
@@ -645,12 +651,13 @@ map
 ```
 
 
-A summary table of watershed land use by station that met data requirements for status or trend is presented in `r tbls("landUse", display="cite")`. The table is sorted in descending order by percent agriculture (% Ag), so stations located in watersheds with the highest percent agricultural land uses are at the top of the table.
+A summary table of watershed land use by station is presented in `r tbls("landUse", display="cite")`. The table is sorted in descending order by percent agriculture (% Ag), so stations located in watersheds with the highest percent agricultural land uses are at the top of the table.
 
 
 ```{r landuse-table, results="asis"}
 
-stn_to_use<-c(unique(stns$Station_ID))
+#EC-edited to include all stations
+stn_to_use<-c(unique(df.all$Station_ID))
 
 landuse<-stn_nlcd_df%>%
   filter(Station_ID %in% stn_to_use) %>%
@@ -663,7 +670,7 @@ save(landuse, file=paste0(Rdata_dir,"/", landuse_file))
 
 knitr::kable(landuse, digits = 0, 
              padding = 2, row.names = FALSE, caption = tbls(name = "landUse", 
-                                                            caption = "Summary table of watershed land use for stations with a status or trend result."))
+                                                            caption = "Summary table of watershed land use for all stations in the Strategic Implementation Area."))
 
 ```
 
@@ -673,7 +680,15 @@ A summary of Oregon's 2012 Integrated Report Assessment database and 303(d) list
 
 ```{r wq-limited, results="asis"}
 
-wq_lim_whole <- extract_303d(df.all, wq_limited, input$select)
+sia_shp_lambert <- spTransform(sia_shp, CRS("+proj=lcc +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"))
+sia_shp_buff <- rgeos::gBuffer(sia_shp_lambert, width=500)
+sia_shp_buff <- spTransform(sia_shp_buff, CRS("+init=epsg:4326"))
+# sia_shp <- spTransform(sia_shp, CRS("+init=epsg:4326"))
+wql_streams_shp <- spTransform(wql_streams_shp, proj4string(sia_shp_buff))
+wql_streams_clip <- raster::intersect(wql_streams_shp, sia_shp_buff)
+
+# wq_lim_whole <- extract_303d(df.all, wq_limited, input$select)
+wq_lim_whole <- wql_streams_clip@data
 wq_lim_whole <- wq_lim_whole[,c('STREAM_LAK', 'LLID_STREA', 
                                 'MILES', 'POLLUTANT', 'SEASON', 
                                 'ASSESSME_1', 'CRITERIA', 
@@ -712,9 +727,9 @@ knitr::kable(wq_limited_df, padding = 2, row.names = FALSE, caption = tbls(name 
 For all monitoring stations with sufficient data (8 years or more), trending was performed using Seasonal Kendall trend analysis. Results are summarized in `r tbls(name = "seakenTable", display="cite")` below. The values in the N column represent the number of results for each analyte at each monitoring station and includes duplicate values; the slope refers to the slope of the trend line; the p-value represents the statistical significance of the trend (p <= 0.20 is significant and is defined in the 'significant' column); median represents the median value of all assessed results for each analyte at each monitoring station. If no table is visible, there were no monitoring stations with sufficient data to assess trends.
 
 
-```{r Seasonal-Kendall, results="asis"}
+```{r Seasonal-Kendall, eval = FALSE, results="asis"}
 
-SK <- SeaKen %>% filter(Station_ID %in% unique(stns$Station_ID)) %>% 
+SK <- SeaKen %>% filter(Station_ID %in% unique(status$Station_ID)) %>% 
   filter(signif !=  "Insufficient data for trend analysis") %>% 
   filter(analyte != 'Dissolved oxygen saturation')
 
@@ -740,7 +755,9 @@ if(nrow(SK) > 0) {
 
 ## _E. coli_
 
-```{r Ecoli, fig.height=6, fig.width=7, results='asis', eval.after="fig.cap", fig.cap=mapply(figs, cap.names, ecoli_captions)}
+No monitoring stations have data to assess status and/or trend for _E.coli_.
+
+```{r Ecoli, eval = FALSE, fig.height=6, fig.width=7, results='asis', eval.after="fig.cap", fig.cap=mapply(figs, cap.names, ecoli_captions)}
 
 exc <- NULL
 ecoli_stns <- NULL
@@ -885,14 +902,16 @@ if(length(entero_stns) > 0) {
                               caption = "_Enterococcus_ status. If sufficient data exists to calculate the geometric mean, it is included in this table."))
 }  else {
   
-  cat(paste0("A status and trend assessment was not made for *Enterococcus* because the marine water contact recreation use criteria do not apply in the ",agwqma,".")) 
+  cat(paste0("A status and trend assessment was not made for *Enterococcus* because the marine water contact recreation use criteria do not apply in the ",sia,".")) 
 } 
 
 ```
 
 ## Total Phosphorus
 
-```{r Total-Phosphorus, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, tp_captions), eval.after="fig.cap"}
+No monitoring stations have data to assess status and/or trend for Total Phosphorus.
+
+```{r Total-Phosphorus, eval=FALSE, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, tp_captions), eval.after="fig.cap"}
 
 exc <- NULL
 tp_stn <- NULL
@@ -1003,7 +1022,9 @@ tp_exc <- exc
 
 ## Total Suspended Solids
 
-```{r TSS, results = 'asis', fig.width = 7, fig.height = 6, fig.cap=mapply(figs, cap.names, tss_captions), eval.after="fig.cap"}
+No monitoring stations have data to assess status and/or trend for Total Suspended Solids.
+
+```{r TSS, eval=FALSE, results = 'asis', fig.width = 7, fig.height = 6, fig.cap=mapply(figs, cap.names, tss_captions), eval.after="fig.cap"}
 
 exc <- NULL
 tss_stn <- NULL
@@ -1117,7 +1138,9 @@ tss_exc <- exc
 
 ## pH
 
-```{r pH, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, pH_captions), eval.after="fig.cap"}
+No monitoring stations have data to assess status and/or trend for pH.
+
+```{r pH, eval=FALSE, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, pH_captions), eval.after="fig.cap"}
 
 exc <- NULL
 pH_stns <- NULL
@@ -1225,7 +1248,9 @@ pH_exc <- exc
 
 ## Temperature
 
-```{r Temperature, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, temp_captions), eval.after="fig.cap"}
+No monitoring stations have data to assess status and/or trend for Temperature.
+
+```{r Temperature, eval=FALSE, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, temp_captions), eval.after="fig.cap"}
 
 exc <- NULL
 temp_stn <- NULL
@@ -1340,7 +1365,9 @@ temp_exc <- exc
 
 ## Dissolved Oxygen
 
-```{r Dissolved-Oxygen, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, DO_captions), eval.after="fig.cap"}
+No monitoring stations have data to assess status and/or trend for Dissolved Oxygen.
+
+```{r Dissolved-Oxygen, eval= FALSE, fig.height=6, fig.width=7, results='asis', fig.cap=mapply(figs, cap.names, DO_captions), eval.after="fig.cap"}
 
 exc <- NULL
 DO_stns <- NULL
@@ -1519,7 +1546,7 @@ knitr::include_graphics(path = paste0("Figures/",station_summary_map_tss_file))
 
 Summary of stations that fit the criteria for status and/or trend analysis. One or more exceedances within the last three years of available data defined whether a station was 'Meeting' or 'Not Meeting'. Trend was determined by significant trends associated with long-term datasets.
 
-```{r parm-summary-table, results = 'asis'}
+```{r parm-summary-table, eval=FALSE, results = 'asis', eval=FALSE}
 
 stns_param_summary <-  parm_summary(stns = stns[,c(1:4)],
                             ecoli = ecoli,
@@ -1575,7 +1602,7 @@ knitr::kable(stns_param_summary_tbl,
 
 ```
 
-```{r parm-summary-map-html, results = 'asis', eval = !(word_output), fig.width=8.5, fig.height=7}
+```{r parm-summary-map-html, eval=FALSE, results = 'asis', eval = !(word_output), fig.width=8.5, fig.height=7}
 
 library(base64enc)
  
@@ -1605,29 +1632,30 @@ trendIcon <- function(trendColumn) {
 }
 
 # Create function to pull the selected parameter's status and trend and create a popup table for the station. This function is called on the click of a station marker in the parameter summary map.
-popupTable <- function(param){
-  table <- paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
-                    lapply(rownames(stns_param_summary), 
-                           function(row) {
-                             htmlTable::htmlTable(stns_param_summary[row,c("Station_ID", "Station_Description",
-                                                                           paste0(param, "_S"), paste0(param, "_T"))],
-                                                  header = c("Station ID", "Station Description",
-                                                             paste0(param, " Status"), paste0(param, " Trend")),
-                                                  rnames = FALSE)
-                           }))
-  return(table)
-}
+# popupTable <- function(param){
+#   table <- paste("<style> div.leaflet-popup-content {width:auto !important;}</style>",
+#                     lapply(rownames(stns_param_summary), 
+#                            function(row) {
+#                              htmlTable::htmlTable(stns_param_summary[row,c("Station_ID", "Station_Description",
+#                                                                            paste0(param, "_S"), paste0(param, "_T"))],
+#                                                   header = c("Station ID", "Station Description",
+#                                                              paste0(param, " Status"), paste0(param, " Trend")),
+#                                                   rnames = FALSE)
+#                            }))
+#   return(table)
+# }
 
 
-agwqma_shp_buff <- gBuffer(agwqma_all_shp[agwqma_all_shp$PlanName == input$select,], width=500)
-agwqma_shp_buff <- spTransform(agwqma_shp_buff, CRS("+init=epsg:4326"))
-agwqma_shp <- spTransform(agwqma_shp, CRS("+init=epsg:4326"))
-wql_streams_shp <- spTransform(wql_streams_shp, proj4string(agwqma_shp_buff))
-wql_streams_clip <- raster::intersect(wql_streams_shp, agwqma_shp_buff)
+sia_shp_lambert <- spTransform(sia_shp, CRS("+proj=lcc +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"))
+sia_shp_buff <- rgeos::gBuffer(sia_shp_lambert, width=500)
+sia_shp_buff <- spTransform(sia_shp_buff, CRS("+init=epsg:4326"))
+sia_shp <- spTransform(sia_shp, CRS("+init=epsg:4326"))
+wql_streams_shp <- spTransform(wql_streams_shp, proj4string(sia_shp_buff))
+wql_streams_clip <- raster::intersect(wql_streams_shp, sia_shp_buff)
 
 lgnd <- base64enc::base64encode(paste0(project_dir, "/Figures/", "Parm_Summary_mapLegend.png"))
 
-leaflet(agwqma_shp) %>%
+leaflet(sia_shp) %>%
   addWMSTiles(GetURL("USGSTopo"),
               attribution = paste0("<a href='https://www.usgs.gov/'>",
                                    "U.S. Geological Survey</a> | ",
@@ -1640,87 +1668,87 @@ leaflet(agwqma_shp) %>%
               options = WMSTileOptions(format = "image/png",
                                        transparent = TRUE),
               layers = "0") %>%
-  addPolygons(fill=FALSE, group = "AgWQMA") %>%
-  addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$DECIMAL_LAT,
-                    lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Ecoli_T`),
-                                        iconColor = 'black',
-                                        library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`Ecoli_S`)),
-                    popup = popupTable("Ecoli"),
-                    group = "Ecoli"
-  ) %>%
+  addPolygons(fill=FALSE, group = "SIA") %>%
+  # addAwesomeMarkers(data = stns_param_summary,
+  #                   lat = stns_param_summary$DECIMAL_LAT,
+  #                   lng = stns_param_summary$DECIMAL_LONG,
+  #                   icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Ecoli_T`),
+  #                                       iconColor = 'black',
+  #                                       library = 'glyphicon',
+  #                                       markerColor = statusColor(stns_param_summary$`Ecoli_S`)),
+  #                   popup = popupTable("Ecoli"),
+  #                   group = "Ecoli"
+  # ) %>%
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "E. Coli",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Ecoli") %>%
-  addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$DECIMAL_LAT,
-                    lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Entero_T`),
-                                        iconColor = 'black',
-                                        library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`Entero_S`)),
-                    popup = popupTable("Entero"),
-                    group = "Enterococcus"
-  ) %>%
+  # addAwesomeMarkers(data = stns_param_summary,
+  #                   lat = stns_param_summary$DECIMAL_LAT,
+  #                   lng = stns_param_summary$DECIMAL_LONG,
+  #                   icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Entero_T`),
+  #                                       iconColor = 'black',
+  #                                       library = 'glyphicon',
+  #                                       markerColor = statusColor(stns_param_summary$`Entero_S`)),
+  #                   popup = popupTable("Entero"),
+  #                   group = "Enterococcus"
+  # ) %>%
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "Enterococcus",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Enterococcus") %>%
-  addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$DECIMAL_LAT,
-                    lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Temp_T`),
-                                        iconColor = 'black',
-                                        library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`Temp_S`)),
-                    popup = popupTable("Temp"),
-                    group = "Temperature"
-  ) %>% 
+  # addAwesomeMarkers(data = stns_param_summary,
+  #                   lat = stns_param_summary$DECIMAL_LAT,
+  #                   lng = stns_param_summary$DECIMAL_LONG,
+  #                   icon = awesomeIcons(icon = trendIcon(stns_param_summary$`Temp_T`),
+  #                                       iconColor = 'black',
+  #                                       library = 'glyphicon',
+  #                                       markerColor = statusColor(stns_param_summary$`Temp_S`)),
+  #                   popup = popupTable("Temp"),
+  #                   group = "Temperature"
+  # ) %>% 
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "Temperature",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Temperature") %>%
-  addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$DECIMAL_LAT,
-                    lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`pH_T`),
-                                        iconColor = 'black',
-                                        library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`pH_S`)),
-                    popup = popupTable("pH"),
-                    group = "pH"
-  ) %>% 
+  # addAwesomeMarkers(data = stns_param_summary,
+  #                   lat = stns_param_summary$DECIMAL_LAT,
+  #                   lng = stns_param_summary$DECIMAL_LONG,
+  #                   icon = awesomeIcons(icon = trendIcon(stns_param_summary$`pH_T`),
+  #                                       iconColor = 'black',
+  #                                       library = 'glyphicon',
+  #                                       markerColor = statusColor(stns_param_summary$`pH_S`)),
+  #                   popup = popupTable("pH"),
+  #                   group = "pH"
+  # ) %>% 
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "pH",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "pH") %>%
-  addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$DECIMAL_LAT,
-                    lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`DO_T`),
-                                        iconColor = 'black',
-                                        library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`DO_S`)),
-                    popup = popupTable("DO"),
-                    group = "Dissolved Oxygen"
-  ) %>%
+  # addAwesomeMarkers(data = stns_param_summary,
+  #                   lat = stns_param_summary$DECIMAL_LAT,
+  #                   lng = stns_param_summary$DECIMAL_LONG,
+  #                   icon = awesomeIcons(icon = trendIcon(stns_param_summary$`DO_T`),
+  #                                       iconColor = 'black',
+  #                                       library = 'glyphicon',
+  #                                       markerColor = statusColor(stns_param_summary$`DO_S`)),
+  #                   popup = popupTable("DO"),
+  #                   group = "Dissolved Oxygen"
+  # ) %>%
   addPolylines(data = wql_streams_clip[wql_streams_clip$POLLUTANT == "Dissolved Oxygen",], popup = ~paste("<b>",STREAM_NAM, "</b><br>", LISTING_ST),
                weight = 2, opacity = 0.7, fill = FALSE, color = "#800000", group = "Dissolved Oxygen") %>%
-  addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$DECIMAL_LAT,
-                    lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`TP_T`),
-                                        iconColor = 'black',
-                                        library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`TP_S`)),
-                    popup = popupTable("TP"),
-                    group = "Total Phosphorus"
-  ) %>%
-  addAwesomeMarkers(data = stns_param_summary,
-                    lat = stns_param_summary$DECIMAL_LAT,
-                    lng = stns_param_summary$DECIMAL_LONG,
-                    icon = awesomeIcons(icon = trendIcon(stns_param_summary$`TSS_T`),
-                                        iconColor = 'black',
-                                        library = 'glyphicon',
-                                        markerColor = statusColor(stns_param_summary$`TSS_S`)),
-                    popup = popupTable("TSS"),
-                    group = "Total Suspended Solids"
-  ) %>%
+  # addAwesomeMarkers(data = stns_param_summary,
+  #                   lat = stns_param_summary$DECIMAL_LAT,
+  #                   lng = stns_param_summary$DECIMAL_LONG,
+  #                   icon = awesomeIcons(icon = trendIcon(stns_param_summary$`TP_T`),
+  #                                       iconColor = 'black',
+  #                                       library = 'glyphicon',
+  #                                       markerColor = statusColor(stns_param_summary$`TP_S`)),
+  #                   popup = popupTable("TP"),
+  #                   group = "Total Phosphorus"
+  # ) %>%
+  # addAwesomeMarkers(data = stns_param_summary,
+  #                   lat = stns_param_summary$DECIMAL_LAT,
+  #                   lng = stns_param_summary$DECIMAL_LONG,
+  #                   icon = awesomeIcons(icon = trendIcon(stns_param_summary$`TSS_T`),
+  #                                       iconColor = 'black',
+  #                                       library = 'glyphicon',
+  #                                       markerColor = statusColor(stns_param_summary$`TSS_S`)),
+  #                   popup = popupTable("TSS"),
+  #                   group = "Total Suspended Solids"
+  # ) %>%
   addLayersControl(baseGroups = c("Dissolved Oxygen", "Ecoli", "Enterococcus", "Temperature", "pH", 
                                   "Total Phosphorus", "Total Suspended Solids"),
                    overlayGroups = c("NatGeo World Map", "Hydrography"), options = layersControlOptions(collapsed = FALSE)) %>%
@@ -1732,7 +1760,7 @@ leaflet(agwqma_shp) %>%
   addEasyButton(easyButton(
     icon = "fa-globe",
     onClick = JS("function(btn, map){
-                var groupLayer = map.layerManager.getLayerGroup('AgWQMA');
+                var groupLayer = map.layerManager.getLayerGroup('SIA');
                 map.fitBounds(groupLayer.getBounds());
                  }")))
 
@@ -1740,7 +1768,7 @@ leaflet(agwqma_shp) %>%
 
 # Conclusions
 
-```{r conclusions-setup}
+```{r conclusions-setup, eval=FALSE}
 
 colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
                                   "DEC_LAT","DEC_LONG",
@@ -1794,18 +1822,18 @@ write.table(Conc_LU, file = paste0(project_dir,"/Lookups/Conclusions_LU.csv"), r
 
 **What is the overall status or trends in water quality?**
 
-* *Dissolved Oxygen*: `r conclusions.DO`
-* *E. coli*: `r conclusions.Ecoli`
-* *Enterococcus*: `r conclusions.Entero`
-* *pH*: `r conclusions.pH`
-* *Temperature*: `r conclusions.Temp`
-* *Total Phosphorus*: `r conclusions.TP`
-* *Total Suspended Solids*: `r conclusions.TSS`
+* *Dissolved Oxygen*: `NA`
+* *E. coli*: `NA`
+* *Enterococcus*: `NA`
+* *pH*: `NA`
+* *Temperature*: `NA`
+* *Total Phosphorus*: `NA`
+* *Total Suspended Solids*: `NA`
 
 
 **Additional Conclusions:**
 
-`r paste0("* ",conclusions.add.txt,"\n", collapse="")`
+
 
 
 # Citations
@@ -1868,9 +1896,9 @@ knitr::kable(org_summary, padding = 2, digits = 1, row.names = FALSE, caption = 
 
 knitr::kable(org_summary_station, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixorgSumbyStation", caption = "Summary of all unique organizations that collected data at each station for each analyte that had a status and/or trend result."))
 
-knitr::kable(status, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixstatusTable", caption = "Number of observations per year for monitoring stations that fit the criteria to assess status."))
+#knitr::kable(status, padding = 2, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixstatusTable", caption = "Number of observations per year for monitoring stations that fit the criteria to assess status."))
 
-knitr::kable(trend, padding = 1, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixtrendTable", caption = "Number of observations per year for monitoring stations that fit the criteria to assess trend."))
+#knitr::kable(trend, padding = 1, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixtrendTable", caption = "Number of observations per year for monitoring stations that fit the criteria to assess trend."))
 
 knitr::kable(stns_by_year, padding = 1, digits = 1, row.names = FALSE, caption = tbls(name = "AppendixstnByYrTable", caption = "All monitoring stations that were queried and the number of results per year during the query period."))
 
