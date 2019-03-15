@@ -487,7 +487,7 @@ This report presents data and analysis that will help DEQ fulfill its roles in t
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
-*	When applicable, are TMDL load allocations for total phosphorus and total suspended solids being met?
+*	Where applicable, are TMDL targets for total phosphorus being achieved?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 DEQ basin coordinators review pertinent information including this report as part of ODA's biennial review. DEQ basin coordinators recommend changes and additional data and resources necessary to achieve water quality criterion and meet TMDL load allocations through ODA's survey. 
@@ -519,7 +519,7 @@ knitr::kable(BC_table,
 
 ## Data Sources
 
-Water quality data were retrieved from DEQ's [AWQMS Database][2.1.1] which may include data submitted to DEQ from many other organizations (see Appendix for a complete list). Data were also retrieved from the U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) and U.S. Geological Survey [NWIS][2.1.3] (USGS 2016) databases via the [Water Quality Portal][2.1.4]). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*). ** REMOVE IF NOT NEEDED. Stations located within the Confederated Tribes of Umatilla Indian Reservation were not included in this report. The Confederated Tribes of Umatilla administer Clean Water Act programs on the reservation.**
+Water quality data were retrieved from DEQ's [AWQMS Database][2.1.1] which may include data submitted to DEQ from many other organizations (see Appendix for a complete list). Data were also retrieved from the U.S. Environmental Protection Agency ([WQX/Storet][2.1.2]) and U.S. Geological Survey [NWIS][2.1.3] (USGS 2016) databases via the [Water Quality Portal][2.1.4]). Data collected between `r format(ymd(input$dates[1]), format="%B %d, %Y")` and `r format(ymd(input$dates[2]), format="%B %d, %Y")` within the `r input$select` agricultural water quality management area were included in this report. Parameters included in the query were temperature, pH, dissolved oxygen, total suspended solids, total phosphorus, and bacteria (*E. coli*, fecal coliform, and *Enterococcus*).
 
 The data returned were evaluated for quality. Data that was rated under the [DEQ's Laboratory Quality Manual][2.1.5] (ODEQ 2013) guidelines were rated `r unique(df.all[!is.na(df.all$Status), 'Status'])`. EPA and USGS data were included unless result comments indicated problems with the data.
 
@@ -531,26 +531,29 @@ The data returned were evaluated for quality. Data that was rated under the [DEQ
 
 ## Analysis
 
-The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids and total phosphorus samples because there is no applicable water quality criteria or TMDL allocations for these parameters. A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(floor_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. 
+The status of water quality standards attainment for dissolved oxygen, *E. coli*, *Enterococcus*, pH, and temperature samples were made in relation to the applicable numeric water quality criterion. Status for total phosphorus was based on a comparison to the total phosphorus concentration targets established in the [Upper Klamath Lake Drainage TMDL] [2.2.1] (ODEQ 2002). For some waterbodies the applicable water quality criterion for these parameters is a narrative non-numeric criterion. In this situation, status was not determined. Status was also not determined for total suspended solids because there is no applicable water quality criteria or TMDL allocations for these parameters. A status assessment was made at a monitoring station if data were available within the last whole two years in the period from `r format(floor_date(ymd(input$dates[2]) - years(2), unit="year"), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. 
 
-Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p <= 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median. A trend assessment was made at a monitoring station if data were available in a minimum of eight different years for any year in the period from `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. The observations must have beeen made with an underlying regularity (e.g. samples were taken in the same months for at least eight years).
+Trends were calculated for dissolved oxygen, bacteria, pH, temperature, total phosphorus, and total suspended solids using a Seasonal Kendall test (Hirsch et al. 1982, Hirsch and Slack 1984, and Helsel and Hirsch 2002). A Seasonal Kendall test removes the influence of seasonal fluctuations by calculating a Mann Kendall test (Mann 1945) on each season separately and then comparing the slopes. A significant positive, negative, or steady trend was determined across all seasons and years when the significance of the seasonal slopes had a two-tailed p <= 0.20. A steady trend had a slope equal to zero.   Prior to applying the Seasonal Kendall test data were grouped into monthly "seasons." Multiple observations within any given month were collapsed into a single value using the median. A trend assessment was made at a monitoring station if data were available in a minimum of eight different years for any year in the period from `r format(ymd(input$dates[1]), format="%B %d, %Y")` to `r format(ymd(input$dates[2]), format="%B %d, %Y")`. The observations must have been made with an underlying regularity (e.g. samples were taken in the same months for at least eight years).
 
 Stations that met the status or trend data requirements were assessed with the results presented in this report. In some cases a station had sufficient data for trend but not status because data were not available anytime in the last two years. In these cases the status was shown on the plot for the older data along with the trend result but the status was not recorded in the maps, summary tables, or conclusions.
 
-Results for pH from both grab and continuous sample data were compared to the applicable water quality criterion as found in [OAR 340-041-0021][2.2.1].
+Results for pH from both grab and continuous sample data were compared to the applicable water quality criterion as found in [OAR 340-041-0021][2.2.2].
 
-Results for bacteria samples were compared to the applicable bacteria criterion as found in [OAR 340-041-0009][2.2.2]. The bacteria standard for freshwater contact recreation is based on the presence of *E. coli* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The bacteria standard for coastal water contact recreation is based on the presence of *Enterococcus* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period.
+Results for bacteria samples were compared to the applicable bacteria criterion as found in [OAR 340-041-0009][2.2.3]. The bacteria standard for freshwater contact recreation is based on the presence of *E. coli* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period. The bacteria standard for coastal water contact recreation is based on the presence of *Enterococcus* compared to a single sample maximum and a geometric mean of five or more samples in a 90 day period.
 
-Dissolved oxygen status was assessed by comparing the observed concentration values to the applicable daily minimum water quality criterion found in [OAR 340-041-0016][2.2.3]. If the dissolved oxygen concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality criterion. These points were noted in the plots using a different shape. Assessments were not made against the seven and 30-day mean minimum dissolved oxygen criteria due to the general lack of continuous dissolved oxygen data.
+Dissolved oxygen status was assessed by comparing the observed concentration values to the applicable daily minimum water quality criterion found in [OAR 340-041-0016][2.2.4]. If the dissolved oxygen concentration exceeded the water quality criterion, but met the criteria for percent saturation at the same time, it was considered to be in compliance with the water quality criterion. These points were noted in the plots using a different shape. Assessments were not made against the seven and 30-day mean minimum dissolved oxygen criteria due to the general lack of continuous dissolved oxygen data.
 
-Results for continuous temperature data were compared against the applicable temperature criteria found in [OAR 340-041-0028][2.2.4]. The applicable temperature criteria is based on the seven day average daily maximum (7DADM) stream temperature metric. In order to ensure there was sufficient continuous data to calculate 7DADM, at least one observation per hour from noon to midnight must have been recorded. In addition, each month can have no more than one day of missing observations to ensure that no more than 10% of the 7DADM results in that month were missing.
+Results for continuous temperature data were compared against the applicable temperature criteria found in [OAR 340-041-0028][2.2.5]. The applicable temperature criteria is based on the seven day average daily maximum (7DADM) stream temperature metric. In order to ensure there was sufficient continuous data to calculate 7DADM, at least one observation per hour from noon to midnight must have been recorded. In addition, each month can have no more than one day of missing observations to ensure that no more than 10% of the 7DADM results in that month were missing.
+
+Results for total phosphorus samples in Upper Klamath Lake and Agency Lake were compared against the 0.11 mg/L annual lake mean and 0.03 mg/L March through May lake mean total phosphorus concentration targets established in the [Upper Klamath Lake Drainage TMDL][2.2.1] (ODEQ 2002). Total phosphorus samples for inflows or tributaries of Upper Klamath Lake and Agency Lake were compared against the 0.066 mg/L annual mean total phosphorus concentration target also established in the Upper [Klamath Lake Drainage TMDL][2.2.1] (ODEQ 2002).
 
 A land use summary was developed for all monitoring stations that fit the criteria to assess water quality status and/or trends. The summary was derived from the Stream-Catchment ([StreamCat](https://www.epa.gov/national-aquatic-resource-surveys/streamcat)) dataset developed by EPA for the National Rivers and Streams Assessment (USEPA 2016). StreamCat utilized the NHDPlus version 2.1 stream network (McKay et al 2012) and the 2011 National Landcover Database (NLCD) (Homer et al. 2015) to calculate the proportion of each NLCD landuse class within the watershed area contributing to each NHDPlus stream segment including the upstream watershed area. This means that the landuse summary for a particular station represents the landuse for the entire NHDPlus segment where the station is located including the watershed portion of the segment downstream of the station as well as watershed areas upstream of that segment. The streamCat derived NLCD proportions were summarized by DEQ into five unique classes: **Developed**, **Forest**, **Agriculture**, **Shrub and Grass**, and **Other**). Developed includes all the various NLCD classes for urban and developed areas (21-24). Forest includes the various forest and woody wetland classes (41, 42, 43, and 90). Agriculture includes Pasture/Hay (81) and Cultivated Crops (82). Shrub and Grass includes NLCD classes Shrub/Scrub (52), Grassland/Herbaceous (71), and Herbaceous Wetlands (95). Other includes open water (11), Perennial Ice/Snow (12), and Barren Land (31). A map was made showing station locations in relation to these landuse classifications or to the original 2011 national land cover dataset if viewing the html version of this report.
 
-[2.2.1]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68713
-[2.2.2]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68695
-[2.2.3]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68706
-[2.2.4]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=244176
+[2.2.1]: https://www.oregon.gov/deq/FilterDocs/UKtmdlwqmp.pdf
+[2.2.2]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68713
+[2.2.3]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68695
+[2.2.4]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=68706
+[2.2.5]: https://secure.sos.state.or.us/oard/viewSingleRule.action;JSESSIONID_OARD=Q--AbU9sI2gNpiU9aa_3IO93qbFAoGOHlZ2WHGSe8IsE0OGtWMuS!568786841?ruleVrsnRsn=244176
 
 # Results
 
@@ -953,19 +956,23 @@ if(length(tp_stn) > 0) {
   TP_exclist<- list()
   tp_plots<-list()
   
-  
   for(j in 1: length(tp_stn)) {
     
     new_data <- df.tp[df.tp$Station_ID == tp_stn[j],]
-
+    
     if (input$select %in% c('Owyhee','Malheur River','Burnt River','Powder-Brownlee','Hells Canyon','Lower Snake Asotin')) {
       # Snake River - Hells Canyon TMDL
       TP_evaluate <- EvaluateTP_SRHC(new_data, 
                                      selectWQSTP = 0.07)
-    } else {
-      
-      TP_evaluate <- EvaluateTPWQS(new_data, 
-                                   selectWQSTP = 0)
+    } else if (df.tp$Station_ID %in% c('WR4000', 'WR5000', 'KL0010', '422820122032100', '422622122004000', '422719121571400', '422305121553800','422042121513100', '421401121480900')) {            
+      TP_evaluate <- EvaluateTP_UKL_lake(new_data,
+                                         annual_target=0.11, 
+                                         spring_target=0.03)
+      } else if (df.tp$Station_ID %in% c('10770', '11501000', '11502500', '21535', '422305121553803', '422622122004003', 'FWNF-085', 'FWNF-129','FWNF-130', 'FWNF-161', 'SR0040', 'SR0050', 'SR0060', 'SR0070', 'SR0080', 'SR0090', 'SR0140', 'WR1000', 'WR2000', 'WR3000', 'WR6000')) {
+          TP_evaluate <- EvaluateTP_UKL_inflows(new_data,
+                                                annual_target = 0.066)
+        } else {
+          TP_evaluate <- EvaluateTPWQS(new_data, selectWQSTP = 0)
     }
     
     TP_eval <- attr(TP_evaluate, 'ex_df')
@@ -988,6 +995,22 @@ if(length(tp_stn) > 0) {
                    plot_trend = trend_logic,
                    selectWQSTP = 0.07,
                    parm = unique(TP_evaluate$Analyte))
+      
+    } else if (df.tp$Station_ID %in% c('WR4000', 'WR5000', 'KL0010', '422820122032100', '422622122004000', '422719121571400', '422305121553800','422042121513100', '421401121480900')) {
+      
+      b <- plot.TP.UKL(new_data = TP_evaluate,
+                       annual_target = 0.11,
+                       spring_target = 0.03,
+                       sea_ken_table = results_seaken,
+                       plot_trend = trend_logic,
+                       parm = unique(TP_evaluate$Analyte))
+    } else if (df.tp$Station_ID %in% c('10770', '11501000', '11502500', '21535', '422305121553803', '422622122004003', 'FWNF-085', 'FWNF-129','FWNF-130', 'FWNF-161', 'SR0040', 'SR0050', 'SR0060', 'SR0070', 'SR0080', 'SR0090', 'SR0140', 'WR1000', 'WR2000', 'WR3000', 'WR6000')) {
+      b <- plot.TP(new_data=TP_evaluate,
+                   sea_ken_table=results_seaken,
+                   plot_trend = trend_logic,
+                   selectWQSTP = 0.066,
+                   parm = unique(TP_evaluate$Analyte))
+      
     } else {
       
       b <- plot.TP(new_data=TP_evaluate,
@@ -1505,7 +1528,7 @@ knitr::include_graphics(paste0("Figures/",station_summary_map_DO_file))
 
 
 
-```{r Ecoli-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for E coli. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for E. coli.")}
+```{r Ecoli-summary-map, eval = word_output & split_param_summary, results='asis', fig.cap=figs(name="Ecoli_map", caption="Summary of stations that fit the criteria for status and trend analysis for _E coli_. One or more exceedances within the last three years of available data defined whether a station was Meeting or Not Meeting. Trend was determined by significant trends associated with long-term datasets. Clusters of stations (grey circles located on the western margin of the study area) had insufficient data to determine status and trends for _E. coli_.")}
 
 knitr::include_graphics(path = paste0("Figures/",station_summary_map_ecoli_file))
 
@@ -1768,7 +1791,8 @@ leaflet(agwqma_shp) %>%
 
 ```{r conclusions-setup}
 
-colnames(stns_param_summary_tbl) <- c("Station_ID", "Station_Description",      #BTD removed "DEC_LAT", "DEC_LONG", 
+colnames(stns_param_summary) <- c("Station_ID", "Station_Description",
+                                  "DEC_LAT", "DEC_LONG",
                                   "DO_S", "DO_T",
                                   "Ecoli_S", "Ecoli_T", 
                                   "Entero_S", "Entero_T",
@@ -1778,13 +1802,13 @@ colnames(stns_param_summary_tbl) <- c("Station_ID", "Station_Description",      
                                   "TSS_S","TSS_T")
 
 # Text for conclusions. Use auto conclusion function or make your own text
-conclusions.DO <- con.auto(df=stns_param_summary_tbl, status_column="DO_S", trend_column="DO_T")
-conclusions.Ecoli <- con.auto(df=stns_param_summary_tbl, status_column="Ecoli_S", trend_column="Ecoli_T")
-conclusions.Entero <- con.auto(df=stns_param_summary_tbl, status_column="Entero_S", trend_column="Entero_T")
-conclusions.pH <- con.auto(df=stns_param_summary_tbl, status_column="pH_S", trend_column="pH_T")
-conclusions.Temp <- con.auto(df=stns_param_summary_tbl, status_column="Temp_S", trend_column="Temp_T")
-conclusions.TP <- con.auto(df=stns_param_summary_tbl, status_column="TP_S", trend_column="TP_T")
-conclusions.TSS <- con.auto(df=stns_param_summary_tbl, status_column="TSS_S", trend_column="TSS_T")
+conclusions.DO <- con.auto(df=stns_param_summary, status_column="DO_S", trend_column="DO_T")
+conclusions.Ecoli <- con.auto(df=stns_param_summary, status_column="Ecoli_S", trend_column="Ecoli_T")
+conclusions.Entero <- con.auto(df=stns_param_summary, status_column="Entero_S", trend_column="Entero_T")
+conclusions.pH <- con.auto(df=stns_param_summary, status_column="pH_S", trend_column="pH_T")
+conclusions.Temp <- con.auto(df=stns_param_summary, status_column="Temp_S", trend_column="Temp_T")
+conclusions.TP <- con.auto(df=stns_param_summary, status_column="TP_S", trend_column="TP_T")
+conclusions.TSS <- con.auto(df=stns_param_summary, status_column="TSS_S", trend_column="TSS_T")
 
 # Text for additional conclusions
 conclusions.add.txt <- c("Grab samples may not provide a complete characterization of water quality for parameters that fluctuate on a daily basis                              (e.g., DO and pH). For this reason continuous data are preferred and should be considered when monitoring these parameters                            in the future.",
@@ -1846,6 +1870,7 @@ Mann, H. B., 1945, Nonparametric test against trend: *Econometrica* 13, 245-259.
 
 McKay, L., Bondelid, T., Dewald, T., Johnston, J., Moore, R., and Rea, A. 2012. NHDPlus Version 2:User Guide (Data Model Version 2.1). Available from http://www.horizon-systems.com/NHDPlus/NHDPlusV2_documentation.php.
 
+Oregon Department of Environmental Quality, 2002. Upper Klamath Lake Drainage Total Maximum Daily Load (TMDL) and Water Quality Management Plan (WQMP).
 
 Oregon Department of Environmental Quality, 2013. Quality Manual. DEQ91-LAB-0006-LQM Version 8.2.
 
