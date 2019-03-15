@@ -1148,7 +1148,7 @@ EvaluateTP_UKL_lake <-function(new_data, annual_target=0.11, spring_target=0.03)
   return(new_data)
 }
 
-EvaluateTP_UKL_inflows <-function(new_data, annual_target=0.11) {
+EvaluateTP_UKL_inflows <-function(new_data, annual_target=0.066) {
   
   # function to evaluate TP targets for inflow in Upper Klamath Lake Drainage TMDL
   # 66 µg/l (0.066 mg/L) annual mean total phosphorus concentration from all inflows to the lake
