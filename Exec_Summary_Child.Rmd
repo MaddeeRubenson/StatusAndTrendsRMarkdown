@@ -15,7 +15,7 @@ This report presents data and analysis that will help DEQ fulfill its role in th
 
 *	What is the status of water quality? 
 *	What is the trend in water quality? 
-*	Where applicable, are TMDL targets for total phosphorus achieved?
+*	Where applicable, are TMDL targets for total phosphorus being achieved?
 * Can water quality status and trends be attributed to a pollution source or sources?
 
 
