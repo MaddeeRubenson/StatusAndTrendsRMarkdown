@@ -1163,7 +1163,7 @@ EvaluateTP_UKL_inflows <-function(new_data, annual_target=0.066) {
     summarize(Result=mean(Result)) %>%
     as.data.frame()
   
-  new_data$exceed<- ifelse(new_data_annual$Result > annual_target, "Exceeds", "Meets")
+  new_data$exceed<- ifelse(new_data$Result > annual_target, "Exceeds", "Meets")
   
   exc<-new_data%>%
     filter(exceed == "Exceeds")
