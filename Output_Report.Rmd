@@ -11,7 +11,7 @@ output:
     toc_float: yes
   word_document:
     fig_caption: yes
-    reference_docx: //deqhq1/WQNPS/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
+    reference_docx: N:/Agriculture/Status_and_Trend_Analysis/R_support_files/Report_Template.docx
     toc: yes
 always_allow_html: yes
 ---
@@ -286,6 +286,10 @@ if(file.exists(file=paste0(Rdata_dir,"/",df_all_clean_file))) {
   df.all$Result <- clean(df.all$Result)
   df.all$Result <- suppressWarnings(as.numeric(df.all$Result))
   df.all <- MRLhandling(df.all)
+  
+  # convert ug/l to mg/l
+  df.all$Result <- ifelse(df.all$Unit == 'ug/l', df.all$Result * 0.001 , df.all$Result)
+  df.all$Unit <- ifelse(df.all$Unit == 'ug/l', 'mg/l' , df.all$Unit)
   
   if ("Fecal Coliform" %in% df.all$Analyte) {
     fc2ec.stations <-Stations_in_poly(df.all[df.all$Analyte == "Fecal Coliform", ], bacteria_nonfreshwater_shp, outside=TRUE)
@@ -964,11 +968,11 @@ if(length(tp_stn) > 0) {
       # Snake River - Hells Canyon TMDL
       TP_evaluate <- EvaluateTP_SRHC(new_data, 
                                      selectWQSTP = 0.07)
-    } else if (df.tp$Station_ID %in% c('WR4000', 'WR5000', 'KL0010', '422820122032100', '422622122004000', '422719121571400', '422305121553800','422042121513100', '421401121480900')) {            
+    } else if (tp_stn[j] %in% c('WR4000', 'WR5000', 'KL0010', '422820122032100', '422622122004000', '422719121571400', '422305121553800','422042121513100', '421401121480900')) {            
       TP_evaluate <- EvaluateTP_UKL_lake(new_data,
                                          annual_target=0.11, 
                                          spring_target=0.03)
-      } else if (df.tp$Station_ID %in% c('10770', '11501000', '11502500', '21535', '422305121553803', '422622122004003', 'FWNF-085', 'FWNF-129','FWNF-130', 'FWNF-161', 'SR0040', 'SR0050', 'SR0060', 'SR0070', 'SR0080', 'SR0090', 'SR0140', 'WR1000', 'WR2000', 'WR3000', 'WR6000')) {
+      } else if (tp_stn[j] %in% c('10770', '11501000', '11502500', '21535', '422305121553803', '422622122004003', 'FWNF-085', 'FWNF-129','FWNF-130', 'FWNF-161', 'SR0040', 'SR0050', 'SR0060', 'SR0070', 'SR0080', 'SR0090', 'SR0140', 'WR1000', 'WR2000', 'WR3000', 'WR6000')) {
           TP_evaluate <- EvaluateTP_UKL_inflows(new_data,
                                                 annual_target = 0.066)
         } else {
@@ -996,7 +1000,8 @@ if(length(tp_stn) > 0) {
                    selectWQSTP = 0.07,
                    parm = unique(TP_evaluate$Analyte))
       
-    } else if (df.tp$Station_ID %in% c('WR4000', 'WR5000', 'KL0010', '422820122032100', '422622122004000', '422719121571400', '422305121553800','422042121513100', '421401121480900')) {
+    } else if (tp_stn[j] %in% c('WR4000', 'WR5000', 'KL0010', '422820122032100', '422622122004000', '422719121571400',
+                                '422305121553800','422042121513100', '421401121480900')) {
       
       b <- plot.TP.UKL(new_data = TP_evaluate,
                        annual_target = 0.11,
@@ -1004,7 +1009,9 @@ if(length(tp_stn) > 0) {
                        sea_ken_table = results_seaken,
                        plot_trend = trend_logic,
                        parm = unique(TP_evaluate$Analyte))
-    } else if (df.tp$Station_ID %in% c('10770', '11501000', '11502500', '21535', '422305121553803', '422622122004003', 'FWNF-085', 'FWNF-129','FWNF-130', 'FWNF-161', 'SR0040', 'SR0050', 'SR0060', 'SR0070', 'SR0080', 'SR0090', 'SR0140', 'WR1000', 'WR2000', 'WR3000', 'WR6000')) {
+    } else if (tp_stn[j] %in% c('10770', '11501000', '11502500', '21535', '422305121553803', '422622122004003', 'FWNF-085',
+                                'FWNF-129','FWNF-130', 'FWNF-161', 'SR0040', 'SR0050', 'SR0060', 'SR0070', 'SR0080', 'SR0090',
+                                'SR0140', 'WR1000', 'WR2000', 'WR3000', 'WR6000')) {
       b <- plot.TP(new_data=TP_evaluate,
                    sea_ken_table=results_seaken,
                    plot_trend = trend_logic,
